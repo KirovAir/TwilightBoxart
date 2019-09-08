@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29021.104
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart", "TwilightBoxart\TwilightBoxart.csproj", "{5C100274-98EA-4C27-8B99-CCE3C510CBA1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KirovAir.Core", "..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj", "{703CAEE9-A844-4168-84CA-86FEDF680BC2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5C100274-98EA-4C27-8B99-CCE3C510CBA1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5C100274-98EA-4C27-8B99-CCE3C510CBA1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5C100274-98EA-4C27-8B99-CCE3C510CBA1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5C100274-98EA-4C27-8B99-CCE3C510CBA1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {361C929E-D323-473B-8C1F-06DA13C1E956}
+	EndGlobalSection
+EndGlobal
