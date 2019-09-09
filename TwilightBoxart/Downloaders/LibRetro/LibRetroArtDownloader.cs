@@ -1,7 +1,9 @@
-﻿using System;
+﻿using KirovAir.Core.Utilities;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using TwilightBoxart.Models;
 
 namespace TwilightBoxart.Downloaders.LibRetro
 {
@@ -10,6 +12,7 @@ namespace TwilightBoxart.Downloaders.LibRetro
         public string DatUrl { get; }
         public string ContentUrl { get; }
         public WebClient WebClient { get; set; } = new WebClient();
+        public List<RomData> Roms { get; set; } = new List<RomData>();
 
         public LibRetroArtDownloader(string datUrl, string contentUrl)
         {
@@ -17,12 +20,25 @@ namespace TwilightBoxart.Downloaders.LibRetro
             ContentUrl = contentUrl;
 
             var datData = WebClient.DownloadString(DatUrl);
-            var roms = ParseDat<RomData>(datData, "game");
-            
+            Roms = ParseDat<RomData>(datData, "game");
         }
 
+        public void Download(IRom rom, string location)
+        {
+            var romData = Roms.FirstOrDefault(c => c.RomMd5.ToLower() == rom.Md5Hash.ToLower());
+
+            if (romData == null)
+            {
+                throw new Exception("Could not find rom by md5 hash!");
+            }
+
+            var url = FileHelper.CombineUri(ContentUrl, $"{romData.Name}.png");
+            WebClient.DownloadFile(url, location);
+        }
+        
         /// <summary>
-        /// Parses a libretro dat file. The code is horrible but so is the format ..
+        /// Parses a libretro .dat file. The code is horrible and so is the format ..
+        /// y no standards libretro? 
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="data"></param>
@@ -33,7 +49,7 @@ namespace TwilightBoxart.Downloaders.LibRetro
             var result = new List<T>();
             var split = new List<string>();
             var instr = false;
-            var value = "";         
+            var value = "";
 
             // Remove whitespace and shit. Just get the values.
             foreach (var c in data)
@@ -96,8 +112,9 @@ namespace TwilightBoxart.Downloaders.LibRetro
         public void ListToObj<T>(T obj, List<string> values, string key, ref int index)
         {
             var properties = obj.GetType().GetProperties();
-                        var currentKey = "";
-            for (int i = index;  i < values.Count; i++)
+            var currentKey = "";
+
+            for (int i = index; i < values.Count; i++)
             {
                 var value = values[i];
 
@@ -125,33 +142,11 @@ namespace TwilightBoxart.Downloaders.LibRetro
                     currentKey = "";
                 }
             }
-
         }
 
         public void Dispose()
         {
             WebClient?.Dispose();
-        }
-    }
-
-//    game (
-//      name "2 Game Pack! - Hot Wheels - Stunt Track Challenge + Hot Wheels - World Race (USA, Europe)"
-//      description "2 Game Pack! - Hot Wheels - Stunt Track Challenge + Hot Wheels - World Race (USA, Europe)"
-//      rom (name "2 Game Pack! - Hot Wheels - Stunt Track Challenge + Hot Wheels - World Race (USA, Europe).gba" size 16777216 crc 20929EC1 md5 4DAF3D378D5F91277F43A5555829FDC7 sha1 717B2A739C8932374AB48A9C2BBD76A44B4CF2F3 )
-//    )
-    public class RomData
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string RomName { get; set; }
-        public string RomSize { get; set; }
-        public string RomCrc { get; set; }
-        public string RomMd5 { get; set; }
-        public string RomSha1 { get; set; }
-        
-        public override string ToString()
-        {
-            return $"{Name} - {RomSize}";
         }
     }
 }

@@ -15,15 +15,11 @@ namespace TwilightBoxart
 
         static void Main(string[] args)
         {
-            var dl = new LibRetroArtDownloader(@"https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/master/Nintendo%20-%20Game%20Boy%20Advance.dat",
-                                                "https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/tree/master/Named_Boxarts");
-                      
-
-
             try
             {
                 Config.Load("TwilightBoxart.ini");
-            } catch { Console.WriteLine("Could not load TwilightBoxart.ini - using defaults."); }
+            }
+            catch { Console.WriteLine("Could not load TwilightBoxart.ini - using defaults."); }
 
             if (string.IsNullOrEmpty(Config.SdRoot))
             {
