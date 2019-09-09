@@ -1,4 +1,5 @@
 ﻿using KirovAir.Core.Extensions;
+using System;
 using System.Net;
 
 namespace TwilightBoxart.Models
@@ -18,8 +19,24 @@ namespace TwilightBoxart.Models
             var region = GetUrlRegion();
             using (var client = new WebClient())
             {
-                var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
-                //client.DownloadFile(url, targetFile);
+                while (true)
+                {
+                    try
+                    {
+                        var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
+                        client.DownloadFile(url, targetFile);
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        if (region != "EN" && e.Message.Contains("404"))
+                        {
+                            Console.WriteLine(".");
+                            continue;
+                        }
+                        throw e;
+                    }
+                }
             }
         }
 
@@ -47,7 +64,7 @@ namespace TwilightBoxart.Models
 
                 case 'U':
                     // Alternate country code for Australia.
-                    region = "AU";
+                    region = "EN";
                     break;
 
                 // European country-specific localizations.

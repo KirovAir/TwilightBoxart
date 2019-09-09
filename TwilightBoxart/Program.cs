@@ -4,16 +4,22 @@ using TwilightBoxart.Models;
 using System.Linq;
 using KirovAir.Core.ConsoleApp;
 using KirovAir.Core.Utilities;
+using TwilightBoxart.Downloaders.LibRetro;
 
 namespace TwilightBoxart
 {
     class Program
     {
-        private static readonly string[] SupportedExtensions = { ".nds", ".gb", ".gbc", ".gba" };
+        private static readonly string[] SupportedExtensions = { ".dsi", ".nds", ".gb", ".gbc", ".gba" };
         private static readonly Config Config = new Config();
 
         static void Main(string[] args)
         {
+            var dl = new LibRetroArtDownloader(@"https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/master/Nintendo%20-%20Game%20Boy%20Advance.dat",
+                                                "https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/tree/master/Named_Boxarts");
+                      
+
+
             try
             {
                 Config.Load("TwilightBoxart.ini");
@@ -30,12 +36,26 @@ namespace TwilightBoxart
             Console.WriteLine("Roms location: " + romsPath);
             Console.WriteLine("BoxArt location: " + boxArtPath);
             Console.WriteLine();
+
             if (!ConsoleEx.YesNoMenu("Is this OK?"))
             {
                 return;
             }
             Console.WriteLine();
 
+            if (!Directory.Exists(romsPath))
+            {
+                ConsoleEx.WriteRedLine($"Could not open {romsPath}. Please check TwilightBoxart.ini");
+            }
+            else
+            {
+                DownloadArt(romsPath, boxArtPath);
+            }
+            Console.ReadKey();
+        }
+
+        static void DownloadArt(string romsPath, string boxArtPath)
+        {
             foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*"))
             {
                 var ext = Path.GetExtension(romFile).ToLower();
@@ -44,13 +64,14 @@ namespace TwilightBoxart
 
                 var targetArtFile = Path.Combine(boxArtPath, Path.GetFileNameWithoutExtension(romFile) + ".png");
                 if (File.Exists(targetArtFile))
-                {  // We already have it. 
+                {  // We already have it.
+                    ConsoleEx.WriteGreenLine($"Skipping {Path.GetFileNameWithoutExtension(romFile)}.. (We already have it)");
                     continue;
                 }
 
                 try
                 {
-                    Console.Write($"Searching art for {Path.GetFileName(romFile)}..");
+                    Console.Write($"Searching art for {Path.GetFileName(romFile)}.. ");
                     var rom = Rom.FromFile(romFile);
                     Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));
                     rom.DownloadBoxArt(targetArtFile);
