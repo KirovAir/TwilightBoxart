@@ -4,11 +4,13 @@ namespace TwilightBoxart.Models.Base
 {
     public interface IRom
     {
-        void DownloadBoxArt(string targetFile);
+        string FileName { get; set; }
         string Sha1 { get; set; }
+        string Title { get; set; }
         string TitleId { get; set; }
         ConsoleType ConsoleType { get; set; }
         string NoIntroName { get; set; }
         NoIntroConsoleType NoIntroConsoleType { get; set; }
+        void DownloadBoxArt(string targetFile);
     }
 }

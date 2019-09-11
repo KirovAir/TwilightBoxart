@@ -9,8 +9,8 @@ namespace TwilightBoxart.Models
 
         public GbRom(byte[] header)
         {
-            Title = header.GetString(308, 12);
-            TitleId = header.GetString(320, 4);
+            Title = header.GetString(0x134, 16);
+            //TitleId = header.GetString(0x13F, 4);
         }
     }
 }

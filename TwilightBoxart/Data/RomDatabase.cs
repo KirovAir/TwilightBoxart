@@ -5,14 +5,12 @@ using KirovAir.Core.Extensions;
 using SQLite;
 using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
-using static System.String;
 
 namespace TwilightBoxart.Data
 {
     public class RomDatabase
     {
         private readonly SQLiteConnection _db;
-        public List<RomMetaData> Roms = new List<RomMetaData>();
 
         public RomDatabase(string databasePath)
         {
@@ -21,6 +19,7 @@ namespace TwilightBoxart.Data
 
             if (!_db.Table<RomMetaData>().Any())
             {
+                var roms = new List<RomMetaData>();
                 Console.WriteLine("No database was found! Downloading No-Intro DB..");
 
                 foreach (var (key, value) in Config.NoIntroDbMapping)
@@ -40,19 +39,16 @@ namespace TwilightBoxart.Data
                             Sha1 = game.Rom?.Sha1.ToLower(),
                             Status = game.Rom?.Status
                         };
-                        Roms.Add(rom);
+                        roms.Add(rom);
                     }
 
                     Console.WriteLine($"Found {data.Game.Count} roms");
                 }
 
                 Console.Write("Flushing data..");
-                _db.InsertAll(Roms);
+                _db.InsertAll(roms);
+                roms = null;
                 Console.WriteLine("Done!");
-            }
-            else
-            {
-               Roms = _db.Table<RomMetaData>().ToList();
             }
 
             Console.WriteLine($"Database contains {_db.Table<RomMetaData>().Count()} roms.");
@@ -61,12 +57,12 @@ namespace TwilightBoxart.Data
         public void AddMetadata(IRom rom)
         {
             RomMetaData result = null;
-            if (!IsNullOrEmpty(rom.Sha1))
+            if (!string.IsNullOrEmpty(rom.Sha1))
             {
                 result = _db.Table<RomMetaData>().FirstOrDefault(c => c.Sha1.ToLower() == rom.Sha1.ToLower());
             }
 
-            if (result == null && !IsNullOrEmpty(rom.TitleId))
+            if (result == null && !string.IsNullOrEmpty(rom.TitleId))
             {
                 var results =
                  _db.Table<RomMetaData>().Where(c => c.ConsoleType == rom.ConsoleType &&

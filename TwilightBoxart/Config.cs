@@ -8,6 +8,16 @@ namespace TwilightBoxart
 {
     public class Config : IniSettings
     {
+        // Used as backup mapping.
+        public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
+        {
+            {".gb", ConsoleType.Gb},
+            {".gbc", ConsoleType.Gbc},
+            {".gba", ConsoleType.Gba},
+            {".nds", ConsoleType.Nds},
+            {".dsi", ConsoleType.Dsi}
+        };
+
         public string SdRoot { get; set; } = "";
         public string RomsDir { get; set; } = "";
         public string BoxArtDir { get; set; } = @"_nds\TWiLightMenu\boxart";

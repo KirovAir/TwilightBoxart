@@ -17,6 +17,7 @@ namespace TwilightBoxart.Data
         public string Serial { get; set; }
         public string GameId { get; set; }
         public string Status { get; set; }
+        public string Title { get; set; }
         public string TitleId { get; set; }
     }
 }

@@ -10,7 +10,6 @@ namespace TwilightBoxart
 {
     class Program
     {
-        private static readonly string[] SupportedExtensions = { ".dsi", ".nds", ".gb", ".gbc", ".gba" };
         private static readonly Config Config = new Config();
         private static RomDatabase _romDb;
 
@@ -56,12 +55,12 @@ namespace TwilightBoxart
             Console.ReadKey();
         }
 
-        static void DownloadArt(string romsPath, string boxArtPath)
+        private static void DownloadArt(string romsPath, string boxArtPath)
         {
-            foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*"))
+            foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*", SearchOption.AllDirectories))
             {
                 var ext = Path.GetExtension(romFile).ToLower();
-                if (!SupportedExtensions.Contains(ext))
+                if (!Config.ExtensionMapping.Keys.Contains(ext))
                     continue;
 
                 var targetArtFile = Path.Combine(boxArtPath, Path.GetFileName(romFile) + ".png");

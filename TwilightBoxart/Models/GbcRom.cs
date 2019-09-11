@@ -9,8 +9,17 @@ namespace TwilightBoxart.Models
 
         public GbcRom(byte[] header)
         {
-            Title = header.GetString(308, 12);
-            TitleId = header.GetString(320, 4);
+            var isColorOnly = header[0x143] == 0xC0;
+
+            if (isColorOnly)
+            {
+                Title = header.GetString(0x134, 11);
+                TitleId = header.GetString(0x13F, 4);
+            }
+            else
+            {
+                Title = header.GetString(0x134, 15);
+            }
         }
     }
 }

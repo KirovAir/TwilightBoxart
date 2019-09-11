@@ -12,29 +12,30 @@ namespace TwilightBoxart.Models.Base
     /// </summary>
     public class Rom : IRom
     {
+        public string FileName { get; set; }
         public byte[] Header { get; set; }
         public string Title { get; set; }
         public string TitleId { get; set; }
-        public char RegionId { get; set; }
         public string Sha1 { get; set; }
         public virtual ConsoleType ConsoleType { get; set; }
         public string NoIntroName { get; set; }
         public NoIntroConsoleType NoIntroConsoleType { get; set; }
 
-        public static IRom FromFile(string filename)
+        public static IRom FromStream(Stream stream, string filename)
         {
-            // Determine type
-            using var stream = File.OpenRead(filename);
+            // Open file, hash it and determine type.
             using var sha1 = new SHA1Managed();
             using var reader = new BinaryReader(stream);
 
+            // Compute the hash, reset pointer.
             var hash = sha1.ComputeHash(stream);
-            var hashString = string.Concat(hash.Select(b => b.ToString("x2"))); // Hash it.
             stream.Seek(0, SeekOrigin.Begin);
+
+            // This header is sufficient for most roms.
             var header = reader.ReadBytes(328);
             IRom result = null;
 
-            if (header.ByteMatch(260, 0xCE, 0xED, 0x66, 0x66)) // Check for GB header.
+            if (header.ByteMatch(0x104, 0xCE, 0xED, 0x66, 0x66) || header.ByteMatch(0x100, 0x00, 0xC3, 0x50, 0x01) || header.ByteMatch(0x104, 0x11, 0x23, 0xF1, 0x1E)) // Check for GB header. (Headers??)
             {
                 if (header.ByteMatch(0x143, 0x80) || header.ByteMatch(0x143, 0xC0))
                 {
@@ -60,13 +61,26 @@ namespace TwilightBoxart.Models.Base
                     result = new NdsRom(header);
                 }
             }
-            if (result != null)
+
+            if (result == null && Config.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
             {
-                result.Sha1 = hashString;
-                return result;
+                // Backup mapper. Only supports sha1.
+                result = new UnknownRom {ConsoleType = consoleType};
             }
 
-            throw new Exception("Unknown ROM type.");
+            if (result == null) throw new Exception("Unknown ROM type.");
+
+            result.FileName = filename;
+            result.Sha1 = string.Concat(hash.Select(b => b.ToString("x2"))); // Hash it.
+
+            return result;
+
+        }
+
+        public static IRom FromFile(string filename)
+        {
+            using var stream = File.OpenRead(filename);
+            return FromStream(stream, filename);
         }
 
         public virtual void DownloadBoxArt(string targetFile)
@@ -76,7 +90,7 @@ namespace TwilightBoxart.Models.Base
 
         public override string ToString()
         {
-            return $"{Title} - {TitleId} ({RegionId})";
+            return $"{Title} - {TitleId}";
         }
     }
 }

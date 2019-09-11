@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj" />
+    <ProjectReference Include="..\TwilightBoxart\TwilightBoxart.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="TwilightDbGen.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

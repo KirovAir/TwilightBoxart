@@ -8,6 +8,7 @@ namespace TwilightBoxart.Models
     public class NdsRom : LibRetroRom
     {
         public override ConsoleType ConsoleType => ConsoleType.Nds;
+        public char RegionId { get; set; }
 
         public NdsRom(byte[] header)
         {
@@ -16,7 +17,7 @@ namespace TwilightBoxart.Models
             RegionId = (char)header[15];
         }
 
-        public sealed override void DownloadBoxArt(string targetFile)
+        public override void DownloadBoxArt(string targetFile)
         {
             try
             {
