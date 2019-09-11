@@ -3,11 +3,11 @@ using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Models
 {
-    public class GbRom : LibRetroRom
+    public class GbcRom : LibRetroRom
     {
-        public override ConsoleType ConsoleType => ConsoleType.Gb;
+        public override ConsoleType ConsoleType => ConsoleType.Gbc;
 
-        public GbRom(byte[] header)
+        public GbcRom(byte[] header)
         {
             Title = header.GetString(308, 12);
             TitleId = header.GetString(320, 4);

@@ -1,11 +1,14 @@
 ﻿using KirovAir.Core.Extensions;
 using System;
-using System.Net;
+using TwilightBoxart.Helpers;
+using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Models
 {
-    public class NdsRom : Rom
+    public class NdsRom : LibRetroRom
     {
+        public override ConsoleType ConsoleType => ConsoleType.Nds;
+
         public NdsRom(byte[] header)
         {
             Title = header.GetString(0, 12);
@@ -15,29 +18,38 @@ namespace TwilightBoxart.Models
 
         public sealed override void DownloadBoxArt(string targetFile)
         {
-            // Example: https://art.gametdb.com/ds/coverS/US/BSKE.png
-            var region = GetUrlRegion();
-            using (var client = new WebClient())
+            try
             {
-                while (true)
+                // First try retrodb
+                base.DownloadBoxArt(targetFile);
+            }
+            catch
+            {
+                Console.WriteLine("."); // An error occured.
+
+                var region = GetUrlRegion(); // Try correct region
+                try
                 {
-                    try
+                    DownloadAndResize(region, targetFile);
+                }
+                catch (Exception e)
+                {
+                    if (region != "EN" && e.Message.Contains("404")) // Finally, trey EN region.
                     {
-                        var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
-                        client.DownloadFile(url, targetFile);
-                        break;
+                        Console.WriteLine(".");
+                        DownloadAndResize("EN", targetFile);
                     }
-                    catch (Exception e)
-                    {
-                        if (region != "EN" && e.Message.Contains("404"))
-                        {
-                            Console.WriteLine(".");
-                            continue;
-                        }
-                        throw e;
-                    }
+
+                    throw;
                 }
             }
+        }
+
+        private void DownloadAndResize(string region, string targetFile)
+        {
+            // Example: https://art.gametdb.com/ds/coverS/US/BSKE.png
+            var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
+            ImgHelper.DownloadAndResize(url, targetFile);
         }
 
         private string GetUrlRegion()

@@ -3,11 +3,11 @@ using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Models
 {
-    public class GbaRom : LibRetroRom
+    public class SnesRom : LibRetroRom
     {
-        public override ConsoleType ConsoleType => ConsoleType.Gba;
+        public override ConsoleType ConsoleType => ConsoleType.Snes;
 
-        public GbaRom(byte[] header)
+        public SnesRom(byte[] header)
         {
             Title = header.GetString(0xA0, 12);
             TitleId = header.GetString(0xAC, 4);
