@@ -1,8 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
@@ -12,12 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="TwilightBoxart.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

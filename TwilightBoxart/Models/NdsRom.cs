@@ -26,8 +26,6 @@ namespace TwilightBoxart.Models
             }
             catch
             {
-                Console.WriteLine("."); // An error occured.
-
                 var region = GetUrlRegion(); // Try correct region
                 try
                 {
@@ -37,7 +35,6 @@ namespace TwilightBoxart.Models
                 {
                     if (region != "EN" && e.Message.Contains("404")) // Finally, trey EN region.
                     {
-                        Console.WriteLine(".");
                         DownloadAndResize("EN", targetFile);
                     }
 

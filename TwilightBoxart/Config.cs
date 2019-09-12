@@ -7,6 +7,10 @@ namespace TwilightBoxart
 {
     public class Config : IniSettings
     {
+        public string SdRoot { get; set; } = "";
+        public string BoxArtPath { get; set; } = @"_nds\TWiLightMenu\boxart";
+
+
         // Used as backup mapping.
         public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
         {
@@ -24,10 +28,6 @@ namespace TwilightBoxart
             {".gen", ConsoleType.SegaGenesis},
             {".sms", ConsoleType.SegaMasterSystem}
         };
-
-        public string SdRoot { get; set; } = "";
-        public string RomsDir { get; set; } = "";
-        public string BoxArtDir { get; set; } = @"_nds\TWiLightMenu\boxart";
 
         /// <summary>
         /// Mapping to merge some ConsoleTypes in the DB.

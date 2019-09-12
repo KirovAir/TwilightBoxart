@@ -6,14 +6,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TwilightBoxart.ini" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj" />
     <ProjectReference Include="..\TwilightBoxart\TwilightBoxart.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="TwilightDbGen.ini">
+    <Content Include="TwilightBoxart.ini">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
 
 </Project>

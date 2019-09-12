@@ -10,13 +10,19 @@ namespace TwilightBoxart.Data
 {
     public class RomDatabase
     {
-        private readonly SQLiteConnection _db;
+        private readonly string _databasePath;
+        private SQLiteConnection _db;
 
         public RomDatabase(string databasePath)
         {
-            _db = new SQLiteConnection(databasePath);
-            _db.CreateTable<RomMetaData>();
+            _databasePath = databasePath;
+        }
 
+        public void Initialize(IProgress<string> progress = null)
+        {
+            _db = new SQLiteConnection(_databasePath);
+            _db.CreateTable<RomMetaData>();
+            
             var hasRecords = false;
             try
             {
@@ -24,50 +30,45 @@ namespace TwilightBoxart.Data
             }
             catch (Exception e)
             {
-                Console.WriteLine("An error occured while accessing localDb: " + e.Message);
+                progress?.Report("An error occured while accessing localDb: " + e.Message);
             }
 
             if (!hasRecords)
             {
-                ReInitDb();
-            }
-
-            Console.WriteLine($"Database contains {_db.Table<RomMetaData>().Count()} roms.");
-        }
-
-        public void ReInitDb()
-        {
-            var roms = new List<RomMetaData>();
-            Console.WriteLine("No valid database was found! Downloading No-Intro DB..");
-            _db.DropTable<RomMetaData>();
-            _db.CreateTable<RomMetaData>();
-            foreach (var (key, value) in Config.NoIntroDbMapping)
-            {
-                Console.Write($"{key.GetDescription()}.. ");
-
-                var data = NoIntroCrawler.GetDataFile(key).Result;
-                foreach (var game in data.Game)
+                var roms = new List<RomMetaData>();
+                progress?.Report("No valid database was found! Downloading No-Intro DB..");
+                _db.DropTable<RomMetaData>();
+                _db.CreateTable<RomMetaData>();
+                foreach (var (key, value) in Config.NoIntroDbMapping)
                 {
-                    var rom = new RomMetaData
+                    progress?.Report($"{key.GetDescription()}.. ");
+
+                    var data = NoIntroCrawler.GetDataFile(key).Result;
+                    foreach (var game in data.Game)
                     {
-                        ConsoleType = value,
-                        ConsoleSubType = key,
-                        GameId = game.Game_id,
-                        Name = game.Name,
-                        Serial = game.Rom?.Serial,
-                        Sha1 = game.Rom?.Sha1.ToLower(),
-                        Status = game.Rom?.Status
-                    };
-                    roms.Add(rom);
+                        var rom = new RomMetaData
+                        {
+                            ConsoleType = value,
+                            ConsoleSubType = key,
+                            GameId = game.Game_id,
+                            Name = game.Name,
+                            Serial = game.Rom?.Serial,
+                            Sha1 = game.Rom?.Sha1.ToLower(),
+                            Status = game.Rom?.Status
+                        };
+                        roms.Add(rom);
+                    }
+
+                    progress?.Report($"Found {data.Game.Count} roms");
                 }
 
-                Console.WriteLine($"Found {data.Game.Count} roms");
+                progress?.Report("Flushing data..");
+                _db.InsertAll(roms);
+                roms = null;
+                progress?.Report("Done!");
             }
 
-            Console.Write("Flushing data..");
-            _db.InsertAll(roms);
-            roms = null;
-            Console.WriteLine("Done!");
+            progress?.Report($"Database contains {_db.Table<RomMetaData>().Count()} roms.");
         }
 
         public void AddMetadata(IRom rom)
