@@ -10,7 +10,7 @@ namespace TwilightBoxart.Data
         public int Id { get; set; }
         [Indexed]
         public ConsoleType ConsoleType { get; set; }
-        public NoIntroConsoleType NoIntroConsoleType { get; set; }
+        public ConsoleType ConsoleSubType { get; set; }
         public string Name { get; set; }
         [Indexed]
         public string Sha1 { get; set; }

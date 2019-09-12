@@ -1,7 +1,6 @@
 ﻿using System;
 using KirovAir.Core.Config;
 using System.Collections.Generic;
-using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
@@ -11,63 +10,117 @@ namespace TwilightBoxart
         // Used as backup mapping.
         public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
         {
-            {".gb", ConsoleType.Gb},
-            {".gbc", ConsoleType.Gbc},
-            {".gba", ConsoleType.Gba},
-            {".nds", ConsoleType.Nds},
-            {".dsi", ConsoleType.Dsi}
+            {".nes", ConsoleType.NintendoEntertainmentSystem},
+            {".sfc", ConsoleType.SuperNintendoEntertainmentSystem},
+            {".smc", ConsoleType.SuperNintendoEntertainmentSystem},
+            {".snes", ConsoleType.SuperNintendoEntertainmentSystem},
+            {".gb", ConsoleType.GameBoy},
+            {".gbc", ConsoleType.GameBoyColor},
+            {".gba", ConsoleType.GameBoyAdvance},
+            {".nds", ConsoleType.NintendoDS},
+            {".ds", ConsoleType.NintendoDS},
+            {".dsi", ConsoleType.NintendoDSi},
+            {".gg", ConsoleType.SegaGameGear},
+            {".gen", ConsoleType.SegaGenesis},
+            {".sms", ConsoleType.SegaMasterSystem}
         };
 
         public string SdRoot { get; set; } = "";
         public string RomsDir { get; set; } = "";
         public string BoxArtDir { get; set; } = @"_nds\TWiLightMenu\boxart";
 
-        public static Dictionary<NoIntroConsoleType, ConsoleType> NoIntroDbMapping = new Dictionary<NoIntroConsoleType, ConsoleType>
+        /// <summary>
+        /// Mapping to merge some ConsoleTypes in the DB.
+        /// </summary>
+        public static Dictionary<ConsoleType, ConsoleType> NoIntroDbMapping = new Dictionary<ConsoleType, ConsoleType>
         {
-            {NoIntroConsoleType.GameBoy, ConsoleType.Gb},
-            {NoIntroConsoleType.GameBoyColor, ConsoleType.Gbc},
-            {NoIntroConsoleType.GameBoyAdvance, ConsoleType.Gba},
-            {NoIntroConsoleType.NintendoDs, ConsoleType.Nds},
-            {NoIntroConsoleType.NintendoDsDownloadPlay, ConsoleType.Nds},
-            {NoIntroConsoleType.NintendoDSi, ConsoleType.Dsi},
-            {NoIntroConsoleType.NintendoDSiDigital, ConsoleType.Dsi},
+            {ConsoleType.NintendoEntertainmentSystem, ConsoleType.NintendoEntertainmentSystem},
+            {ConsoleType.SuperNintendoEntertainmentSystem, ConsoleType.SuperNintendoEntertainmentSystem},
+
+            {ConsoleType.GameBoy, ConsoleType.GameBoy},
+            {ConsoleType.GameBoyColor, ConsoleType.GameBoyColor},
+            {ConsoleType.GameBoyAdvance, ConsoleType.GameBoyAdvance},
+
+            {ConsoleType.NintendoDS, ConsoleType.NintendoDS},
+            {ConsoleType.NintendoDSDownloadPlay, ConsoleType.NintendoDS},
+            {ConsoleType.NintendoDSi, ConsoleType.NintendoDSi},
+            {ConsoleType.NintendoDSiDigital, ConsoleType.NintendoDSi},
+
+            {ConsoleType.SegaGameGear, ConsoleType.SegaGameGear},
+            {ConsoleType.SegaGenesis, ConsoleType.SegaGenesis},
+            {ConsoleType.SegaMasterSystem, ConsoleType.SegaMasterSystem}
         };
 
         public static Dictionary<ConsoleType, ConsoleConfig> Consoles = new Dictionary<ConsoleType, ConsoleConfig>
         {
             {
-                ConsoleType.Gb,
+                ConsoleType.NintendoEntertainmentSystem,
                 new ConsoleConfig
                 {
-                    ContentUrl = "https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy/b208f5466d7ea97b605bf4179de6534d988bc42c/Named_Boxarts/"
+                    ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Nintendo_Entertainment_System/raw/master/Named_Boxarts/"
                 }
             },
             {
-                ConsoleType.Gbc,
+                ConsoleType.SuperNintendoEntertainmentSystem,
                 new ConsoleConfig
                 {
-                    ContentUrl = "https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Game_Boy_Color/a57dc041615f82e5f7a8d292dbc8c81a42b1f281/Named_Boxarts/"
+                    ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/raw/master/Named_Boxarts/"
                 }
             },
             {
-                ConsoleType.Gba,
+                ConsoleType.GameBoy,
+                new ConsoleConfig
+                {
+                    ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy/raw/master/Named_Boxarts/"
+                }
+            },
+            {
+                ConsoleType.GameBoyColor,
+                new ConsoleConfig
+                {
+                    ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy_Color/raw/master/Named_Boxarts/"
+                }
+            },
+            {
+                ConsoleType.GameBoyAdvance,
                 new ConsoleConfig
                 {
                     ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Game_Boy_Advance/raw/master/Named_Boxarts/"
                 }
             },
             {
-                ConsoleType.Nds,
+                ConsoleType.NintendoDS,
                 new ConsoleConfig
                 {
                     ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Nintendo_DS/raw/master/Named_Boxarts/"
                 }
             },
             {
-                ConsoleType.Dsi,
+                ConsoleType.NintendoDSi,
                 new ConsoleConfig
                 {
-                    ContentUrl = "https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Nintendo_DSi/ca5aed91f8327158549077a438cdb0834063c61e/Named_Boxarts/"
+                    ContentUrl = "https://github.com/libretro-thumbnails/Nintendo_-_Nintendo_DSi/raw/master/Named_Boxarts/"
+                }
+            },
+            {
+                ConsoleType.SegaGameGear,
+                new ConsoleConfig
+                {
+                    ContentUrl = "https://github.com/libretro-thumbnails/Sega_-_Game_Gear/raw/master/Named_Boxarts/"
+                }
+            },
+            {
+                ConsoleType.SegaGenesis,
+                new ConsoleConfig
+                {
+                    ContentUrl = "https://github.com/libretro-thumbnails/Sega_-_Mega_Drive_-_Genesis/raw/master/Named_Boxarts/"
+                }
+            },
+            {
+                ConsoleType.SegaMasterSystem,
+                new ConsoleConfig
+                {
+                    ContentUrl = "https://github.com/libretro-thumbnails/Sega_-_Master_System_-_Mark_III/raw/master/Named_Boxarts/"
                 }
             }
         };

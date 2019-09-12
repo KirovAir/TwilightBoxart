@@ -7,7 +7,7 @@ namespace TwilightBoxart.Models
 {
     public class NdsRom : LibRetroRom
     {
-        public override ConsoleType ConsoleType => ConsoleType.Nds;
+        public override ConsoleType ConsoleType => ConsoleType.NintendoDS;
         public char RegionId { get; set; }
 
         public NdsRom(byte[] header)

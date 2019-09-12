@@ -6,6 +6,10 @@ namespace TwilightBoxart.Models.Base
 {
     public class LibRetroRom : Rom
     {
+        /// <summary>
+        /// Used for 'simple' sha1 mapping only.
+        /// </summary>
+        /// <param name="targetFile"></param>
         public override void DownloadBoxArt(string targetFile)
         {
             if (string.IsNullOrEmpty(NoIntroName))

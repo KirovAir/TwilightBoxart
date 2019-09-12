@@ -5,7 +5,7 @@ namespace TwilightBoxart.Models
 {
     public class DsiRom : NdsRom
     {
-        public override ConsoleType ConsoleType => ConsoleType.Dsi;
+        public override ConsoleType ConsoleType => Base.ConsoleType.NintendoDSi;
 
         public DsiRom(byte[] header) : base(header)
         {

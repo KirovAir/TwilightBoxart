@@ -17,43 +17,59 @@ namespace TwilightBoxart.Data
             _db = new SQLiteConnection(databasePath);
             _db.CreateTable<RomMetaData>();
 
-            if (!_db.Table<RomMetaData>().Any())
+            var hasRecords = false;
+            try
             {
-                var roms = new List<RomMetaData>();
-                Console.WriteLine("No database was found! Downloading No-Intro DB..");
+                hasRecords = _db.Table<RomMetaData>().Any();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("An error occured while accessing localDb: " + e.Message);
+            }
 
-                foreach (var (key, value) in Config.NoIntroDbMapping)
-                {
-                    Console.Write($"{key.GetDescription()}.. ");
-
-                    var data = NoIntroCrawler.GetDataFile(key).Result;
-                    foreach (var game in data.Game)
-                    {
-                        var rom = new RomMetaData
-                        {
-                            ConsoleType = value,
-                            NoIntroConsoleType = key,
-                            GameId = game.Game_id,
-                            Name = game.Name,
-                            Serial = game.Rom?.Serial,
-                            Sha1 = game.Rom?.Sha1.ToLower(),
-                            Status = game.Rom?.Status
-                        };
-                        roms.Add(rom);
-                    }
-
-                    Console.WriteLine($"Found {data.Game.Count} roms");
-                }
-
-                Console.Write("Flushing data..");
-                _db.InsertAll(roms);
-                roms = null;
-                Console.WriteLine("Done!");
+            if (!hasRecords)
+            {
+                ReInitDb();
             }
 
             Console.WriteLine($"Database contains {_db.Table<RomMetaData>().Count()} roms.");
         }
-        
+
+        public void ReInitDb()
+        {
+            var roms = new List<RomMetaData>();
+            Console.WriteLine("No valid database was found! Downloading No-Intro DB..");
+            _db.DropTable<RomMetaData>();
+            _db.CreateTable<RomMetaData>();
+            foreach (var (key, value) in Config.NoIntroDbMapping)
+            {
+                Console.Write($"{key.GetDescription()}.. ");
+
+                var data = NoIntroCrawler.GetDataFile(key).Result;
+                foreach (var game in data.Game)
+                {
+                    var rom = new RomMetaData
+                    {
+                        ConsoleType = value,
+                        ConsoleSubType = key,
+                        GameId = game.Game_id,
+                        Name = game.Name,
+                        Serial = game.Rom?.Serial,
+                        Sha1 = game.Rom?.Sha1.ToLower(),
+                        Status = game.Rom?.Status
+                    };
+                    roms.Add(rom);
+                }
+
+                Console.WriteLine($"Found {data.Game.Count} roms");
+            }
+
+            Console.Write("Flushing data..");
+            _db.InsertAll(roms);
+            roms = null;
+            Console.WriteLine("Done!");
+        }
+
         public void AddMetadata(IRom rom)
         {
             RomMetaData result = null;
@@ -79,7 +95,10 @@ namespace TwilightBoxart.Data
                 }
             }
 
-            rom.NoIntroName = result?.Name;
+            if (result == null) return;
+
+            rom.NoIntroName = result.Name;
+            rom.NoIntroConsoleType = result.ConsoleSubType;
         }
     }
 }

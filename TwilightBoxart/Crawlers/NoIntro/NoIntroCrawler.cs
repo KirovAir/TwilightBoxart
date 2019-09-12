@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 using KirovAir.Core.Extensions;
+using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Crawlers.NoIntro
 {
     public static class NoIntroCrawler
     {
-        public static async Task<DataFile> GetDataFile(NoIntroConsoleType consoleType)
+        public static async Task<DataFile> GetDataFile(ConsoleType consoleType)
         {
             var baseAddress = new Uri("https://datomatic.no-intro.org/");
             var downloadUri = "/index.php?page=download&fun=wut";

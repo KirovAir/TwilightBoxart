@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using KirovAir.Core.Extensions;
-using TwilightBoxart.Crawlers.NoIntro;
 
 namespace TwilightBoxart.Models.Base
 {
@@ -13,13 +12,12 @@ namespace TwilightBoxart.Models.Base
     public class Rom : IRom
     {
         public string FileName { get; set; }
-        public byte[] Header { get; set; }
         public string Title { get; set; }
         public string TitleId { get; set; }
         public string Sha1 { get; set; }
         public virtual ConsoleType ConsoleType { get; set; }
         public string NoIntroName { get; set; }
-        public NoIntroConsoleType NoIntroConsoleType { get; set; }
+        public ConsoleType NoIntroConsoleType { get; set; }
 
         public static IRom FromStream(Stream stream, string filename)
         {
@@ -64,7 +62,7 @@ namespace TwilightBoxart.Models.Base
 
             if (result == null && Config.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
             {
-                // Backup mapper. Only supports sha1.
+                // Backup mapper. Only supports sha1 matching.
                 result = new UnknownRom {ConsoleType = consoleType};
             }
 

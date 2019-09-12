@@ -10,7 +10,7 @@ namespace TwilightBoxart.Models.Base
         string TitleId { get; set; }
         ConsoleType ConsoleType { get; set; }
         string NoIntroName { get; set; }
-        NoIntroConsoleType NoIntroConsoleType { get; set; }
+        ConsoleType NoIntroConsoleType { get; set; }
         void DownloadBoxArt(string targetFile);
     }
 }
