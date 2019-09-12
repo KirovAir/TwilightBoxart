@@ -7,6 +7,6 @@ namespace TwilightBoxart.Models
     /// </summary>
     public class UnknownRom : LibRetroRom
     {
-        public override ConsoleType ConsoleType { get; set; }
+        public override ConsoleType ConsoleType { get; set; } = ConsoleType.Unknown;
     }
 }

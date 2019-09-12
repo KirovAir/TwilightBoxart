@@ -55,6 +55,8 @@ namespace TwilightBoxart
             Console.ReadKey();
         }
 
+
+
         private static void DownloadArt(string romsPath, string boxArtPath)
         {
             foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*", SearchOption.AllDirectories))

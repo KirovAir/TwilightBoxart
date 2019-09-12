@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart", "TwilightB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KirovAir.Core", "..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj", "{703CAEE9-A844-4168-84CA-86FEDF680BC2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwilightDbGen", "TwilightDbGen\TwilightDbGen.csproj", "{581B9339-C0C5-4911-853A-B823205C77E6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightDbGen", "TwilightDbGen\TwilightDbGen.csproj", "{581B9339-C0C5-4911-853A-B823205C77E6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

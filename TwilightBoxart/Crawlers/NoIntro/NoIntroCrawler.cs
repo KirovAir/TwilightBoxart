@@ -24,7 +24,7 @@ namespace TwilightBoxart.Crawlers.NoIntro
                 result.EnsureSuccessStatusCode();
 
                 var content = new FormUrlEncodedContent(new[]
-                {
+                {   // We do 2 requests in 1 here. Select the console and download. :)
                     new KeyValuePair<string, string>("download", "Download"),
                     new KeyValuePair<string, string>("sel_s", consoleType.GetDescription())
                 });

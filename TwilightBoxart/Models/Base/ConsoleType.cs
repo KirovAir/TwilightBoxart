@@ -3,6 +3,9 @@ using SQLite;
 
 namespace TwilightBoxart.Models.Base
 {
+    /// <summary>
+    /// The Console Types. The description corresponds with the NoIntro DBs.
+    /// </summary>
     [StoreAsText]
     public enum ConsoleType
     {
