@@ -39,7 +39,7 @@ namespace TwilightBoxart.Data
                 progress?.Report("No valid database was found! Downloading No-Intro DB..");
                 _db.DropTable<RomMetaData>();
                 _db.CreateTable<RomMetaData>();
-                foreach (var (key, value) in Config.NoIntroDbMapping)
+                foreach (var (key, value) in BoxartConfig.NoIntroDbMapping)
                 {
                     progress?.Report($"{key.GetDescription()}.. ");
 

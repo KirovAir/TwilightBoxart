@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using KirovAir.Core.ConsoleApp;
 using KirovAir.Core.Utilities;
 
@@ -13,16 +15,39 @@ namespace TwilightBoxart.CLI
             Console.WriteLine("Loads of love to the devs of TwilightMenu++, LibRetro and the maintainers of the No-Intro DB.");
             Console.WriteLine();
 
-            var config = new Config();
+            var config = new BoxartConfig();
             try
             {
                 config.Load("TwilightBoxart.ini");
             }
             catch { Console.WriteLine("Could not load TwilightBoxart.ini - using defaults."); }
-
+            
             if (string.IsNullOrEmpty(config.SdRoot))
             {
-                config.SdRoot = FileHelper.GetCurrentDirectory();
+                var allDrives = new List<DriveInfo>();
+                try
+                {
+                    allDrives = DriveInfo.GetDrives().Where(c => c.DriveType == DriveType.Removable).ToList();
+                }
+                catch { }
+                
+                var choice = FileHelper.GetCurrentDirectory();
+                if (allDrives.Count > 0)
+                {
+                    var choices = allDrives.Select(c => c.Name).ToList();
+                    choices.Add("Current Directory");
+                    var i = ConsoleEx.MenuIndex("Select your SD location: ", true, choices.ToArray());
+                    if (i != choices.Count - 1)
+                    {
+                        choice = allDrives[i].RootDirectory.FullName;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No settings or drives found. Using current directory.");
+                }
+
+                config.SdRoot = choice;
             }
 
             var boxArtPath = Path.Combine(config.SdRoot, config.BoxArtPath);
@@ -32,11 +57,12 @@ namespace TwilightBoxart.CLI
             Console.WriteLine();
             if (!ConsoleEx.YesNoMenu("Is this OK?"))
             {
+                Console.WriteLine("Please edit TwilightBoxart.ini or insert your SD card and try again.");
                 return;
             }
             Console.WriteLine();
-
-            var crawler = new BoxartCrawler();
+            
+            var crawler = new BoxartCrawler(config);
             var progress = new Progress<string>(Console.WriteLine);
             crawler.InitializeDb(progress);
             crawler.DownloadArt(config.SdRoot, boxArtPath, progress);

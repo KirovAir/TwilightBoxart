@@ -31,7 +31,7 @@ namespace TwilightBoxart.Crawlers.LocalMeta
                     using var fs = File.OpenRead(romFile);
                     using var archive = new ZipArchive(fs);
 
-                    var romEntry = archive.Entries.FirstOrDefault(c => Config.ExtensionMapping.Keys.Contains(Path.GetExtension(c.Name)));
+                    var romEntry = archive.Entries.FirstOrDefault(c => BoxartConfig.ExtensionMapping.Keys.Contains(Path.GetExtension(c.Name)));
                     if (romEntry != null)
                     {
                         using var ms = new MemoryStream();
@@ -54,7 +54,7 @@ namespace TwilightBoxart.Crawlers.LocalMeta
                     continue;
                 }
 
-                if (!Config.ExtensionMapping.Keys.Contains(ext))
+                if (!BoxartConfig.ExtensionMapping.Keys.Contains(ext))
                     continue;
 
                 try

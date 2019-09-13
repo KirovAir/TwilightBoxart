@@ -1,6 +1,5 @@
 ﻿using KirovAir.Core.Extensions;
 using System;
-using TwilightBoxart.Helpers;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Models
@@ -47,7 +46,7 @@ namespace TwilightBoxart.Models
         {
             // Example: https://art.gametdb.com/ds/coverS/US/BSKE.png
             var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
-            ImgHelper.DownloadAndResize(url, targetFile);
+            ImgDownloader.DownloadAndResize(url, targetFile);
         }
 
         private string GetUrlRegion()

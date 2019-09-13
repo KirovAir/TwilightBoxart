@@ -1,5 +1,4 @@
 ﻿using SQLite;
-using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Data

@@ -1,4 +1,4 @@
-﻿using TwilightBoxart.Crawlers.NoIntro;
+﻿using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.Models.Base
 {
@@ -12,5 +12,6 @@ namespace TwilightBoxart.Models.Base
         string NoIntroName { get; set; }
         ConsoleType NoIntroConsoleType { get; set; }
         void DownloadBoxArt(string targetFile);
+        void SetDownloader(ImgDownloader downloader);
     }
 }

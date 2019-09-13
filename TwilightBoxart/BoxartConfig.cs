@@ -1,15 +1,16 @@
 ﻿using System;
-using KirovAir.Core.Config;
 using System.Collections.Generic;
+using KirovAir.Core.Config;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
 {
-    public class Config : IniSettings
+    public class BoxartConfig : IniSettings
     {
         public string SdRoot { get; set; } = "";
         public string BoxArtPath { get; set; } = @"_nds\TWiLightMenu\boxart";
-
+        public int BoxartWidth { get; set; } = 128;
+        public int BoxartHeight { get; set; } = 115;
 
         // Used as backup mapping.
         public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
@@ -130,11 +131,11 @@ namespace TwilightBoxart
     {
         public static ConsoleConfig Get(ConsoleType type)
         {
-            if (!Config.Consoles.ContainsKey(type))
+            if (!BoxartConfig.Consoles.ContainsKey(type))
             {
                 throw new Exception("Could not find config for " + type);
             }
-            return Config.Consoles[type];
+            return BoxartConfig.Consoles[type];
         }
 
         public string ContentUrl { get; set; }

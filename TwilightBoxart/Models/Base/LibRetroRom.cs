@@ -1,6 +1,5 @@
 ﻿using System;
 using KirovAir.Core.Utilities;
-using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.Models.Base
 {
@@ -18,7 +17,7 @@ namespace TwilightBoxart.Models.Base
             }
 
             var url = FileHelper.CombineUri(ConsoleConfig.Get(ConsoleType).ContentUrl, $"{NoIntroName}.png");
-            ImgHelper.DownloadAndResize(url, targetFile);
+            ImgDownloader.DownloadAndResize(url, targetFile);
         }
     }
 }

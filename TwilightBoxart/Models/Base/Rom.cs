@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using KirovAir.Core.Extensions;
+using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.Models.Base
 {
@@ -18,6 +19,7 @@ namespace TwilightBoxart.Models.Base
         public virtual ConsoleType ConsoleType { get; set; }
         public string NoIntroName { get; set; }
         public ConsoleType NoIntroConsoleType { get; set; }
+        internal ImgDownloader ImgDownloader { get; set; }
 
         public static IRom FromStream(Stream stream, string filename)
         {
@@ -60,7 +62,7 @@ namespace TwilightBoxart.Models.Base
                 }
             }
 
-            if (result == null && Config.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
+            if (result == null && BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
             {
                 // Backup mapper. Only supports sha1 matching.
                 result = new UnknownRom {ConsoleType = consoleType};
@@ -84,6 +86,11 @@ namespace TwilightBoxart.Models.Base
         public virtual void DownloadBoxArt(string targetFile)
         {
             throw new NotImplementedException();
+        }
+
+        public void SetDownloader(ImgDownloader downloader)
+        {
+            ImgDownloader = downloader;
         }
 
         public override string ToString()
