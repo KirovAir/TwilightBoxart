@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.btnBrowseSd = new System.Windows.Forms.Button();
             this.txtSdRoot = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -44,6 +45,8 @@
             this.lblSize2 = new System.Windows.Forms.Label();
             this.lblSize1 = new System.Windows.Forms.Label();
             this.chkBoxartSize = new System.Windows.Forms.CheckBox();
+            this.btnGithub = new System.Windows.Forms.Button();
+            this.linkLabel1 = new System.Windows.Forms.LinkLabel();
             ((System.ComponentModel.ISupportInitialize)(this.numWidth)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numHeight)).BeginInit();
             this.SuspendLayout();
@@ -140,14 +143,14 @@
             this.btnDetect.Name = "btnDetect";
             this.btnDetect.Size = new System.Drawing.Size(152, 58);
             this.btnDetect.TabIndex = 8;
-            this.btnDetect.Text = "Detect";
+            this.btnDetect.Text = "Detect SD";
             this.btnDetect.UseVisualStyleBackColor = true;
             this.btnDetect.Click += new System.EventHandler(this.btnDetect_Click);
             // 
             // btnStart
             // 
             this.btnStart.Enabled = false;
-            this.btnStart.Location = new System.Drawing.Point(860, 617);
+            this.btnStart.Location = new System.Drawing.Point(854, 617);
             this.btnStart.Margin = new System.Windows.Forms.Padding(4);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(152, 58);
@@ -222,17 +225,40 @@
             this.chkBoxartSize.Location = new System.Drawing.Point(698, 196);
             this.chkBoxartSize.Margin = new System.Windows.Forms.Padding(6);
             this.chkBoxartSize.Name = "chkBoxartSize";
-            this.chkBoxartSize.Size = new System.Drawing.Size(232, 29);
+            this.chkBoxartSize.Size = new System.Drawing.Size(230, 29);
             this.chkBoxartSize.TabIndex = 15;
-            this.chkBoxartSize.Text = "Change Boxart size";
+            this.chkBoxartSize.Text = "Change boxart size";
             this.chkBoxartSize.UseVisualStyleBackColor = true;
             this.chkBoxartSize.CheckedChanged += new System.EventHandler(this.chkBoxartSize_CheckedChanged);
+            // 
+            // btnGithub
+            // 
+            this.btnGithub.BackgroundImage = global::TwilightBoxart.UX.Properties.Resources.GitHub_Mark_64px;
+            this.btnGithub.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnGithub.Location = new System.Drawing.Point(11, 617);
+            this.btnGithub.Margin = new System.Windows.Forms.Padding(4);
+            this.btnGithub.Name = "btnGithub";
+            this.btnGithub.Size = new System.Drawing.Size(58, 58);
+            this.btnGithub.TabIndex = 16;
+            this.btnGithub.UseVisualStyleBackColor = true;
+            // 
+            // linkLabel1
+            // 
+            this.linkLabel1.AutoSize = true;
+            this.linkLabel1.Location = new System.Drawing.Point(76, 634);
+            this.linkLabel1.Name = "linkLabel1";
+            this.linkLabel1.Size = new System.Drawing.Size(754, 25);
+            this.linkLabel1.TabIndex = 17;
+            this.linkLabel1.TabStop = true;
+            this.linkLabel1.Text = "Created by KirovAir - Thanks to gametdb, libretro, nointro and twilight++ team!";
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(1032, 694);
+            this.ClientSize = new System.Drawing.Size(1030, 694);
+            this.Controls.Add(this.linkLabel1);
+            this.Controls.Add(this.btnGithub);
             this.Controls.Add(this.chkBoxartSize);
             this.Controls.Add(this.lblSize1);
             this.Controls.Add(this.lblSize2);
@@ -248,7 +274,9 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.txtSdRoot);
             this.Controls.Add(this.btnBrowseSd);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.Name = "MainForm";
@@ -279,6 +307,8 @@
         private System.Windows.Forms.Label lblSize2;
         private System.Windows.Forms.Label lblSize1;
         private System.Windows.Forms.CheckBox chkBoxartSize;
+        private System.Windows.Forms.Button btnGithub;
+        private System.Windows.Forms.LinkLabel linkLabel1;
     }
 }
 

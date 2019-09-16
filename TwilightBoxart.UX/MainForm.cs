@@ -43,8 +43,11 @@ namespace TwilightBoxart.UX
                 }
             }
 
-            txtSdRoot.Text = path;
-            SetUx();
+            if (!string.IsNullOrEmpty(path))
+            {
+                txtSdRoot.Text = path;
+                SetUx();
+            }
         }
 
         // UI STUFF
@@ -63,7 +66,7 @@ namespace TwilightBoxart.UX
             numWidth.Visible = chkBoxartSize.Checked;
             lblSize1.Visible = chkBoxartSize.Checked;
             lblSize2.Visible = chkBoxartSize.Checked;
-            
+
             if (!chkBoxartSize.Checked)
             {
                 numWidth.Value = defaults.BoxartWidth;
@@ -82,7 +85,7 @@ namespace TwilightBoxart.UX
 
         private void Go()
         {
-            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int) numWidth.Value, (int) numHeight.Value);
+            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value);
             _isRunning = false;
             this.UIThread(SetUx);
         }
