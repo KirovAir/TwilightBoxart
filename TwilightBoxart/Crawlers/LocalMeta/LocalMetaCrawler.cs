@@ -28,30 +28,32 @@ namespace TwilightBoxart.Crawlers.LocalMeta
                 var ext = Path.GetExtension(romFile).ToLower();
                 if (ext == ".zip")
                 {
-                    using var fs = File.OpenRead(romFile);
-                    using var archive = new ZipArchive(fs);
-
-                    var romEntry = archive.Entries.FirstOrDefault(c => BoxartConfig.ExtensionMapping.Keys.Contains(Path.GetExtension(c.Name)));
-                    if (romEntry != null)
+                    using (var fs = File.OpenRead(romFile))
+                    using (var archive = new ZipArchive(fs))
                     {
-                        using var ms = new MemoryStream();
-                        using var dec = romEntry.Open();
+                        var romEntry = archive.Entries.FirstOrDefault(c => BoxartConfig.ExtensionMapping.Keys.Contains(Path.GetExtension(c.Name)));
+                        if (romEntry != null)
+                        {
+                            using (var ms = new MemoryStream())
+                            using (var dec = romEntry.Open())
+                            {
+                                dec.CopyTo(ms);
+                                ms.Seek(0, SeekOrigin.Begin);
+                                try
+                                {
+                                    var fsRom = Rom.FromStream(ms, romEntry.FullName);
+                                    WriteRom(fsRom);
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("Err with: " + romEntry.FullName);
+                                    WriteErr(romFile, e);
+                                }
+                            }
+                        }
 
-                        dec.CopyTo(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        try
-                        {
-                            var fsRom = Rom.FromStream(ms, romEntry.FullName);
-                            WriteRom(fsRom);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine("Err with: " + romEntry.FullName);
-                            WriteErr(romFile, e);
-                        }
+                        continue;
                     }
-
-                    continue;
                 }
 
                 if (!BoxartConfig.ExtensionMapping.Keys.Contains(ext))

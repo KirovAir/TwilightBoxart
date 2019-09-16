@@ -1,17 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using KirovAir.Core.Extensions;
-using SQLite;
+using KirovAir.Core.Utilities;
 using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
+using Utf8Json;
 
 namespace TwilightBoxart.Data
 {
     public class RomDatabase
     {
         private readonly string _databasePath;
-        private SQLiteConnection _db;
+        private List<RomMetaData> _roms = new List<RomMetaData>();
+        private readonly RetryHelper _retryHelper = new RetryHelper(TimeSpan.FromSeconds(3));
 
         public RomDatabase(string databasePath)
         {
@@ -20,55 +23,66 @@ namespace TwilightBoxart.Data
 
         public void Initialize(IProgress<string> progress = null)
         {
-            _db = new SQLiteConnection(_databasePath);
-            _db.CreateTable<RomMetaData>();
-            
-            var hasRecords = false;
-            try
+            if (File.Exists(_databasePath))
             {
-                hasRecords = _db.Table<RomMetaData>().Any();
-            }
-            catch (Exception e)
-            {
-                progress?.Report("An error occured while accessing localDb: " + e.Message);
-            }
-
-            if (!hasRecords)
-            {
-                var roms = new List<RomMetaData>();
-                progress?.Report("No valid database was found! Downloading No-Intro DB..");
-                _db.DropTable<RomMetaData>();
-                _db.CreateTable<RomMetaData>();
-                foreach (var (key, value) in BoxartConfig.NoIntroDbMapping)
+                try
                 {
-                    progress?.Report($"{key.GetDescription()}.. ");
+                    using (var compressed = File.OpenRead(_databasePath))
+                    {
+                        _roms = JsonSerializer.Deserialize<List<RomMetaData>>(FileHelper.Decompress(compressed));
+                    }
+                }
+                catch (Exception e)
+                {
+                    progress?.Report("Error reading NoIntro DB: " + e);
+                }
+            }
 
-                    var data = NoIntroCrawler.GetDataFile(key).Result;
+            if (_roms == null || _roms.Count == 0)
+            {
+                progress?.Report("No valid database was found! Downloading No-Intro DB..");
+                _roms = new List<RomMetaData>();
+
+                foreach (var map in BoxartConfig.NoIntroDbMapping)
+                {
+                    progress?.Report($"{map.Key.GetDescription()}.. ");
+
+                    DataFile data = null;
+                    _retryHelper.RetryOnException(() =>
+                    {
+                        data = NoIntroCrawler.GetDataFile(map.Key).Result;
+                    });
+
                     foreach (var game in data.Game)
                     {
                         var rom = new RomMetaData
                         {
-                            ConsoleType = value,
-                            ConsoleSubType = key,
+                            ConsoleType = map.Value,
+                            ConsoleSubType = map.Key,
                             GameId = game.Game_id,
                             Name = game.Name,
                             Serial = game.Rom?.Serial,
                             Sha1 = game.Rom?.Sha1.ToLower(),
                             Status = game.Rom?.Status
                         };
-                        roms.Add(rom);
+                        _roms.Add(rom);
                     }
 
                     progress?.Report($"Found {data.Game.Count} roms");
                 }
 
                 progress?.Report("Flushing data..");
-                _db.InsertAll(roms);
-                roms = null;
+                using (var ms = new MemoryStream())
+                {
+                    JsonSerializer.Serialize(ms, _roms);
+                    ms.Seek(0, SeekOrigin.Begin);
+                    File.WriteAllBytes(_databasePath, FileHelper.Compress(ms));
+                }
+
                 progress?.Report("Done!");
             }
 
-            progress?.Report($"Database contains {_db.Table<RomMetaData>().Count()} roms.");
+            progress?.Report($"Loaded NoIntro.db. Database contains {_roms?.Count} roms.");
         }
 
         public void AddMetadata(IRom rom)
@@ -76,19 +90,20 @@ namespace TwilightBoxart.Data
             RomMetaData result = null;
             if (!string.IsNullOrEmpty(rom.Sha1))
             {
-                result = _db.Table<RomMetaData>().FirstOrDefault(c => c.Sha1.ToLower() == rom.Sha1.ToLower());
+                result = _roms.FirstOrDefault(c => c.Sha1.ToLower() == rom.Sha1.ToLower());
             }
 
             if (result == null && !string.IsNullOrEmpty(rom.TitleId))
             {
                 var results =
-                 _db.Table<RomMetaData>().Where(c => c.ConsoleType == rom.ConsoleType &&
-                                                                      (c.Serial.ToLower() == rom.TitleId.ToLower()
-                                                                       || c.TitleId.ToLower() == rom.TitleId.ToLower())).ToList();
-                // Do logic to fix dupes..
+                 _roms.Where(c => c.ConsoleType == rom.ConsoleType &&
+                                                                      (c.Serial?.ToLower() == rom.TitleId.ToLower()
+                                                                       || c.TitleId?.ToLower() == rom.TitleId.ToLower())).ToList();
+
+                // Do logic to fix dupes.. Todo: make this actually solid but for now we filter bad dumps.
                 if (results.Count > 1)
                 {
-                    result = results.FirstOrDefault(c => !c.Status.Contains("bad")); // lol
+                    result = results.FirstOrDefault(c => !c.Status?.Contains("bad") ?? true); // lol
                 }
                 else
                 {

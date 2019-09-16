@@ -17,11 +17,15 @@ namespace TwilightBoxart.Helpers
 
         public void DownloadAndResize(string url, string targetFile)
         {
-            using var webClient = new WebClient();
-            var data = webClient.DownloadData(url);
-            using var image = Image.Load(data);
-            image.Mutate(x => x.Resize(_width, _height));
-            image.Save(targetFile);
+            using (var webClient = new WebClient())
+            {
+                var data = webClient.DownloadData(url);
+                using (var image = Image.Load(data))
+                {
+                    image.Mutate(x => x.Resize(_width, _height));
+                    image.Save(targetFile);
+                }
+            }
         }
     }
 }

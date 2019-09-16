@@ -7,7 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KirovAir.Core", "..\KirovAi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart", "TwilightBoxart\TwilightBoxart.csproj", "{40200F46-E3CC-4522-B107-F9E5DACC765B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwilightBoxart.CLI", "TwilightBoxart.CLI\TwilightBoxart.CLI.csproj", "{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart.CLI", "TwilightBoxart.CLI\TwilightBoxart.CLI.csproj", "{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwilightBoxart.UX", "TwilightBoxart.UX\TwilightBoxart.UX.csproj", "{8BF295BA-08B3-4E13-8D63-E7931847B389}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8BF295BA-08B3-4E13-8D63-E7931847B389}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BF295BA-08B3-4E13-8D63-E7931847B389}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BF295BA-08B3-4E13-8D63-E7931847B389}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BF295BA-08B3-4E13-8D63-E7931847B389}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

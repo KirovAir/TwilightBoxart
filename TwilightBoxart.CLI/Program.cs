@@ -50,7 +50,7 @@ namespace TwilightBoxart.CLI
                 config.SdRoot = choice;
             }
 
-            var boxArtPath = Path.Combine(config.SdRoot, config.BoxArtPath);
+            var boxArtPath = Path.Combine(config.SdRoot, config.BoxartPath);
             ConsoleEx.WriteGreenLine("Loaded settings:");
             Console.WriteLine("SDRoot / Roms location: \t" + config.SdRoot);
             Console.WriteLine("BoxArt location: \t\t" + boxArtPath);
@@ -61,11 +61,12 @@ namespace TwilightBoxart.CLI
                 return;
             }
             Console.WriteLine();
-            
-            var crawler = new BoxartCrawler(config);
+
             var progress = new Progress<string>(Console.WriteLine);
-            crawler.InitializeDb(progress);
-            crawler.DownloadArt(config.SdRoot, boxArtPath, progress);
+
+            var crawler = new BoxartCrawler(progress);
+            crawler.InitializeDb();
+            crawler.DownloadArt(config.SdRoot, boxArtPath, config.BoxartWidth, config.BoxartHeight);
         }
 
         // Todo: Implement as CLI and add Progress<> to MetaCrawler.

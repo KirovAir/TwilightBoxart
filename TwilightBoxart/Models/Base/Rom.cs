@@ -24,63 +24,65 @@ namespace TwilightBoxart.Models.Base
         public static IRom FromStream(Stream stream, string filename)
         {
             // Open file, hash it and determine type.
-            using var sha1 = new SHA1Managed();
-            using var reader = new BinaryReader(stream);
-
-            // Compute the hash, reset pointer.
-            var hash = sha1.ComputeHash(stream);
-            stream.Seek(0, SeekOrigin.Begin);
-
-            // This header is sufficient for most roms.
-            var header = reader.ReadBytes(328);
-            IRom result = null;
-
-            if (header.ByteMatch(0x104, 0xCE, 0xED, 0x66, 0x66) || header.ByteMatch(0x100, 0x00, 0xC3, 0x50, 0x01) || header.ByteMatch(0x104, 0x11, 0x23, 0xF1, 0x1E)) // Check for GB header. (Headers??)
+            using (var sha1 = new SHA1Managed())
+            using (var reader = new BinaryReader(stream))
             {
-                if (header.ByteMatch(0x143, 0x80) || header.ByteMatch(0x143, 0xC0))
+                // Compute the hash, reset pointer.
+                var hash = sha1.ComputeHash(stream);
+                stream.Seek(0, SeekOrigin.Begin);
+
+                // This header is sufficient for most roms.
+                var header = reader.ReadBytes(328);
+                IRom result = null;
+
+                if (header.ByteMatch(0x104, 0xCE, 0xED, 0x66, 0x66) || header.ByteMatch(0x100, 0x00, 0xC3, 0x50, 0x01) || header.ByteMatch(0x104, 0x11, 0x23, 0xF1, 0x1E)) // Check for GB header. (Headers??)
                 {
-                    result = new GbcRom(header);
+                    if (header.ByteMatch(0x143, 0x80) || header.ByteMatch(0x143, 0xC0))
+                    {
+                        result = new GbcRom(header);
+                    }
+                    else
+                    {
+                        result = new GbRom(header);
+                    }
                 }
-                else
+                else if (header.ByteMatch(4, 0x24, 0xFF, 0xAE, 0x51)) // GBA 24 FF AE 51
                 {
-                    result = new GbRom(header);
+                    result = new GbaRom(header);
                 }
-            }
-            else if (header.ByteMatch(4, 0x24, 0xFF, 0xAE, 0x51)) // GBA 24 FF AE 51
-            {
-                result = new GbaRom(header);
-            }
-            else if (header.ByteMatch(192, 0x24, 0xFF, 0xAE, 0x51)) //  24 FF AE 51
-            {
-                if (header[0x012] == 0x03)
+                else if (header.ByteMatch(192, 0x24, 0xFF, 0xAE, 0x51)) //  24 FF AE 51
                 {
-                    result = new DsiRom(header);
+                    if (header[0x012] == 0x03)
+                    {
+                        result = new DsiRom(header);
+                    }
+                    else
+                    {
+                        result = new NdsRom(header);
+                    }
                 }
-                else
+
+                if (result == null && BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
                 {
-                    result = new NdsRom(header);
+                    // Backup mapper. Only supports sha1 matching.
+                    result = new UnknownRom {ConsoleType = consoleType};
                 }
+
+                if (result == null) throw new Exception("Unknown ROM type.");
+
+                result.FileName = filename;
+                result.Sha1 = string.Concat(hash.Select(b => b.ToString("x2"))); // Hash it.
+
+                return result;
             }
-
-            if (result == null && BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
-            {
-                // Backup mapper. Only supports sha1 matching.
-                result = new UnknownRom {ConsoleType = consoleType};
-            }
-
-            if (result == null) throw new Exception("Unknown ROM type.");
-
-            result.FileName = filename;
-            result.Sha1 = string.Concat(hash.Select(b => b.ToString("x2"))); // Hash it.
-
-            return result;
-
         }
 
         public static IRom FromFile(string filename)
         {
-            using var stream = File.OpenRead(filename);
-            return FromStream(stream, filename);
+            using (var stream = File.OpenRead(filename))
+            {
+                return FromStream(stream, filename);
+            }
         }
 
         public virtual void DownloadBoxArt(string targetFile)
