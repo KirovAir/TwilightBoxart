@@ -1,4 +1,4 @@
-﻿![Screenshot](https://https://raw.githubusercontent.com/KirovAir/TwilightBoxart/master/img/screenshot.png)
+﻿![Screenshot](https://github.com/KirovAir/TwilightBoxart/raw/master/img/screenshot.png)
 
 # Twilight Boxart
 A boxart downloader written in C#. Uses various sources and scan methods to determine the correct boxart. 
