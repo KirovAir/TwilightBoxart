@@ -42,11 +42,29 @@ namespace TwilightBoxart.Models
             }
         }
 
+        private static readonly string[] Qualities = { "HQ", "M", "S" };
+        private static readonly string[] Extensions = { "jpg", "jpg", "png" };
         private void DownloadAndResize(string region, string targetFile)
         {
-            // Example: https://art.gametdb.com/ds/coverS/US/BSKE.png
-            var url = $"https://art.gametdb.com/ds/coverS/{region}/{TitleId}.png";
-            ImgDownloader.DownloadAndResize(url, targetFile);
+            var lastException = new Exception("Unable to download region " + region);
+            for (var i = 0; i < Qualities.Length; i++)
+            {
+                var quality = Qualities[i];
+                var extension = Extensions[i];
+                var url = $"https://art.gametdb.com/ds/cover{quality}/{region}/{TitleId}.{extension}";
+
+                try
+                {
+                    ImgDownloader.DownloadAndResize(url, targetFile);
+                    return; // Success.
+                }
+                catch (Exception e)
+                {
+                    lastException = e;
+                }
+            }
+
+            throw lastException;
         }
 
         private string GetUrlRegion()

@@ -1,4 +1,6 @@
-﻿# Twilight Boxart
+﻿![Screenshot](https://https://raw.githubusercontent.com/KirovAir/TwilightBoxart/master/img/screenshot.png)
+
+# Twilight Boxart
 A boxart downloader written in C#. Uses various sources and scan methods to determine the correct boxart. 
 Written for TwilightMenu++ but can be used for other loader UI's with some config changes. 😊
 

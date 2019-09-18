@@ -54,10 +54,10 @@
             // 
             // btnBrowseSd
             // 
-            this.btnBrowseSd.Location = new System.Drawing.Point(349, 18);
-            this.btnBrowseSd.Margin = new System.Windows.Forms.Padding(2);
+            this.btnBrowseSd.Location = new System.Drawing.Point(698, 35);
+            this.btnBrowseSd.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnBrowseSd.Name = "btnBrowseSd";
-            this.btnBrowseSd.Size = new System.Drawing.Size(76, 30);
+            this.btnBrowseSd.Size = new System.Drawing.Size(152, 58);
             this.btnBrowseSd.TabIndex = 2;
             this.btnBrowseSd.Text = "Browse...";
             this.btnBrowseSd.UseVisualStyleBackColor = true;
@@ -66,61 +66,63 @@
             // txtSdRoot
             // 
             this.txtSdRoot.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtSdRoot.Location = new System.Drawing.Point(6, 24);
-            this.txtSdRoot.Margin = new System.Windows.Forms.Padding(2);
+            this.txtSdRoot.Location = new System.Drawing.Point(12, 46);
+            this.txtSdRoot.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtSdRoot.Name = "txtSdRoot";
-            this.txtSdRoot.ReadOnly = true;
-            this.txtSdRoot.Size = new System.Drawing.Size(339, 20);
+            this.txtSdRoot.Size = new System.Drawing.Size(674, 31);
             this.txtSdRoot.TabIndex = 1;
+            this.txtSdRoot.TextChanged += new System.EventHandler(this.txtSdRoot_TextChanged);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(3, 9);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Location = new System.Drawing.Point(6, 17);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(129, 13);
+            this.label1.Size = new System.Drawing.Size(252, 25);
             this.label1.TabIndex = 2;
             this.label1.Text = "SD Root / Roms location:";
             // 
             // txtLog
             // 
             this.txtLog.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtLog.Location = new System.Drawing.Point(6, 127);
+            this.txtLog.Location = new System.Drawing.Point(12, 244);
+            this.txtLog.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(499, 189);
+            this.txtLog.Size = new System.Drawing.Size(996, 360);
             this.txtLog.TabIndex = 10;
             // 
             // txtBoxart
             // 
             this.txtBoxart.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtBoxart.Location = new System.Drawing.Point(6, 71);
-            this.txtBoxart.Margin = new System.Windows.Forms.Padding(2);
+            this.txtBoxart.Location = new System.Drawing.Point(12, 137);
+            this.txtBoxart.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.txtBoxart.Name = "txtBoxart";
             this.txtBoxart.ReadOnly = true;
-            this.txtBoxart.Size = new System.Drawing.Size(339, 20);
+            this.txtBoxart.Size = new System.Drawing.Size(674, 31);
             this.txtBoxart.TabIndex = 4;
+            this.txtBoxart.TextChanged += new System.EventHandler(this.txtBoxart_TextChanged);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(3, 56);
-            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label2.Location = new System.Drawing.Point(6, 108);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(80, 13);
+            this.label2.Size = new System.Drawing.Size(161, 25);
             this.label2.TabIndex = 5;
             this.label2.Text = "Boxart location:";
             // 
             // btnBrowseBoxart
             // 
             this.btnBrowseBoxart.Enabled = false;
-            this.btnBrowseBoxart.Location = new System.Drawing.Point(349, 65);
-            this.btnBrowseBoxart.Margin = new System.Windows.Forms.Padding(2);
+            this.btnBrowseBoxart.Location = new System.Drawing.Point(698, 125);
+            this.btnBrowseBoxart.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnBrowseBoxart.Name = "btnBrowseBoxart";
-            this.btnBrowseBoxart.Size = new System.Drawing.Size(76, 30);
+            this.btnBrowseBoxart.Size = new System.Drawing.Size(152, 58);
             this.btnBrowseBoxart.TabIndex = 5;
             this.btnBrowseBoxart.Text = "Browse...";
             this.btnBrowseBoxart.UseVisualStyleBackColor = true;
@@ -129,9 +131,10 @@
             // chkManualBoxartLocation
             // 
             this.chkManualBoxartLocation.AutoSize = true;
-            this.chkManualBoxartLocation.Location = new System.Drawing.Point(430, 71);
+            this.chkManualBoxartLocation.Location = new System.Drawing.Point(860, 137);
+            this.chkManualBoxartLocation.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.chkManualBoxartLocation.Name = "chkManualBoxartLocation";
-            this.chkManualBoxartLocation.Size = new System.Drawing.Size(87, 17);
+            this.chkManualBoxartLocation.Size = new System.Drawing.Size(169, 29);
             this.chkManualBoxartLocation.TabIndex = 6;
             this.chkManualBoxartLocation.Text = "Set Manually";
             this.chkManualBoxartLocation.UseVisualStyleBackColor = true;
@@ -139,10 +142,10 @@
             // 
             // btnDetect
             // 
-            this.btnDetect.Location = new System.Drawing.Point(429, 18);
-            this.btnDetect.Margin = new System.Windows.Forms.Padding(2);
+            this.btnDetect.Location = new System.Drawing.Point(858, 35);
+            this.btnDetect.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnDetect.Name = "btnDetect";
-            this.btnDetect.Size = new System.Drawing.Size(76, 30);
+            this.btnDetect.Size = new System.Drawing.Size(152, 58);
             this.btnDetect.TabIndex = 3;
             this.btnDetect.Text = "Detect SD";
             this.toolTip.SetToolTip(this.btnDetect, "Will try to detect your (Twilight++) SD card");
@@ -152,10 +155,10 @@
             // btnStart
             // 
             this.btnStart.Enabled = false;
-            this.btnStart.Location = new System.Drawing.Point(430, 321);
-            this.btnStart.Margin = new System.Windows.Forms.Padding(2);
+            this.btnStart.Location = new System.Drawing.Point(858, 614);
+            this.btnStart.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(76, 30);
+            this.btnStart.Size = new System.Drawing.Size(152, 58);
             this.btnStart.TabIndex = 12;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
@@ -163,14 +166,15 @@
             // 
             // numWidth
             // 
-            this.numWidth.Location = new System.Drawing.Point(46, 101);
+            this.numWidth.Location = new System.Drawing.Point(92, 194);
+            this.numWidth.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.numWidth.Maximum = new decimal(new int[] {
             9999,
             0,
             0,
             0});
             this.numWidth.Name = "numWidth";
-            this.numWidth.Size = new System.Drawing.Size(59, 20);
+            this.numWidth.Size = new System.Drawing.Size(118, 31);
             this.numWidth.TabIndex = 7;
             this.numWidth.Value = new decimal(new int[] {
             128,
@@ -181,14 +185,15 @@
             // 
             // numHeight
             // 
-            this.numHeight.Location = new System.Drawing.Point(166, 101);
+            this.numHeight.Location = new System.Drawing.Point(332, 194);
+            this.numHeight.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.numHeight.Maximum = new decimal(new int[] {
             9999,
             0,
             0,
             0});
             this.numHeight.Name = "numHeight";
-            this.numHeight.Size = new System.Drawing.Size(59, 20);
+            this.numHeight.Size = new System.Drawing.Size(118, 31);
             this.numHeight.TabIndex = 8;
             this.numHeight.Value = new decimal(new int[] {
             115,
@@ -200,10 +205,10 @@
             // lblSize2
             // 
             this.lblSize2.AutoSize = true;
-            this.lblSize2.Location = new System.Drawing.Point(120, 103);
-            this.lblSize2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.lblSize2.Location = new System.Drawing.Point(240, 198);
+            this.lblSize2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSize2.Name = "lblSize2";
-            this.lblSize2.Size = new System.Drawing.Size(41, 13);
+            this.lblSize2.Size = new System.Drawing.Size(80, 25);
             this.lblSize2.TabIndex = 13;
             this.lblSize2.Text = "Height:";
             this.lblSize2.Visible = false;
@@ -211,10 +216,10 @@
             // lblSize1
             // 
             this.lblSize1.AutoSize = true;
-            this.lblSize1.Location = new System.Drawing.Point(3, 103);
-            this.lblSize1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.lblSize1.Location = new System.Drawing.Point(6, 198);
+            this.lblSize1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.lblSize1.Name = "lblSize1";
-            this.lblSize1.Size = new System.Drawing.Size(38, 13);
+            this.lblSize1.Size = new System.Drawing.Size(73, 25);
             this.lblSize1.TabIndex = 14;
             this.lblSize1.Text = "Width:";
             this.lblSize1.Visible = false;
@@ -222,9 +227,10 @@
             // chkBoxartSize
             // 
             this.chkBoxartSize.AutoSize = true;
-            this.chkBoxartSize.Location = new System.Drawing.Point(349, 102);
+            this.chkBoxartSize.Location = new System.Drawing.Point(698, 196);
+            this.chkBoxartSize.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.chkBoxartSize.Name = "chkBoxartSize";
-            this.chkBoxartSize.Size = new System.Drawing.Size(116, 17);
+            this.chkBoxartSize.Size = new System.Drawing.Size(230, 29);
             this.chkBoxartSize.TabIndex = 9;
             this.chkBoxartSize.Text = "Change boxart size";
             this.chkBoxartSize.UseVisualStyleBackColor = true;
@@ -234,10 +240,10 @@
             // 
             this.btnGithub.BackgroundImage = global::TwilightBoxart.UX.Properties.Resources.GitHub_Mark_64px;
             this.btnGithub.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnGithub.Location = new System.Drawing.Point(6, 321);
-            this.btnGithub.Margin = new System.Windows.Forms.Padding(2);
+            this.btnGithub.Location = new System.Drawing.Point(12, 617);
+            this.btnGithub.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.btnGithub.Name = "btnGithub";
-            this.btnGithub.Size = new System.Drawing.Size(29, 30);
+            this.btnGithub.Size = new System.Drawing.Size(58, 58);
             this.btnGithub.TabIndex = 11;
             this.toolTip.SetToolTip(this.btnGithub, "Visit the Github Repository.");
             this.btnGithub.UseVisualStyleBackColor = true;
@@ -245,9 +251,9 @@
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(514, 357);
+            this.ClientSize = new System.Drawing.Size(1028, 687);
             this.Controls.Add(this.btnGithub);
             this.Controls.Add(this.chkBoxartSize);
             this.Controls.Add(this.lblSize1);
@@ -267,7 +273,7 @@
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "TwilightBoxart";

@@ -21,7 +21,7 @@ namespace TwilightBoxart.Models
                 // Todo: Make this less ugly, embedded and optional.
                 if (TitleId[0] == 'K' || TitleId[0] == 'H') // This is DSiWare. There is no BoxArt available (probably) so use a default image.
                 {
-                    ImgDownloader.DownloadAndResize("https://www.imgdumper.nl/uploads9/5d790c464226f/5d790c463e9f2-BAE4069C-8E5A-47EF-978A-1601C73F0C84.jpeg", targetFile);
+                    ImgDownloader.DownloadAndResize("https://raw.githubusercontent.com/KirovAir/TwilightBoxart/master/img/dsiware.jpg", targetFile);
                 }
             }
         }

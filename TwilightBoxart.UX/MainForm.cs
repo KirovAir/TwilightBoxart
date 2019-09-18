@@ -44,6 +44,10 @@ namespace TwilightBoxart.UX
                     }
                 }
             }
+            else
+            {
+                Log("No SD card(s) found.");
+            }
 
             if (!string.IsNullOrEmpty(path))
             {
@@ -74,6 +78,8 @@ namespace TwilightBoxart.UX
                 txtBoxart.Text = _config.GetBoxartPath(txtSdRoot.Text);
             }
 
+            txtBoxart.ReadOnly = !chkManualBoxartLocation.Checked;
+
             numHeight.Visible = chkBoxartSize.Checked;
             numWidth.Visible = chkBoxartSize.Checked;
             lblSize1.Visible = chkBoxartSize.Checked;
@@ -103,7 +109,12 @@ namespace TwilightBoxart.UX
                 Log($"Error while loading {BoxartConfig.FileName}. Using defaults.");
             }
 
-            if (string.IsNullOrEmpty(_config.SdRoot))
+            if (!string.IsNullOrEmpty(_config.SdRoot))
+            {
+                txtSdRoot.Text = _config.SdRoot;
+                txtBoxart.Text = _config.GetBoxartPath();
+            }
+            else
             {
                 DetectSd();
             }
@@ -158,6 +169,16 @@ namespace TwilightBoxart.UX
         }
 
         private void chkBoxartSize_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
+        }
+
+        private void txtSdRoot_TextChanged(object sender, EventArgs e)
+        {
+            SetUx();
+        }
+
+        private void txtBoxart_TextChanged(object sender, EventArgs e)
         {
             SetUx();
         }
