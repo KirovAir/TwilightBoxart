@@ -3,13 +3,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29021.104
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KirovAir.Core", "..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj", "{703CAEE9-A844-4168-84CA-86FEDF680BC2}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart", "TwilightBoxart\TwilightBoxart.csproj", "{40200F46-E3CC-4522-B107-F9E5DACC765B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TwilightBoxart.CLI", "TwilightBoxart.CLI\TwilightBoxart.CLI.csproj", "{5FC5943A-E7B8-41E0-A97B-F9BF7BEF5069}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwilightBoxart.UX", "TwilightBoxart.UX\TwilightBoxart.UX.csproj", "{8BF295BA-08B3-4E13-8D63-E7931847B389}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{24C53AC1-1103-4A6B-A157-89B97E10CA20}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +20,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{703CAEE9-A844-4168-84CA-86FEDF680BC2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{40200F46-E3CC-4522-B107-F9E5DACC765B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{40200F46-E3CC-4522-B107-F9E5DACC765B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{40200F46-E3CC-4522-B107-F9E5DACC765B}.Release|Any CPU.ActiveCfg = Release|Any CPU

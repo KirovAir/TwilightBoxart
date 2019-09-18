@@ -11,14 +11,13 @@ namespace TwilightBoxart.CLI
     {
         static void Main(string[] args)
         {
-            ConsoleEx.WriteGreenLine("TwilightBoxart - Created by KirovAir.");
-            Console.WriteLine("Loads of love to the devs of TwilightMenu++, LibRetro and the maintainers of the No-Intro DB.");
+            ConsoleEx.WriteGreenLine(BoxartConfig.Credits);
             Console.WriteLine();
 
             var config = new BoxartConfig();
             try
             {
-                config.Load("TwilightBoxart.ini");
+                config.Load();
             }
             catch { Console.WriteLine("Could not load TwilightBoxart.ini - using defaults."); }
             
@@ -50,7 +49,7 @@ namespace TwilightBoxart.CLI
                 config.SdRoot = choice;
             }
 
-            var boxArtPath = Path.Combine(config.SdRoot, config.BoxartPath);
+            var boxArtPath = config.GetBoxartPath();
             ConsoleEx.WriteGreenLine("Loaded settings:");
             Console.WriteLine("SDRoot / Roms location: \t" + config.SdRoot);
             Console.WriteLine("BoxArt location: \t\t" + boxArtPath);
@@ -63,7 +62,6 @@ namespace TwilightBoxart.CLI
             Console.WriteLine();
 
             var progress = new Progress<string>(Console.WriteLine);
-
             var crawler = new BoxartCrawler(progress);
             crawler.InitializeDb();
             crawler.DownloadArt(config.SdRoot, boxArtPath, config.BoxartWidth, config.BoxartHeight);

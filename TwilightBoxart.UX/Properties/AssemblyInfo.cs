@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TwilightBoxart.UX")]
+[assembly: AssemblyTitle("TwilightBoxart")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("TwilightBoxart.UX")]
-[assembly: AssemblyCopyright("Copyright ©  2019")]
+[assembly: AssemblyCompany("KirovAir")]
+[assembly: AssemblyProduct("TwilightBoxart")]
+[assembly: AssemblyCopyright("Copyright ©  2019 KirovAir Industries")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

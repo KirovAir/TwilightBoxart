@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ namespace TwilightBoxart.UX
         private readonly BoxartCrawler _crawler;
         private bool _isInitialized;
         private bool _isRunning;
+        private readonly BoxartConfig _config = new BoxartConfig();
 
         public MainForm()
         {
@@ -50,37 +52,9 @@ namespace TwilightBoxart.UX
             }
         }
 
-        // UI STUFF
-        private void SetUx()
+        private void Log(string text)
         {
-            var defaults = new BoxartConfig();
-
-            btnBrowseBoxart.Enabled = chkManualBoxartLocation.Checked;
-
-            if (!chkManualBoxartLocation.Checked && !string.IsNullOrEmpty(txtSdRoot.Text))
-            {
-                txtBoxart.Text = Path.Combine(txtSdRoot.Text, defaults.BoxartPath);
-            }
-
-            numHeight.Visible = chkBoxartSize.Checked;
-            numWidth.Visible = chkBoxartSize.Checked;
-            lblSize1.Visible = chkBoxartSize.Checked;
-            lblSize2.Visible = chkBoxartSize.Checked;
-
-            if (!chkBoxartSize.Checked)
-            {
-                numWidth.Value = defaults.BoxartWidth;
-                numHeight.Value = defaults.BoxartHeight;
-            }
-
-            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized && !_isRunning;
-        }
-
-        private void btnStart_Click(object sender, EventArgs e)
-        {
-            _isRunning = true;
-            SetUx();
-            Task.Run(Go);
+            this.UIThread(() => txtLog.AppendText($"{DateTime.Now:HH:mm:ss} - {text}{Environment.NewLine}"));
         }
 
         private void Go()
@@ -90,35 +64,50 @@ namespace TwilightBoxart.UX
             this.UIThread(SetUx);
         }
 
-        private void btnBrowseSd_Click(object sender, EventArgs e)
+        // UI STUFF
+        private void SetUx()
         {
-            if (folderBrowseDlg.ShowDialog() != DialogResult.OK) return;
+            btnBrowseBoxart.Enabled = chkManualBoxartLocation.Checked;
 
-            txtSdRoot.Text = folderBrowseDlg.SelectedPath;
-            SetUx();
-        }
-
-        private void btnDetect_Click(object sender, EventArgs e)
-        {
-            DetectSd();
-        }
-
-        private void chkManualBoxartLocation_CheckedChanged(object sender, EventArgs e)
-        {
-            SetUx();
-        }
-
-        private void btnBrowseBoxart_Click(object sender, EventArgs e)
-        {
-            if (folderBrowseDlg.ShowDialog() == DialogResult.OK)
+            if (!chkManualBoxartLocation.Checked && !string.IsNullOrEmpty(txtSdRoot.Text))
             {
-                txtBoxart.Text = folderBrowseDlg.SelectedPath;
+                txtBoxart.Text = _config.GetBoxartPath(txtSdRoot.Text);
             }
+
+            numHeight.Visible = chkBoxartSize.Checked;
+            numWidth.Visible = chkBoxartSize.Checked;
+            lblSize1.Visible = chkBoxartSize.Checked;
+            lblSize2.Visible = chkBoxartSize.Checked;
+
+            if (!chkBoxartSize.Checked)
+            {
+                numWidth.Value = _config.BoxartWidth;
+                numHeight.Value = _config.BoxartHeight;
+            }
+
+            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized && !_isRunning;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            DetectSd();
+            try
+            {
+                if (File.Exists(BoxartConfig.FileName))
+                {
+                    _config.Load();
+                    Log($"Loaded {BoxartConfig.FileName}.");
+                }
+            }
+            catch
+            {
+                Log($"Error while loading {BoxartConfig.FileName}. Using defaults.");
+            }
+
+            if (string.IsNullOrEmpty(_config.SdRoot))
+            {
+                DetectSd();
+            }
+
             Task.Run(() =>
             {
                 try
@@ -135,14 +124,50 @@ namespace TwilightBoxart.UX
             });
         }
 
-        private void Log(string text)
+        private void btnStart_Click(object sender, EventArgs e)
         {
-            this.UIThread(() => txtLog.AppendText($"{DateTime.Now:HH:mm:ss} - {text}{Environment.NewLine}"));
+            _isRunning = true;
+            SetUx();
+            Task.Run(Go);
+        }
+
+        private void btnBrowseSd_Click(object sender, EventArgs e)
+        {
+            if (folderBrowseDlg.ShowDialog() != DialogResult.OK) return;
+
+            txtSdRoot.Text = folderBrowseDlg.SelectedPath;
+            SetUx();
+        }
+
+        private void btnBrowseBoxart_Click(object sender, EventArgs e)
+        {
+            if (folderBrowseDlg.ShowDialog() == DialogResult.OK)
+            {
+                txtBoxart.Text = folderBrowseDlg.SelectedPath;
+            }
+        }
+
+        private void btnDetect_Click(object sender, EventArgs e)
+        {
+            DetectSd();
+        }
+
+        private void chkManualBoxartLocation_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
         }
 
         private void chkBoxartSize_CheckedChanged(object sender, EventArgs e)
         {
             SetUx();
+        }
+
+        private void btnGithub_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
+            {
+                Process.Start(new ProcessStartInfo("cmd", $"/c start {"https://github.com/KirovAir/TwilightBoxart"}") { CreateNoWindow = true });
+            }
         }
     }
 }

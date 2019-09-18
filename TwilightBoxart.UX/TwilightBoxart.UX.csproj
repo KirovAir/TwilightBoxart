@@ -53,8 +53,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Starvingartist-Antiseptic-Videogame-Nintendo-ds-lite %281%29.ico</ApplicationIcon>
+    <ApplicationIcon>Starvingartist-Antiseptic-Videogame-Nintendo-ds-lite.ico</ApplicationIcon>
   </PropertyGroup>
+  <PropertyGroup />
+  <PropertyGroup />
+  <PropertyGroup />
   <PropertyGroup>
     <ApplicationManifest>TwilightBoxart.manifest</ApplicationManifest>
   </PropertyGroup>
@@ -74,6 +77,7 @@
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
     </Reference>
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard2.0\System.Memory.dll</HintPath>
@@ -131,10 +135,8 @@
       <SubType>Designer</SubType>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <Content Include="Starvingartist-Antiseptic-Videogame-Nintendo-ds-lite %281%29.ico" />
-    <Content Include="TwilightBoxart.manifest">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Starvingartist-Antiseptic-Videogame-Nintendo-ds-lite.ico" />
+    <None Include="TwilightBoxart.manifest" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -155,10 +157,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\KirovAir.Core\KirovAir.Core\KirovAir.Core.csproj">
-      <Project>{703caee9-a844-4168-84ca-86fedf680bc2}</Project>
-      <Name>KirovAir.Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\TwilightBoxart\TwilightBoxart.csproj">
       <Project>{40200f46-e3cc-4522-b107-f9e5dacc765b}</Project>
       <Name>TwilightBoxart</Name>
@@ -195,6 +193,9 @@
 echo Cleaning xml/pdb..
 del $(TargetDir)\*.xml /Q
 del $(TargetDir)\*.pdb /Q
+del $(TargetDir)\*.config /Q
+del $(TargetDir)\TwilightBoxart.exe /Q
+ren $(TargetPath) TwilightBoxart.exe
 goto :exit
 :Debug
 :exit</PostBuildEvent>

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using KirovAir.Core.Config;
 using TwilightBoxart.Models.Base;
 
@@ -7,9 +9,33 @@ namespace TwilightBoxart
     public class BoxartConfig : IniSettings
     {
         public string SdRoot { get; set; } = "";
-        public string BoxartPath { get; set; } = @"_nds\TWiLightMenu\boxart";
+        public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
+
+        public const string FileName = "TwilightBoxart.ini";
+        public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
+
+        public void Load()
+        {
+            Load(FileName);
+        }
+
+
+        public string GetBoxartPath(string root = "")
+        {
+            if (root == "")
+            {
+                root = SdRoot;
+            }
+
+            if (!BoxartPath.StartsWith("{sdroot}"))
+            {
+                return BoxartPath;
+            }
+
+            return Path.Combine(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, BoxartPath.Replace("{sdroot}", "").TrimStart(Path.DirectorySeparatorChar));
+        }
 
         // Used as backup mapping.
         public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
