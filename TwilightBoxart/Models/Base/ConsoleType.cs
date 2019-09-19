@@ -26,6 +26,8 @@ namespace TwilightBoxart.Models.Base
         NintendoEntertainmentSystem,
         [Description("Nintendo - Super Nintendo Entertainment System")]
         SuperNintendoEntertainmentSystem,
+        [Description("Nintendo - Family Computer Disk System")]
+        FamicomDiskSystem,
         [Description("Sega - Mega Drive - Genesis")]
         SegaGenesis,
         [Description("Sega - Master System - Mark III")]

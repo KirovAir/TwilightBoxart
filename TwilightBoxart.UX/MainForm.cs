@@ -63,7 +63,7 @@ namespace TwilightBoxart.UX
 
         private void Go()
         {
-            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value);
+            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkAspectRatio.Checked);
             _isRunning = false;
             this.UIThread(SetUx);
         }
@@ -101,6 +101,7 @@ namespace TwilightBoxart.UX
                 if (File.Exists(BoxartConfig.FileName))
                 {
                     _config.Load();
+                    chkAspectRatio.Checked = _config.AdjustAspectRatio;
                     Log($"Loaded {BoxartConfig.FileName}.");
                 }
             }

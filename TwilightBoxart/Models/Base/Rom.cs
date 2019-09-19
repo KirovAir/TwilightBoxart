@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using KirovAir.Core.Extensions;
@@ -62,10 +63,12 @@ namespace TwilightBoxart.Models.Base
                     }
                 }
 
-                if (result == null && BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType))
+                if (result == null &&
+                    BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType) &&
+                    consoleType != ConsoleType.Unknown)
                 {
                     // Backup mapper. Only supports sha1 matching.
-                    result = new UnknownRom {ConsoleType = consoleType};
+                    result = new UnknownRom { ConsoleType = consoleType };
                 }
 
                 if (result == null) throw new Exception("Unknown ROM type.");
@@ -79,9 +82,28 @@ namespace TwilightBoxart.Models.Base
 
         public static IRom FromFile(string filename)
         {
-            using (var stream = File.OpenRead(filename))
+            using (var fs = File.OpenRead(filename))
             {
-                return FromStream(stream, filename);
+                var ext = Path.GetExtension(filename).ToLower();
+                if (ext == ".zip")
+                {
+                    using (var archive = new ZipArchive(fs))
+                    {
+                        var romEntry = archive.Entries.FirstOrDefault(c => BoxartConfig.ExtensionMapping.Keys.Contains(Path.GetExtension(c.Name)));
+                        if (romEntry != null)
+                        {
+                            using (var ms = new MemoryStream())
+                            using (var dec = romEntry.Open())
+                            {
+                                dec.CopyTo(ms);
+                                ms.Seek(0, SeekOrigin.Begin);
+                                return FromStream(ms, romEntry.FullName);
+                            }
+                        }
+                    }
+                }
+
+                return FromStream(fs, filename);
             }
         }
 

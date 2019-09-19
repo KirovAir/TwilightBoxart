@@ -64,7 +64,7 @@ namespace TwilightBoxart.CLI
             var progress = new Progress<string>(Console.WriteLine);
             var crawler = new BoxartCrawler(progress);
             crawler.InitializeDb();
-            crawler.DownloadArt(config.SdRoot, boxArtPath, config.BoxartWidth, config.BoxartHeight);
+            crawler.DownloadArt(config.SdRoot, boxArtPath, config.BoxartWidth, config.BoxartHeight, config.AdjustAspectRatio);
         }
 
         // Todo: Implement as CLI and add Progress<> to MetaCrawler.

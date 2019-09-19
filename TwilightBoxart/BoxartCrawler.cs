@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using KirovAir.Core.Utilities;
+using SixLabors.Primitives;
 using TwilightBoxart.Data;
 using TwilightBoxart.Helpers;
 using TwilightBoxart.Models.Base;
@@ -24,7 +25,7 @@ namespace TwilightBoxart
             _romDb.Initialize(_progress);
         }
 
-        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight)
+        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool useAspect = false)
         {
             _progress?.Report($"Scanning {romsPath}..");
 
@@ -35,8 +36,6 @@ namespace TwilightBoxart
                     _progress?.Report($"Could not open {romsPath}.");
                     return;
                 }
-
-                var downloader = new ImgDownloader(defaultWidth, defaultHeight); // Use 1 width/height for all. Maybe we want different sizes per type in the future.
 
                 foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*", SearchOption.AllDirectories))
                 {
@@ -55,9 +54,22 @@ namespace TwilightBoxart
                     try
                     {
                         _progress?.Report($"Searching art for {Path.GetFileName(romFile)}.. ");
+
                         var rom = Rom.FromFile(romFile);
-                        rom.SetDownloader(downloader);
                         _romDb.AddMetadata(rom);
+
+                        var downloader = new ImgDownloader(defaultWidth, defaultHeight);
+                        if (BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
+                        {
+                            if (rom.NoIntroConsoleType == ConsoleType.SuperNintendoEntertainmentSystem &&
+                                !string.IsNullOrEmpty(rom.NoIntroName) &&
+                                rom.NoIntroName.ToLower().EndsWith("(japan)"))
+                            {
+                                size = new Size(84, 115);
+                            }
+                            downloader.SetSizeAdjustedToAspectRatio(size);
+                        }
+                        rom.SetDownloader(downloader);
 
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));
                         rom.DownloadBoxArt(targetArtFile);

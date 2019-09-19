@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using KirovAir.Core.Config;
+using SixLabors.Primitives;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
@@ -12,6 +13,8 @@ namespace TwilightBoxart
         public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
+        public bool AdjustAspectRatio { get; set; } = true;
+
 
         public const string FileName = "TwilightBoxart.ini";
         public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
@@ -20,7 +23,6 @@ namespace TwilightBoxart
         {
             Load(FileName);
         }
-
 
         public string GetBoxartPath(string root = "")
         {
@@ -45,6 +47,7 @@ namespace TwilightBoxart
             {".smc", ConsoleType.SuperNintendoEntertainmentSystem},
             {".snes", ConsoleType.SuperNintendoEntertainmentSystem},
             {".gb", ConsoleType.GameBoy},
+            {".sgb", ConsoleType.GameBoy},
             {".gbc", ConsoleType.GameBoyColor},
             {".gba", ConsoleType.GameBoyAdvance},
             {".nds", ConsoleType.NintendoDS},
@@ -52,7 +55,9 @@ namespace TwilightBoxart
             {".dsi", ConsoleType.NintendoDSi},
             {".gg", ConsoleType.SegaGameGear},
             {".gen", ConsoleType.SegaGenesis},
-            {".sms", ConsoleType.SegaMasterSystem}
+            {".sms", ConsoleType.SegaMasterSystem},
+            {".fds", ConsoleType.FamicomDiskSystem},
+            {".zip", ConsoleType.Unknown }
         };
 
         /// <summary>
@@ -62,6 +67,7 @@ namespace TwilightBoxart
         {
             {ConsoleType.NintendoEntertainmentSystem, ConsoleType.NintendoEntertainmentSystem},
             {ConsoleType.SuperNintendoEntertainmentSystem, ConsoleType.SuperNintendoEntertainmentSystem},
+            {ConsoleType.FamicomDiskSystem, ConsoleType.FamicomDiskSystem},
 
             {ConsoleType.GameBoy, ConsoleType.GameBoy},
             {ConsoleType.GameBoyColor, ConsoleType.GameBoyColor},
@@ -75,6 +81,18 @@ namespace TwilightBoxart
             {ConsoleType.SegaGameGear, ConsoleType.SegaGameGear},
             {ConsoleType.SegaGenesis, ConsoleType.SegaGenesis},
             {ConsoleType.SegaMasterSystem, ConsoleType.SegaMasterSystem}
+        };
+
+        public static Dictionary<ConsoleType, Size> AspectRatioMapping = new Dictionary<ConsoleType, Size>
+        {
+            {ConsoleType.FamicomDiskSystem, new Size(1, 1)},
+
+            {ConsoleType.NintendoEntertainmentSystem, new Size(84, 115)},
+            {ConsoleType.SegaGameGear, new Size(84, 115)},
+            {ConsoleType.SegaGenesis, new Size(84, 115)},
+            {ConsoleType.SegaMasterSystem, new Size(84, 115)},
+
+            {ConsoleType.SuperNintendoEntertainmentSystem, new Size(158, 115)}
         };
     }
 }
