@@ -31,6 +31,13 @@ namespace TwilightBoxart.Helpers
 
         public void SetSizeAdjustedToAspectRatio(Size aspectRatio)
         {
+            if (_width == aspectRatio.Width || _height == aspectRatio.Height)
+            {
+                _height = aspectRatio.Height;
+                _width = aspectRatio.Width;
+                return;
+            }
+
             var sourceWidth = aspectRatio.Width;
             var sourceHeight = aspectRatio.Height;
             var dWidth = _width;

@@ -15,7 +15,7 @@ namespace TwilightBoxart
         public int BoxartHeight { get; set; } = 115;
         public bool AdjustAspectRatio { get; set; } = true;
 
-
+        public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
         public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
 
@@ -34,6 +34,33 @@ namespace TwilightBoxart
             if (!BoxartPath.StartsWith("{sdroot}"))
             {
                 return BoxartPath;
+            }
+
+            if (root.Contains(Path.DirectorySeparatorChar.ToString()))
+            {
+                try
+                {
+                    var split = root.Split(Path.DirectorySeparatorChar);
+                    var tmpReplace = "";
+                    for (var i = split.Length; i-- > 0;)
+                    {
+                        tmpReplace = split[i] + Path.DirectorySeparatorChar + tmpReplace;
+                        tmpReplace = tmpReplace.TrimEnd(Path.DirectorySeparatorChar);
+
+                        // Remove where we are.
+                        var place = root.LastIndexOf(tmpReplace);
+                        if (place == -1)
+                            break;
+                        var correctRoot = root.Remove(place, tmpReplace.Length);
+
+                        if (Directory.Exists(Path.Combine(correctRoot, MagicDir)))
+                        {
+                            root = correctRoot;
+                            break;
+                        }
+                    }
+                }
+                catch { }
             }
 
             return Path.Combine(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, BoxartPath.Replace("{sdroot}", "").TrimStart(Path.DirectorySeparatorChar));
@@ -85,13 +112,18 @@ namespace TwilightBoxart
 
         public static Dictionary<ConsoleType, Size> AspectRatioMapping = new Dictionary<ConsoleType, Size>
         {
+            // FDS / GBC / GB
             {ConsoleType.FamicomDiskSystem, new Size(1, 1)},
-
+            {ConsoleType.GameBoy, new Size(1, 1)},
+            {ConsoleType.GameBoyColor, new Size(1, 1)},
+ 
+            // NES / GEN/MD / SFC / MS/ GG
             {ConsoleType.NintendoEntertainmentSystem, new Size(84, 115)},
-            {ConsoleType.SegaGameGear, new Size(84, 115)},
             {ConsoleType.SegaGenesis, new Size(84, 115)},
             {ConsoleType.SegaMasterSystem, new Size(84, 115)},
+            {ConsoleType.SegaGameGear, new Size(84, 115)},
 
+            // SNES
             {ConsoleType.SuperNintendoEntertainmentSystem, new Size(158, 115)}
         };
     }

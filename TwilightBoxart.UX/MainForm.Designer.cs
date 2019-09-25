@@ -72,7 +72,6 @@
             this.txtSdRoot.Name = "txtSdRoot";
             this.txtSdRoot.Size = new System.Drawing.Size(674, 31);
             this.txtSdRoot.TabIndex = 1;
-            this.txtSdRoot.TextChanged += new System.EventHandler(this.txtSdRoot_TextChanged);
             // 
             // label1
             // 
@@ -105,7 +104,6 @@
             this.txtBoxart.ReadOnly = true;
             this.txtBoxart.Size = new System.Drawing.Size(674, 31);
             this.txtBoxart.TabIndex = 4;
-            this.txtBoxart.TextChanged += new System.EventHandler(this.txtBoxart_TextChanged);
             // 
             // label2
             // 
@@ -259,6 +257,7 @@
             this.chkAspectRatio.Size = new System.Drawing.Size(318, 29);
             this.chkAspectRatio.TabIndex = 15;
             this.chkAspectRatio.Text = "Adjust to correct aspect ratio";
+            this.toolTip.SetToolTip(this.chkAspectRatio, "Will resize the boxart to TwilightMenu++ compatible aspect ratio\'s");
             this.chkAspectRatio.UseVisualStyleBackColor = true;
             // 
             // MainForm

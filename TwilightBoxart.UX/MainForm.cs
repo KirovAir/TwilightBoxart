@@ -37,7 +37,7 @@ namespace TwilightBoxart.UX
                 path = allDrives[0].RootDirectory.FullName;
                 foreach (var drive in allDrives)
                 {
-                    if (Directory.Exists(Path.Combine(drive.RootDirectory.FullName, "_nds")))
+                    if (Directory.Exists(Path.Combine(drive.RootDirectory.FullName, BoxartConfig.MagicDir)))
                     {
                         path = drive.RootDirectory.FullName;
                         break;
@@ -71,6 +71,9 @@ namespace TwilightBoxart.UX
         // UI STUFF
         private void SetUx()
         {
+            if (!_isInitialized)
+                return;
+
             btnBrowseBoxart.Enabled = chkManualBoxartLocation.Checked;
 
             if (!chkManualBoxartLocation.Checked && !string.IsNullOrEmpty(txtSdRoot.Text))
@@ -113,7 +116,6 @@ namespace TwilightBoxart.UX
             if (!string.IsNullOrEmpty(_config.SdRoot))
             {
                 txtSdRoot.Text = _config.SdRoot;
-                txtBoxart.Text = _config.GetBoxartPath();
             }
             else
             {
@@ -170,16 +172,6 @@ namespace TwilightBoxart.UX
         }
 
         private void chkBoxartSize_CheckedChanged(object sender, EventArgs e)
-        {
-            SetUx();
-        }
-
-        private void txtSdRoot_TextChanged(object sender, EventArgs e)
-        {
-            SetUx();
-        }
-
-        private void txtBoxart_TextChanged(object sender, EventArgs e)
         {
             SetUx();
         }

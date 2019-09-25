@@ -103,6 +103,22 @@ namespace TwilightBoxart.Models.Base
                     }
                 }
 
+                //if (filename.ToLower().Contains(".lz77."))
+                //{
+                //    fs.Seek(0, SeekOrigin.Begin);
+                //    using (var decompressedFileStream = new MemoryStream())
+                //    {
+                //        using (DeflateStream decompressionStream = new DeflateStream(fs, CompressionMode.Decompress))
+                //        {
+                //            decompressionStream.CopyTo(decompressedFileStream);
+                //        }
+
+                //        decompressedFileStream.Seek(0, SeekOrigin.Begin);
+                //        return FromStream(decompressedFileStream, filename);
+
+                //    }
+                //}
+
                 return FromStream(fs, filename);
             }
         }
