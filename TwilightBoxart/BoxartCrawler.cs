@@ -17,8 +17,7 @@ namespace TwilightBoxart
 
         public BoxartCrawler(IProgress<string> progress = null)
         {
-            // Enable all SSL cert pinning for now as users have reported problems with github.
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            // Disable all SSL cert pinning for now as users have reported problems with github.
             ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
             _progress = progress;
