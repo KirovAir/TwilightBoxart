@@ -60,7 +60,7 @@ namespace TwilightBoxart.CLI
                 return;
             }
             Console.WriteLine();
-
+            
             var progress = new Progress<string>(Console.WriteLine);
             var crawler = new BoxartCrawler(progress);
             crawler.InitializeDb();

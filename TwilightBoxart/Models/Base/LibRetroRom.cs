@@ -1,5 +1,4 @@
-﻿using System;
-using KirovAir.Core.Extensions;
+﻿using KirovAir.Core.Extensions;
 using KirovAir.Core.Utilities;
 
 namespace TwilightBoxart.Models.Base
@@ -14,7 +13,7 @@ namespace TwilightBoxart.Models.Base
         {
             if (string.IsNullOrEmpty(NoIntroName))
             {
-                throw new Exception("No NoIntro name found for rom! Could not download from libretro github.");
+                throw new NoDbMatchException("Could not match rom in no intro database.");
             }
             
             try

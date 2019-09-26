@@ -32,9 +32,10 @@ namespace TwilightBoxart.Models
                 }
                 catch (Exception e)
                 {
-                    if (region != "EN" && e.Message.Contains("404")) // Finally, trey EN region.
+                    if (region != "EN" && e.Message.Contains("404")) // Finally, try EN region.
                     {
                         DownloadAndResize("EN", targetFile);
+                        return;
                     }
 
                     throw;

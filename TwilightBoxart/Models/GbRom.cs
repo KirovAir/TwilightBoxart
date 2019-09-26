@@ -5,7 +5,7 @@ namespace TwilightBoxart.Models
 {
     public class GbRom : LibRetroRom
     {
-        public override ConsoleType ConsoleType => Base.ConsoleType.GameBoy;
+        public override ConsoleType ConsoleType => ConsoleType.GameBoy;
 
         public GbRom(byte[] header)
         {

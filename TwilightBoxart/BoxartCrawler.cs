@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using KirovAir.Core.Utilities;
 using SixLabors.Primitives;
 using TwilightBoxart.Data;
@@ -16,6 +17,10 @@ namespace TwilightBoxart
 
         public BoxartCrawler(IProgress<string> progress = null)
         {
+            // Enable all SSL cert pinning for now as users have reported problems with github.
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls12;
+            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
+
             _progress = progress;
             _romDb = new RomDatabase(Path.Combine(FileHelper.GetCurrentDirectory(), "NoIntro.db"));
         }
@@ -67,13 +72,19 @@ namespace TwilightBoxart
                             {
                                 size = new Size(84, 115);
                             }
+
                             downloader.SetSizeAdjustedToAspectRatio(size);
                         }
+
                         rom.SetDownloader(downloader);
 
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));
                         rom.DownloadBoxArt(targetArtFile);
                         _progress?.Report("Got it!");
+                    }
+                    catch (NoDbMatchException)
+                    {
+                        _progress?.Report("Could not match using NoIntro sha1 hash.. Skipping.");
                     }
                     catch (Exception e)
                     {
