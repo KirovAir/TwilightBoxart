@@ -126,5 +126,10 @@ namespace TwilightBoxart
             // SNES
             {ConsoleType.SuperNintendoEntertainmentSystem, new Size(158, 115)}
         };
+
+        public static Dictionary<ConsoleType, string> LibRetroDatUrls = new Dictionary<ConsoleType, string>
+        {
+            {ConsoleType.NintendoEntertainmentSystem, "https://github.com/libretro/libretro-database/raw/master/dat/Nintendo%20-%20Nintendo%20Entertainment%20System.dat"}
+        };
     }
 }

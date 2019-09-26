@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using KirovAir.Core.Extensions;
 using KirovAir.Core.Utilities;
+using TwilightBoxart.Crawlers.LibRetro;
 using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
 using Utf8Json;
@@ -69,6 +70,30 @@ namespace TwilightBoxart.Data
                     }
 
                     progress?.Report($"Found {data.Game.Count} roms");
+                }
+
+                progress?.Report("Downloading extra LibRetro data..");
+
+                foreach (var map in BoxartConfig.LibRetroDatUrls)
+                {
+                    progress?.Report($"{map.Key.GetDescription()}.. ");
+
+                    List<LibRetroRomData> data = null;
+                    _retryHelper.RetryOnException(() => { data = LibRetroDat.DownloadDat(map.Value); });
+
+                    foreach (var game in data)
+                    {
+                        var rom = new RomMetaData
+                        {
+                            ConsoleType = map.Key,
+                            ConsoleSubType = map.Key,
+                            Name = game.Name,
+                            Sha1 = game.RomSha1.ToLower()
+                        };
+                        _roms.Add(rom);
+                    }
+
+                    progress?.Report($"Found {data.Count} roms");
                 }
 
                 progress?.Report("Flushing data..");
