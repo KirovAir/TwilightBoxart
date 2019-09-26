@@ -59,7 +59,7 @@ namespace TwilightBoxart
                         _romDb.AddMetadata(rom);
 
                         var downloader = new ImgDownloader(defaultWidth, defaultHeight);
-                        if (BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
+                        if (useAspect && BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
                         {
                             if (rom.NoIntroConsoleType == ConsoleType.SuperNintendoEntertainmentSystem &&
                                 !string.IsNullOrEmpty(rom.NoIntroName) &&
