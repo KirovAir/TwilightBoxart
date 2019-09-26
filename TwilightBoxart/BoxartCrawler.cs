@@ -65,12 +65,12 @@ namespace TwilightBoxart
                         var downloader = new ImgDownloader(defaultWidth, defaultHeight);
                         if (useAspect && BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
                         {
-                            if (rom.NoIntroConsoleType == ConsoleType.SuperNintendoEntertainmentSystem &&
-                                !string.IsNullOrEmpty(rom.NoIntroName) &&
-                                rom.NoIntroName.ToLower().EndsWith("(japan)"))
-                            {
-                                size = new Size(84, 115);
-                            }
+                            if (rom.ConsoleType == ConsoleType.SuperNintendoEntertainmentSystem)
+                                if ((rom.NoIntroName?.ToLower().EndsWith("(japan)") ?? false) ||
+                                    (rom.Name?.ToLower().EndsWith("(japan)") ?? false))
+                                {
+                                    size = new Size(84, 115);
+                                }
 
                             downloader.SetSizeAdjustedToAspectRatio(size);
                         }
@@ -81,16 +81,16 @@ namespace TwilightBoxart
                         rom.DownloadBoxArt(targetArtFile);
                         _progress?.Report("Got it!");
                     }
-                    catch (NoDbMatchException)
+                    catch (NoMatchException ex)
                     {
-                        _progress?.Report("Could not match using NoIntro sha1 hash.. Skipping.");
+                        _progress?.Report(ex.Message);
                     }
                     catch (Exception e)
                     {
                         _progress?.Report("Something bad happened: " + e.Message);
                     }
                 }
-                
+
                 _progress?.Report("Finished scan.");
             }
             catch (Exception e)

@@ -2,9 +2,9 @@
 
 namespace TwilightBoxart.Models.Base
 {
-    public class NoDbMatchException : Exception
+    public class NoMatchException : Exception
     {
-        public NoDbMatchException(string message)
+        public NoMatchException(string message)
             : base(message)
         {
         }

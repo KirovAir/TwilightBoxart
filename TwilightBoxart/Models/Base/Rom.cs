@@ -21,6 +21,7 @@ namespace TwilightBoxart.Models.Base
         public string NoIntroName { get; set; }
         public ConsoleType NoIntroConsoleType { get; set; }
         internal ImgDownloader ImgDownloader { get; set; }
+        public string Name => Path.GetFileNameWithoutExtension(FileName.Replace(".lz77", ""));
 
         public static IRom FromStream(Stream stream, string filename)
         {
