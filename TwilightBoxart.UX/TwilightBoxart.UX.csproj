@@ -190,12 +190,13 @@
   <PropertyGroup>
     <PostBuildEvent>goto :$(ConfigurationName)
 :Release
-echo Cleaning xml/pdb..
-del $(TargetDir)\*.xml /Q
-del $(TargetDir)\*.pdb /Q
-del $(TargetDir)\*.config /Q
-del $(TargetDir)\TwilightBoxart.exe /Q
+echo Cleaning..
+IF EXIST $(TargetDir)\TwilightBoxart.exe del $(TargetDir)\TwilightBoxart.exe /Q
+IF EXIST $(ProjectDir)\bin\TwilightBoxart-Windows.UX.zip del $(ProjectDir)\bin\TwilightBoxart-Windows.UX.zip /Q
+echo Zipping..
 ren $(TargetPath) TwilightBoxart.exe
+powershell Compress-Archive -Path '$(TargetDir)*.exe','$(TargetDir)*.db','$(TargetDir)*.ini' -DestinationPath '$(ProjectDir)\bin\TwilightBoxart-Windows.UX.zip' -Force
+ren $(TargetDir)\TwilightBoxart.exe TwilightBoxart.UX.exe
 goto :exit
 :Debug
 :exit</PostBuildEvent>

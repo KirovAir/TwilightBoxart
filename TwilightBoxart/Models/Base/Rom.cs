@@ -20,8 +20,8 @@ namespace TwilightBoxart.Models.Base
         public virtual ConsoleType ConsoleType { get; set; }
         public string NoIntroName { get; set; }
         public ConsoleType NoIntroConsoleType { get; set; }
+        public string SearchName => !string.IsNullOrEmpty(FileName) ? Path.GetFileNameWithoutExtension(FileName?.Replace(".lz77", "")) : null;
         internal ImgDownloader ImgDownloader { get; set; }
-        public string Name => Path.GetFileNameWithoutExtension(FileName.Replace(".lz77", ""));
 
         public static IRom FromStream(Stream stream, string filename)
         {

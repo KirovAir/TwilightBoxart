@@ -5,7 +5,7 @@ namespace TwilightBoxart.Models.Base
     public interface IRom
     {
         string FileName { get; set; }
-        string Name { get; }
+        string SearchName { get; }
         string Sha1 { get; set; }
         string Title { get; set; }
         string TitleId { get; set; }

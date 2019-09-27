@@ -34,7 +34,7 @@ namespace TwilightBoxart.Models.Base
            
             try
             {
-                DownloadWithRetry(Name, targetFile);
+                DownloadWithRetry(SearchName, targetFile);
             }
             catch
             {
@@ -44,6 +44,11 @@ namespace TwilightBoxart.Models.Base
 
         private void DownloadWithRetry(string name, string targetFile)
         {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new NoMatchException("Invalid filename.");
+            }
+
             try
             {
                 Download(ConsoleType, name, targetFile);
