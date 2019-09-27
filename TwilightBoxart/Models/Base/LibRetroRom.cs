@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using KirovAir.Core.Extensions;
+﻿using KirovAir.Core.Extensions;
 using KirovAir.Core.Utilities;
 
 namespace TwilightBoxart.Models.Base

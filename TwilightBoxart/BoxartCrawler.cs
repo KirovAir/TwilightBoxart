@@ -66,12 +66,13 @@ namespace TwilightBoxart
                         if (useAspect && BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
                         {
                             if (rom.ConsoleType == ConsoleType.SuperNintendoEntertainmentSystem)
+                            {
                                 if ((rom.NoIntroName?.ToLower().EndsWith("(japan)") ?? false) ||
                                     (rom.Name?.ToLower().EndsWith("(japan)") ?? false))
                                 {
                                     size = new Size(84, 115);
                                 }
-
+                            }
                             downloader.SetSizeAdjustedToAspectRatio(size);
                         }
 

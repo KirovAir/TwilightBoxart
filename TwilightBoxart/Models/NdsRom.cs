@@ -20,11 +20,6 @@ namespace TwilightBoxart.Models
         {
             try
             {
-                // First try retrodb
-                base.DownloadBoxArt(targetFile);
-            }
-            catch
-            {
                 var region = GetUrlRegion(); // Try correct region
                 try
                 {
@@ -40,6 +35,10 @@ namespace TwilightBoxart.Models
 
                     throw;
                 }
+            }
+            catch
+            {
+                base.DownloadBoxArt(targetFile);
             }
         }
 
