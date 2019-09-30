@@ -24,6 +24,10 @@ namespace TwilightBoxart.Models.Base
             }
             catch
             {
+                if (NoIntroName == SearchName)
+                {
+                    throw new NoMatchException("Nothing was found! (Using sha1/filename)");
+                }
                 // Else try filename.
                 DownloadByName(targetFile);
             }
@@ -31,14 +35,13 @@ namespace TwilightBoxart.Models.Base
 
         private void DownloadByName(string targetFile)
         {
-           
             try
             {
                 DownloadWithRetry(SearchName, targetFile);
             }
             catch
             {
-                throw new NoMatchException("Could not match rom using sha1 or filename.. Skipping.");
+                throw new NoMatchException("Nothing was found! (Using sha1/filename)");
             }
         }
 
@@ -67,6 +70,8 @@ namespace TwilightBoxart.Models.Base
             // We can generate the LibRetro content url based on the NoIntroDb name.
             var consoleStr = consoleType.GetDescription().Replace(" ", "_");
             var url = $"https://github.com/libretro-thumbnails/{consoleStr}/raw/master/Named_Boxarts/";
+            name = name.Replace("&", "_"); // Todo: There are probably more replacements going on, search & add them.
+            name = name.Replace("/", "_");
             url = FileHelper.CombineUri(url, $"{name}.png");
             ImgDownloader.DownloadAndResize(url, targetFile);
         }

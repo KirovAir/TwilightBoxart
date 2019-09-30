@@ -67,8 +67,8 @@ namespace TwilightBoxart
                         {
                             if (rom.ConsoleType == ConsoleType.SuperNintendoEntertainmentSystem)
                             {
-                                if ((rom.NoIntroName?.ToLower().EndsWith("(japan)") ?? false) ||
-                                    (rom.SearchName?.ToLower().EndsWith("(japan)") ?? false))
+                                if ((rom.NoIntroName?.ToLower().Contains("(japan)") ?? false) ||
+                                    (rom.SearchName?.ToLower().Contains("(japan)") ?? false))
                                 {
                                     size = new Size(84, 115);
                                 }

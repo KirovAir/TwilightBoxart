@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using KirovAir.Core.Utilities;
 
 namespace KirovAir.Core.Extensions
 {
