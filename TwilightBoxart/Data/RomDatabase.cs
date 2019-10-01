@@ -44,22 +44,30 @@ namespace TwilightBoxart.Data
                 progress?.Report("No valid database was found! Downloading No-Intro DB..");
                 _roms = new List<RomMetaData>();
 
-                foreach (var map in BoxartConfig.NoIntroDbMapping)
+                foreach (var consoleType in (ConsoleType[])Enum.GetValues(typeof(ConsoleType)))
                 {
-                    progress?.Report($"{map.Key.GetDescription()}.. ");
+                    if (consoleType == ConsoleType.Unknown)
+                        continue;
+
+                    progress?.Report($"{consoleType.GetDescription()}.. ");
+
+                    if (!BoxartConfig.NoIntroDbMapping.TryGetValue(consoleType, out var baseType))
+                    {
+                        baseType = consoleType; // If nothing is found set the same type.
+                    }
 
                     DataFile data = null;
                     _retryHelper.RetryOnException(() =>
                     {
-                        data = NoIntroCrawler.GetDataFile(map.Key).Result;
+                        data = NoIntroCrawler.GetDataFile(consoleType).Result;
                     });
 
                     foreach (var game in data.Game)
                     {
                         var rom = new RomMetaData
                         {
-                            ConsoleType = map.Value,
-                            ConsoleSubType = map.Key,
+                            ConsoleType = baseType,       // The base type to merge similar searches. (nds sha1 might be in a dsi library)
+                            ConsoleSubType = consoleType, // The 'original' type.
                             GameId = game.Game_id,
                             Name = game.Name,
                             Serial = game.Rom?.Serial,
@@ -71,7 +79,7 @@ namespace TwilightBoxart.Data
 
                     progress?.Report($"Found {data.Game.Count} roms");
                 }
-
+                
                 progress?.Report("Downloading extra LibRetro data..");
 
                 foreach (var map in BoxartConfig.LibRetroDatUrls)

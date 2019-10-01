@@ -18,7 +18,7 @@ namespace TwilightBoxart
         public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
         public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
-
+        
         public void Load()
         {
             Load(FileName);
@@ -92,22 +92,10 @@ namespace TwilightBoxart
         /// </summary>
         public static Dictionary<ConsoleType, ConsoleType> NoIntroDbMapping = new Dictionary<ConsoleType, ConsoleType>
         {
-            {ConsoleType.NintendoEntertainmentSystem, ConsoleType.NintendoEntertainmentSystem},
-            {ConsoleType.SuperNintendoEntertainmentSystem, ConsoleType.SuperNintendoEntertainmentSystem},
-            {ConsoleType.FamicomDiskSystem, ConsoleType.FamicomDiskSystem},
-
-            {ConsoleType.GameBoy, ConsoleType.GameBoy},
-            {ConsoleType.GameBoyColor, ConsoleType.GameBoyColor},
-            {ConsoleType.GameBoyAdvance, ConsoleType.GameBoyAdvance},
-
             {ConsoleType.NintendoDS, ConsoleType.NintendoDS},
             {ConsoleType.NintendoDSDownloadPlay, ConsoleType.NintendoDS},
             {ConsoleType.NintendoDSi, ConsoleType.NintendoDSi},
-            {ConsoleType.NintendoDSiDigital, ConsoleType.NintendoDSi},
-
-            {ConsoleType.SegaGameGear, ConsoleType.SegaGameGear},
-            {ConsoleType.SegaGenesis, ConsoleType.SegaGenesis},
-            {ConsoleType.SegaMasterSystem, ConsoleType.SegaMasterSystem}
+            {ConsoleType.NintendoDSiDigital, ConsoleType.NintendoDSi}
         };
 
         public static Dictionary<ConsoleType, Size> AspectRatioMapping = new Dictionary<ConsoleType, Size>
