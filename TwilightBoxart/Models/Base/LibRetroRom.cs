@@ -1,4 +1,5 @@
-﻿using KirovAir.Core.Extensions;
+﻿using System;
+using KirovAir.Core.Extensions;
 using KirovAir.Core.Utilities;
 
 namespace TwilightBoxart.Models.Base
@@ -56,7 +57,7 @@ namespace TwilightBoxart.Models.Base
             {
                 Download(ConsoleType, name, targetFile);
             }
-            catch
+            catch (Exception e)
             {
                 if (NoIntroConsoleType == ConsoleType.Unknown || ConsoleType == NoIntroConsoleType) throw;
 
