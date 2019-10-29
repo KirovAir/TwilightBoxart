@@ -71,8 +71,20 @@ namespace TwilightBoxart.Models.Base
             // We can generate the LibRetro content url based on the NoIntroDb name.
             var consoleStr = consoleType.GetDescription().Replace(" ", "_");
             var url = $"https://github.com/libretro-thumbnails/{consoleStr}/raw/master/Named_Boxarts/";
-            name = name.Replace("&", "_"); // Todo: There are probably more replacements going on, search & add them.
+
+            // Found the characters: https://docs.libretro.com/guides/roms-playlists-thumbnails/
+            // &*/:`<>?\|
+            name = name.Replace("&", "_");
+            name = name.Replace("*", "_");
             name = name.Replace("/", "_");
+            name = name.Replace(":", "_");
+            name = name.Replace("`", "_");
+            name = name.Replace("<", "_");
+            name = name.Replace(">", "_");
+            name = name.Replace("?", "_");
+            name = name.Replace("\\", "_");
+            name = name.Replace("|", "_");
+
             url = FileHelper.CombineUri(url, $"{name}.png");
             ImgDownloader.DownloadAndResize(url, targetFile);
         }
