@@ -76,7 +76,7 @@ namespace TwilightBoxart.Models.Base
                 }
 
                 if (result == null &&
-                    BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename), out var consoleType) &&
+                    BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename).ToLower(), out var consoleType) &&
                     consoleType != ConsoleType.Unknown)
                 {
                     // Backup mapper. Only supports sha1 matching.

@@ -104,6 +104,7 @@ namespace TwilightBoxart
             {ConsoleType.FamicomDiskSystem, new Size(1, 1)},
             {ConsoleType.GameBoy, new Size(1, 1)},
             {ConsoleType.GameBoyColor, new Size(1, 1)},
+            {ConsoleType.GameBoyAdvance, new Size(1, 1)},
  
             // NES / GEN/MD / SFC / MS/ GG
             {ConsoleType.NintendoEntertainmentSystem, new Size(84, 115)},
