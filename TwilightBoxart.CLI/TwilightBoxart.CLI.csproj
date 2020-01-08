@@ -8,7 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TwilightBoxart\TwilightBoxart.csproj" />
+    <None Remove="TwilightBoxart.ini" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="TwilightBoxart.ini">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TwilightBoxart\TwilightBoxart.csproj" />
+  </ItemGroup>
 </Project>

@@ -63,7 +63,7 @@ namespace TwilightBoxart.UX
 
         private void Go()
         {
-            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkAspectRatio.Checked);
+            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkKeepAspectRatio.Checked);
             _isRunning = false;
             this.UIThread(SetUx);
         }
@@ -83,16 +83,8 @@ namespace TwilightBoxart.UX
 
             txtBoxart.ReadOnly = !chkManualBoxartLocation.Checked;
 
-            numHeight.Visible = chkBoxartSize.Checked;
-            numWidth.Visible = chkBoxartSize.Checked;
-            lblSize1.Visible = chkBoxartSize.Checked;
-            lblSize2.Visible = chkBoxartSize.Checked;
-
-            if (!chkBoxartSize.Checked)
-            {
-                numWidth.Value = _config.BoxartWidth;
-                numHeight.Value = _config.BoxartHeight;
-            }
+            numHeight.Enabled = rbtCustom.Checked;
+            numWidth.Enabled = rbtCustom.Checked;
 
             btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized && !_isRunning;
         }
@@ -104,7 +96,11 @@ namespace TwilightBoxart.UX
                 if (File.Exists(BoxartConfig.FileName))
                 {
                     _config.Load();
-                    chkAspectRatio.Checked = _config.AdjustAspectRatio;
+                    if (_config.BoxartWidth > 0 && _config.BoxartHeight > 0)
+                    {
+                        numWidth.Value = _config.BoxartWidth;
+                        numHeight.Value = _config.BoxartHeight;
+                    }
                     Log($"Loaded {BoxartConfig.FileName}.");
                 }
             }
@@ -171,16 +167,38 @@ namespace TwilightBoxart.UX
             SetUx();
         }
 
-        private void chkBoxartSize_CheckedChanged(object sender, EventArgs e)
-        {
-            SetUx();
-        }
-
         private void btnGithub_Click(object sender, EventArgs e)
         {
             if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
             {
                 Process.Start(new ProcessStartInfo("cmd", $"/c start {"https://github.com/KirovAir/TwilightBoxart"}") { CreateNoWindow = true });
+            }
+        }
+
+        private void rbtCustom_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
+        }
+
+        private void rbtLarge_CheckedChanged(object sender, EventArgs e)
+        {
+            numWidth.Value = 256;
+            numHeight.Value = 192;
+            SetUx();
+        }
+
+        private void rbtDefault_CheckedChanged(object sender, EventArgs e)
+        {
+            numWidth.Value = 128;
+            numHeight.Value = 115;
+            SetUx();
+        }
+
+        private void chkKeepAspectRatio_CheckedChanged(object sender, EventArgs e)
+        {
+            if (!chkKeepAspectRatio.Checked)
+            {
+                MessageBox.Show("Warning: Disabling this might give ugly results when searching for mixed boxart types. (For example: SNES and NDS)", "Keep aspect ratio");
             }
         }
     }

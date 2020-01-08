@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using KirovAir.Core.Config;
-using SixLabors.Primitives;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
@@ -13,7 +12,7 @@ namespace TwilightBoxart
         public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
-        public bool AdjustAspectRatio { get; set; } = true;
+        public bool KeepAspectRatio { get; set; } = true;
 
         public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
@@ -96,24 +95,6 @@ namespace TwilightBoxart
             {ConsoleType.NintendoDSDownloadPlay, ConsoleType.NintendoDS},
             {ConsoleType.NintendoDSi, ConsoleType.NintendoDSi},
             {ConsoleType.NintendoDSiDigital, ConsoleType.NintendoDSi}
-        };
-
-        public static Dictionary<ConsoleType, Size> AspectRatioMapping = new Dictionary<ConsoleType, Size>
-        {
-            // FDS / GBC / GB
-            {ConsoleType.FamicomDiskSystem, new Size(1, 1)},
-            {ConsoleType.GameBoy, new Size(1, 1)},
-            {ConsoleType.GameBoyColor, new Size(1, 1)},
-            {ConsoleType.GameBoyAdvance, new Size(1, 1)},
- 
-            // NES / GEN/MD / SFC / MS/ GG
-            {ConsoleType.NintendoEntertainmentSystem, new Size(84, 115)},
-            {ConsoleType.SegaGenesis, new Size(84, 115)},
-            {ConsoleType.SegaMasterSystem, new Size(84, 115)},
-            {ConsoleType.SegaGameGear, new Size(84, 115)},
-
-            // SNES
-            {ConsoleType.SuperNintendoEntertainmentSystem, new Size(158, 115)}
         };
 
         public static Dictionary<ConsoleType, string> LibRetroDatUrls = new Dictionary<ConsoleType, string>

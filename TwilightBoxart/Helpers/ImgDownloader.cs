@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Net;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -11,15 +12,20 @@ using SixLabors.Primitives;
 
 namespace TwilightBoxart.Helpers
 {
+    /// <summary>
+    /// Downloads and resizes an image.
+    /// </summary>
     public class ImgDownloader
     {
         private int _width;
         private int _height;
+        private bool _keepAspectRatio;
 
-        public ImgDownloader(int width, int height)
+        public ImgDownloader(int width, int height, bool keepAspectRatio = true)
         {
             _width = width;
             _height = height;
+            _keepAspectRatio = keepAspectRatio;
         }
 
         public void DownloadAndResize(string url, string targetFile)
@@ -33,7 +39,14 @@ namespace TwilightBoxart.Helpers
                 {
                     image.Metadata.ExifProfile = null;
 
-                    image.Mutate(x => x.Resize(_width, _height));
+                    var width = _width;
+                    var height = _height;
+                    if (_keepAspectRatio)
+                    {
+                        (width, height) = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _width, _height);
+                    }
+
+                    image.Mutate(x => x.Resize(width, height));
 
                     var encoder = GetEncoder(image, targetFile);
                     image.Save(targetFile, encoder);
@@ -81,6 +94,12 @@ namespace TwilightBoxart.Helpers
             encoder.BitDepth = PngBitDepth.Bit8;
             encoder.ColorType = PngColorType.Rgb;
             encoder.FilterMethod = PngFilterMethod.Adaptive;
+        }
+
+        private Size GetSizeWithCorrectAspectRatio(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
+        {
+            var ratio = Math.Min((float)targetWidth / (float)sourceWidth, (float)targetHeight / (float)sourceHeight);
+            return new Size((int)Math.Floor(sourceWidth * ratio), (int)Math.Floor(sourceHeight * ratio));
         }
 
         public void SetSizeAdjustedToAspectRatio(Size aspectRatio)

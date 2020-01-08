@@ -6,7 +6,6 @@
 
   <ItemGroup>
     <None Remove="NoIntro.db" />
-    <None Remove="TwilightBoxart.ini" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,9 +16,6 @@
   <ItemGroup>
     <Content Include="NoIntro.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="TwilightBoxart.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 

@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using KirovAir.Core.Utilities;
-using SixLabors.Primitives;
 using TwilightBoxart.Data;
 using TwilightBoxart.Helpers;
 using TwilightBoxart.Models.Base;
@@ -29,9 +28,9 @@ namespace TwilightBoxart
             _romDb.Initialize(_progress);
         }
 
-        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool useAspect = false)
+        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool keepAspectRatio = true)
         {
-            _progress?.Report($"Scanning {romsPath}..");
+            _progress?.Report($"Started! Using width: {defaultWidth} height: {defaultHeight}. Scanning {romsPath}..");
 
             try
             {
@@ -62,20 +61,7 @@ namespace TwilightBoxart
                         var rom = Rom.FromFile(romFile);
                         _romDb.AddMetadata(rom);
 
-                        var downloader = new ImgDownloader(defaultWidth, defaultHeight);
-                        if (useAspect && BoxartConfig.AspectRatioMapping.TryGetValue(rom.ConsoleType, out var size))
-                        {
-                            if (rom.ConsoleType == ConsoleType.SuperNintendoEntertainmentSystem)
-                            {
-                                if ((rom.NoIntroName?.ToLower().Contains("(japan)") ?? false) ||
-                                    (rom.SearchName?.ToLower().Contains("(japan)") ?? false))
-                                {
-                                    size = new Size(84, 115);
-                                }
-                            }
-                            downloader.SetSizeAdjustedToAspectRatio(size);
-                        }
-
+                        var downloader = new ImgDownloader(defaultWidth, defaultHeight, keepAspectRatio);
                         rom.SetDownloader(downloader);
 
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));
