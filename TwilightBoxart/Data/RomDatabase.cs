@@ -2,10 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using KirovAir.Core.Extensions;
 using KirovAir.Core.Utilities;
-using TwilightBoxart.Crawlers.LibRetro;
-using TwilightBoxart.Crawlers.NoIntro;
 using TwilightBoxart.Models.Base;
 using Utf8Json;
 
@@ -15,7 +12,6 @@ namespace TwilightBoxart.Data
     {
         private readonly string _databasePath;
         private List<RomMetaData> _roms = new List<RomMetaData>();
-        private readonly RetryHelper _retryHelper = new RetryHelper(TimeSpan.FromSeconds(3));
 
         public RomDatabase(string databasePath)
         {
@@ -38,81 +34,14 @@ namespace TwilightBoxart.Data
                     progress?.Report("Error reading NoIntro DB: " + e);
                 }
             }
+            else
+            {
+                throw new Exception($"Database was not found at {_databasePath}");
+            }
 
             if (_roms == null || _roms.Count == 0)
             {
-                progress?.Report("No valid database was found! Downloading No-Intro DB..");
-                _roms = new List<RomMetaData>();
-
-                foreach (var consoleType in (ConsoleType[])Enum.GetValues(typeof(ConsoleType)))
-                {
-                    if (consoleType == ConsoleType.Unknown)
-                        continue;
-
-                    progress?.Report($"{consoleType.GetDescription()}.. ");
-
-                    if (!BoxartConfig.NoIntroDbMapping.TryGetValue(consoleType, out var baseType))
-                    {
-                        baseType = consoleType; // If nothing is found set the same type.
-                    }
-
-                    DataFile data = null;
-                    _retryHelper.RetryOnException(() =>
-                    {
-                        data = NoIntroCrawler.GetDataFile(consoleType).Result;
-                    });
-
-                    foreach (var game in data.Game)
-                    {
-                        var rom = new RomMetaData
-                        {
-                            ConsoleType = baseType,       // The base type to merge similar searches. (nds sha1 might be in a dsi library)
-                            ConsoleSubType = consoleType, // The 'original' type.
-                            GameId = game.Game_id,
-                            Name = game.Name,
-                            Serial = game.Rom?.Serial,
-                            Sha1 = game.Rom?.Sha1.ToLower(),
-                            Status = game.Rom?.Status
-                        };
-                        _roms.Add(rom);
-                    }
-
-                    progress?.Report($"Found {data.Game.Count} roms");
-                }
-                
-                progress?.Report("Downloading extra LibRetro data..");
-
-                foreach (var map in BoxartConfig.LibRetroDatUrls)
-                {
-                    progress?.Report($"{map.Key.GetDescription()}.. ");
-
-                    List<LibRetroRomData> data = null;
-                    _retryHelper.RetryOnException(() => { data = LibRetroDat.DownloadDat(map.Value); });
-
-                    foreach (var game in data)
-                    {
-                        var rom = new RomMetaData
-                        {
-                            ConsoleType = map.Key,
-                            ConsoleSubType = map.Key,
-                            Name = game.Name,
-                            Sha1 = game.RomSha1.ToLower()
-                        };
-                        _roms.Add(rom);
-                    }
-
-                    progress?.Report($"Found {data.Count} roms");
-                }
-
-                progress?.Report("Flushing data..");
-                using (var ms = new MemoryStream())
-                {
-                    JsonSerializer.Serialize(ms, _roms);
-                    ms.Seek(0, SeekOrigin.Begin);
-                    File.WriteAllBytes(_databasePath, FileHelper.Compress(ms));
-                }
-
-                progress?.Report("Done!");
+                throw new Exception("Empty database!");
             }
 
             progress?.Report($"Loaded NoIntro.db. Database contains {_roms?.Count} roms.");

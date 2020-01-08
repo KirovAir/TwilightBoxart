@@ -95,7 +95,7 @@
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtLog.Size = new System.Drawing.Size(500, 189);
-            this.txtLog.TabIndex = 10;
+            this.txtLog.TabIndex = 13;
             // 
             // txtBoxart
             // 
@@ -159,7 +159,7 @@
             this.btnStart.Margin = new System.Windows.Forms.Padding(2);
             this.btnStart.Name = "btnStart";
             this.btnStart.Size = new System.Drawing.Size(76, 30);
-            this.btnStart.TabIndex = 12;
+            this.btnStart.TabIndex = 15;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
@@ -175,7 +175,7 @@
             0});
             this.numWidth.Name = "numWidth";
             this.numWidth.Size = new System.Drawing.Size(75, 20);
-            this.numWidth.TabIndex = 7;
+            this.numWidth.TabIndex = 11;
             this.numWidth.Value = new decimal(new int[] {
             128,
             0,
@@ -193,7 +193,7 @@
             0});
             this.numHeight.Name = "numHeight";
             this.numHeight.Size = new System.Drawing.Size(75, 20);
-            this.numHeight.TabIndex = 8;
+            this.numHeight.TabIndex = 12;
             this.numHeight.Value = new decimal(new int[] {
             115,
             0,
@@ -228,7 +228,7 @@
             this.btnGithub.Margin = new System.Windows.Forms.Padding(2);
             this.btnGithub.Name = "btnGithub";
             this.btnGithub.Size = new System.Drawing.Size(29, 30);
-            this.btnGithub.TabIndex = 11;
+            this.btnGithub.TabIndex = 14;
             this.toolTip.SetToolTip(this.btnGithub, "Visit the Github Repository.");
             this.btnGithub.UseVisualStyleBackColor = true;
             this.btnGithub.Click += new System.EventHandler(this.btnGithub_Click);
@@ -241,7 +241,7 @@
             this.chkKeepAspectRatio.Location = new System.Drawing.Point(69, 121);
             this.chkKeepAspectRatio.Name = "chkKeepAspectRatio";
             this.chkKeepAspectRatio.Size = new System.Drawing.Size(221, 17);
-            this.chkKeepAspectRatio.TabIndex = 15;
+            this.chkKeepAspectRatio.TabIndex = 10;
             this.chkKeepAspectRatio.Text = "Keep original aspect ratio (recommended)";
             this.toolTip.SetToolTip(this.chkKeepAspectRatio, "Will resize the boxart to the exact defined size (NOT recommended)");
             this.chkKeepAspectRatio.UseVisualStyleBackColor = true;
@@ -254,7 +254,7 @@
             this.rbtDefault.Location = new System.Drawing.Point(69, 100);
             this.rbtDefault.Name = "rbtDefault";
             this.rbtDefault.Size = new System.Drawing.Size(58, 17);
-            this.rbtDefault.TabIndex = 16;
+            this.rbtDefault.TabIndex = 7;
             this.rbtDefault.TabStop = true;
             this.rbtDefault.Text = "Classic";
             this.rbtDefault.UseVisualStyleBackColor = true;
@@ -276,7 +276,7 @@
             this.rbtLarge.Location = new System.Drawing.Point(177, 100);
             this.rbtLarge.Name = "rbtLarge";
             this.rbtLarge.Size = new System.Drawing.Size(52, 17);
-            this.rbtLarge.TabIndex = 19;
+            this.rbtLarge.TabIndex = 8;
             this.rbtLarge.Text = "Large";
             this.rbtLarge.UseVisualStyleBackColor = true;
             this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
@@ -287,7 +287,7 @@
             this.rbtCustom.Location = new System.Drawing.Point(281, 100);
             this.rbtCustom.Name = "rbtCustom";
             this.rbtCustom.Size = new System.Drawing.Size(60, 17);
-            this.rbtCustom.TabIndex = 21;
+            this.rbtCustom.TabIndex = 9;
             this.rbtCustom.Text = "Custom";
             this.rbtCustom.UseVisualStyleBackColor = true;
             this.rbtCustom.CheckedChanged += new System.EventHandler(this.rbtCustom_CheckedChanged);

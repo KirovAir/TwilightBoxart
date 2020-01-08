@@ -30,7 +30,7 @@ namespace KirovAir.Core.Utilities
                     operation();
                     break;
                 }   
-                catch
+                catch (Exception e)
                 {
                     if (attempts == times)
                         throw;
