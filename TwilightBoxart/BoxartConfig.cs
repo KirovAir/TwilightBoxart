@@ -13,11 +13,20 @@ namespace TwilightBoxart
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
         public bool KeepAspectRatio { get; set; } = true;
+        public bool DisableUpdates { get; set; } = false;
 
         public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
+        public const string Repository = "KirovAir/TwilightBoxart";
+
+        public static Version Version = new Version(0, 7, 0);
         public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
-        
+
+        public static string RepositoryUrl = $"https://github.com/{Repository}";
+        public static string RepositoryReleasesUrl = $"https://github.com/{Repository}/releases";
+        public static string NoIntroDbUrl = $"{RepositoryUrl}/raw/master/TwilightBoxart/NoIntro.db";
+        public static string DsiWareBoxartUrl = $"{RepositoryUrl}/raw/master/img/dsiware.jpg";
+
         public void Load()
         {
             Load(FileName);
@@ -85,10 +94,5 @@ namespace TwilightBoxart
             {".fds", ConsoleType.FamicomDiskSystem},
             {".zip", ConsoleType.Unknown }
         };
-        
-        public const string NoIntroDbUrl = "https://github.com/KirovAir/TwilightBoxart/raw/master/TwilightBoxart/NoIntro.db";
-        public const string DsiWareBoxartUrl = "https://github.com/KirovAir/TwilightBoxart/raw/master/img/dsiware.jpg";
-        public const string RepositoryUrl = "https://github.com/KirovAir/TwilightBoxart";
-        public const string Version = "0.7";
     }
 }

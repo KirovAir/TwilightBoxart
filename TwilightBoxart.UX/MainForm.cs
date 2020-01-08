@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using KirovAir.Core.Utilities;
+using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.UX
 {
@@ -91,8 +92,7 @@ namespace TwilightBoxart.UX
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            Text = $"{Text} - v{BoxartConfig.Version}";
-            Log($"{Text}."); // Display version in log.
+            Log($"{Text} - Version {BoxartConfig.Version}."); // Display version in log.
 
             try
             {
@@ -121,7 +121,6 @@ namespace TwilightBoxart.UX
                 DetectSd();
             }
 
-            
             Task.Run(() =>
             {
                 try
@@ -130,7 +129,7 @@ namespace TwilightBoxart.UX
                 }
                 catch (Exception ex)
                 {
-                    var errorMsg = "Warning: Could not initialize NoIntro DB! Only DS boxart will be downloaded!" + Environment.NewLine + 
+                    var errorMsg = "Warning: Could not initialize NoIntro DB! Only DS boxart will be downloaded!" + Environment.NewLine +
                                    "Try to delete NoIntro.db and restart TwilightBoxart.";
                     Log($"{errorMsg}  Error: {ex}");
                     this.UIThread(() => MessageBox.Show(errorMsg, "Oh no!"));
@@ -139,6 +138,38 @@ namespace TwilightBoxart.UX
                 _isInitialized = true;
                 this.UIThread(SetUx);
             });
+
+
+            if (!_config.DisableUpdates)
+            {
+                Task.Run(UpdateCheck);
+            }
+        }
+
+        public void UpdateCheck()
+        {
+            try
+            {
+                var client = new GithubClient(BoxartConfig.Repository);
+                var update = client.GetNewRelease(BoxartConfig.Version);
+
+                if (update != null)
+                {
+                    var result = MessageBox.Show(update.UpdateText,
+                        "A new update is available!",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Information);
+
+                    if (result == DialogResult.Yes)
+                    {
+                        OSHelper.OpenBrowser(BoxartConfig.RepositoryReleasesUrl);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Log($"An error occured while looking for updates. {e.Message}");
+            }
         }
 
         private void btnStart_Click(object sender, EventArgs e)
@@ -176,9 +207,11 @@ namespace TwilightBoxart.UX
 
         private void btnGithub_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
+            if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", 
+                    MessageBoxButtons.YesNo, 
+                    MessageBoxIcon.Information) == DialogResult.OK)
             {
-                Process.Start(new ProcessStartInfo("cmd", $"/c start {BoxartConfig.RepositoryUrl}") { CreateNoWindow = true });
+                OSHelper.OpenBrowser(BoxartConfig.RepositoryUrl);
             }
         }
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using KirovAir.Core.ConsoleApp;
 using KirovAir.Core.Utilities;
+using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.CLI
 {
@@ -20,7 +21,32 @@ namespace TwilightBoxart.CLI
                 config.Load();
             }
             catch { Console.WriteLine("Could not load TwilightBoxart.ini - using defaults."); }
-            
+
+            if (!config.DisableUpdates)
+            {
+                try
+                {
+                    var client = new GithubClient(BoxartConfig.Repository);
+                    var update = client.GetNewRelease(BoxartConfig.Version);
+
+                    if (update != null)
+                    {
+                        ConsoleEx.WriteGreenLine(update.UpdateText);
+
+                        if (ConsoleEx.YesNoMenu())
+                        {
+                            OSHelper.OpenBrowser(BoxartConfig.RepositoryReleasesUrl);
+                        }
+
+                        Console.WriteLine();
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Could not check for updates: {e.Message}");
+                }
+            }
+
             if (string.IsNullOrEmpty(config.SdRoot))
             {
                 var allDrives = new List<DriveInfo>();
