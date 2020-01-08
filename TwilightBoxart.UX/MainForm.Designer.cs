@@ -243,7 +243,8 @@
             this.chkKeepAspectRatio.Size = new System.Drawing.Size(221, 17);
             this.chkKeepAspectRatio.TabIndex = 10;
             this.chkKeepAspectRatio.Text = "Keep original aspect ratio (recommended)";
-            this.toolTip.SetToolTip(this.chkKeepAspectRatio, "Will resize the boxart to the exact defined size (NOT recommended)");
+            this.toolTip.SetToolTip(this.chkKeepAspectRatio, "Enabling this will keep the original aspect ratio for much better boxart sizes. T" +
+        "his will only work on the latest (2020) TwilightMenu++ releases.");
             this.chkKeepAspectRatio.UseVisualStyleBackColor = true;
             this.chkKeepAspectRatio.CheckedChanged += new System.EventHandler(this.chkKeepAspectRatio_CheckedChanged);
             // 

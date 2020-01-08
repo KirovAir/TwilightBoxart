@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using KirovAir.Core.Utilities;
 using TwilightBoxart.Models.Base;
 using Utf8Json;
@@ -20,28 +21,31 @@ namespace TwilightBoxart.Data
 
         public void Initialize(IProgress<string> progress = null)
         {
-            if (File.Exists(_databasePath))
+            if (!File.Exists(_databasePath))
             {
-                try
+                progress?.Report($"Database was not found at {_databasePath}. Downloading..");
+                using (var wc = new WebClient())
                 {
-                    using (var compressed = File.OpenRead(_databasePath))
-                    {
-                        _roms = JsonSerializer.Deserialize<List<RomMetaData>>(FileHelper.Decompress(compressed));
-                    }
-                }
-                catch (Exception e)
-                {
-                    progress?.Report("Error reading NoIntro DB: " + e);
+                    wc.DownloadFile(BoxartConfig.NoIntroDbUrl, _databasePath);
+                    progress?.Report("Downloaded database from Github.");
                 }
             }
-            else
+
+            try
             {
-                throw new Exception($"Database was not found at {_databasePath}");
+                using (var compressed = File.OpenRead(_databasePath))
+                {
+                    _roms = JsonSerializer.Deserialize<List<RomMetaData>>(FileHelper.Decompress(compressed));
+                }
+            }
+            catch (Exception e)
+            {
+                progress?.Report("Error reading NoIntro DB: " + e);
             }
 
             if (_roms == null || _roms.Count == 0)
             {
-                throw new Exception("Empty database!");
+                throw new Exception("NoIntro.db is empty!");
             }
 
             progress?.Report($"Loaded NoIntro.db. Database contains {_roms?.Count} roms.");

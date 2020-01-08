@@ -85,21 +85,10 @@ namespace TwilightBoxart
             {".fds", ConsoleType.FamicomDiskSystem},
             {".zip", ConsoleType.Unknown }
         };
-
-        /// <summary>
-        /// Mapping to merge some ConsoleTypes in the DB.
-        /// </summary>
-        public static Dictionary<ConsoleType, ConsoleType> NoIntroDbMapping = new Dictionary<ConsoleType, ConsoleType>
-        {
-            {ConsoleType.NintendoDS, ConsoleType.NintendoDS},
-            {ConsoleType.NintendoDSDownloadPlay, ConsoleType.NintendoDS},
-            {ConsoleType.NintendoDSi, ConsoleType.NintendoDSi},
-            {ConsoleType.NintendoDSiDigital, ConsoleType.NintendoDSi}
-        };
-
-        public static Dictionary<ConsoleType, string> LibRetroDatUrls = new Dictionary<ConsoleType, string>
-        {
-            {ConsoleType.NintendoEntertainmentSystem, "https://github.com/libretro/libretro-database/raw/master/dat/Nintendo%20-%20Nintendo%20Entertainment%20System.dat"}
-        };
+        
+        public const string NoIntroDbUrl = "https://github.com/KirovAir/TwilightBoxart/raw/master/TwilightBoxart/NoIntro.db";
+        public const string DsiWareBoxartUrl = "https://github.com/KirovAir/TwilightBoxart/raw/master/img/dsiware.jpg";
+        public const string RepositoryUrl = "https://github.com/KirovAir/TwilightBoxart";
+        public const string Version = "0.7";
     }
 }

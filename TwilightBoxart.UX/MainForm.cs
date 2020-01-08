@@ -91,6 +91,9 @@ namespace TwilightBoxart.UX
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+            Text = $"{Text} - v{BoxartConfig.Version}";
+            Log($"{Text}."); // Display version in log.
+
             try
             {
                 if (File.Exists(BoxartConfig.FileName))
@@ -118,6 +121,7 @@ namespace TwilightBoxart.UX
                 DetectSd();
             }
 
+            
             Task.Run(() =>
             {
                 try
@@ -126,7 +130,10 @@ namespace TwilightBoxart.UX
                 }
                 catch (Exception ex)
                 {
-                    Log("Warning: Could not initialize NoIntro DB! Only DS Roms will work. Error: " + ex);
+                    var errorMsg = "Warning: Could not initialize NoIntro DB! Only DS boxart will be downloaded!" + Environment.NewLine + 
+                                   "Try to delete NoIntro.db and restart TwilightBoxart.";
+                    Log($"{errorMsg}  Error: {ex}");
+                    this.UIThread(() => MessageBox.Show(errorMsg, "Oh no!"));
                 }
 
                 _isInitialized = true;
@@ -171,7 +178,7 @@ namespace TwilightBoxart.UX
         {
             if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", MessageBoxButtons.OKCancel, MessageBoxIcon.Information) == DialogResult.OK)
             {
-                Process.Start(new ProcessStartInfo("cmd", $"/c start {"https://github.com/KirovAir/TwilightBoxart"}") { CreateNoWindow = true });
+                Process.Start(new ProcessStartInfo("cmd", $"/c start {BoxartConfig.RepositoryUrl}") { CreateNoWindow = true });
             }
         }
 
@@ -198,7 +205,7 @@ namespace TwilightBoxart.UX
         {
             if (!chkKeepAspectRatio.Checked)
             {
-                MessageBox.Show("Warning: Disabling this might give ugly results when searching for mixed boxart types. (For example: SNES and NDS)", "Keep aspect ratio");
+                MessageBox.Show("Warning: Disabling this might give ugly results when searching for mixed boxart types (For example: SNES and NDS) as they will be resized to the exact defined measurements.", "Keep aspect ratio");
             }
         }
     }
