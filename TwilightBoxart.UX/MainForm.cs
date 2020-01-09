@@ -150,8 +150,7 @@ namespace TwilightBoxart.UX
         {
             try
             {
-                var client = new GithubClient(BoxartConfig.Repository);
-                var update = client.GetNewRelease(BoxartConfig.Version);
+                var update = GithubClient.GetNewRelease(BoxartConfig.Repository, BoxartConfig.Version);
 
                 if (update != null)
                 {

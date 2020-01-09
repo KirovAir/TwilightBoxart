@@ -5,18 +5,11 @@ using Utf8Json;
 
 namespace TwilightBoxart.Helpers
 {
-    public class GithubClient
+    public static class GithubClient
     {
-        private readonly string _repo;
-
-        public GithubClient(string repo)
+        public static GithubRelease GetNewRelease(string repoPath, Version currentVersion)
         {
-            _repo = repo;
-        }
-
-        public GithubRelease GetNewRelease(Version currentVersion)
-        {
-            var releasesUrl = $"https://api.github.com/repos/{_repo}/releases/latest";
+            var releasesUrl = $"https://api.github.com/repos/{repoPath}/releases/latest";
 
             using (var wc = new WebClient())
             {

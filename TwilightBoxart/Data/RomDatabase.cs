@@ -24,11 +24,7 @@ namespace TwilightBoxart.Data
             if (!File.Exists(_databasePath))
             {
                 progress?.Report($"Database was not found at {_databasePath}. Downloading..");
-                using (var wc = new WebClient())
-                {
-                    wc.DownloadFile(BoxartConfig.NoIntroDbUrl, _databasePath);
-                    progress?.Report("Downloaded database from Github.");
-                }
+                DownloadDatabase(progress);
             }
 
             try
@@ -49,6 +45,15 @@ namespace TwilightBoxart.Data
             }
 
             progress?.Report($"Loaded NoIntro.db. Database contains {_roms?.Count} roms.");
+        }
+
+        public void DownloadDatabase(IProgress<string> progress = null)
+        {
+            using (var wc = new WebClient())
+            {
+                wc.DownloadFile(BoxartConfig.NoIntroDbUrl, _databasePath);
+                progress?.Report("Downloaded database from Github.");
+            }
         }
 
         public void AddMetadata(IRom rom)

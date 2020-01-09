@@ -98,8 +98,25 @@ namespace TwilightBoxart.Helpers
 
         private Size GetSizeWithCorrectAspectRatio(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
         {
-            var ratio = Math.Min((float)targetWidth / (float)sourceWidth, (float)targetHeight / (float)sourceHeight);
-            return new Size((int)Math.Floor(sourceWidth * ratio), (int)Math.Floor(sourceHeight * ratio));
+            var widthRatio = (float)targetWidth / (float)sourceWidth;
+            var heightRatio = (float)targetHeight / (float)sourceHeight;
+
+            var ratio = Math.Min(widthRatio, heightRatio);
+
+            var width = (int)Math.Ceiling(sourceWidth * ratio);
+            var height = (int)Math.Ceiling(sourceHeight * ratio);
+
+            if (width > targetWidth)
+            {
+                width = targetWidth;
+            }
+
+            if (height > targetHeight)
+            {
+                height = targetHeight;
+            }
+
+            return new Size(width, height);
         }
 
         public void SetSizeAdjustedToAspectRatio(Size aspectRatio)
