@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using KirovAir.Core.Utilities;
 using TwilightBoxart.Data;
 using TwilightBoxart.Helpers;
@@ -13,6 +14,7 @@ namespace TwilightBoxart
     {
         private readonly IProgress<string> _progress;
         private static RomDatabase _romDb;
+        private CancellationTokenSource _cancelToken;
 
         public BoxartCrawler(IProgress<string> progress = null)
         {
@@ -30,6 +32,7 @@ namespace TwilightBoxart
 
         public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool keepAspectRatio = true)
         {
+            _cancelToken = new CancellationTokenSource();
             _progress?.Report($"Started! Using width: {defaultWidth} height: {defaultHeight}. Scanning {romsPath}..");
 
             try
@@ -42,6 +45,12 @@ namespace TwilightBoxart
 
                 foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*", SearchOption.AllDirectories))
                 {
+                    if (_cancelToken.IsCancellationRequested)
+                    {
+                        _progress?.Report("Stopped by user.");
+                        break;
+                    }
+
                     var ext = Path.GetExtension(romFile).ToLower();
                     if (!BoxartConfig.ExtensionMapping.Keys.Contains(ext))
                         continue;
@@ -84,6 +93,11 @@ namespace TwilightBoxart
             {
                 _progress?.Report("Unhandled exception occured! " + e);
             }
+        }
+
+        public void Stop()
+        {
+            _cancelToken?.Cancel();
         }
     }
 }

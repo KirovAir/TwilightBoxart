@@ -87,7 +87,8 @@ namespace TwilightBoxart.UX
             numHeight.Enabled = rbtCustom.Checked;
             numWidth.Enabled = rbtCustom.Checked;
 
-            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized && !_isRunning;
+            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized;
+            btnStart.Text = _isRunning ? "Stop" : "Start";
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -173,9 +174,17 @@ namespace TwilightBoxart.UX
 
         private void btnStart_Click(object sender, EventArgs e)
         {
-            _isRunning = true;
-            SetUx();
-            Task.Run(Go);
+            if (!_isRunning)
+            {
+                _isRunning = true;
+                SetUx();
+                Task.Run(Go);
+            }
+            else
+            {
+                btnStart.Enabled = false;
+                _crawler.Stop();
+            }
         }
 
         private void btnBrowseSd_Click(object sender, EventArgs e)
@@ -206,8 +215,8 @@ namespace TwilightBoxart.UX
 
         private void btnGithub_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello", 
-                    MessageBoxButtons.YesNo, 
+            if (MessageBox.Show(BoxartConfig.Credits + Environment.NewLine + Environment.NewLine + "Visit Github now?", "Hello",
+                    MessageBoxButtons.YesNo,
                     MessageBoxIcon.Information) == DialogResult.OK)
             {
                 OSHelper.OpenBrowser(BoxartConfig.RepositoryUrl);
