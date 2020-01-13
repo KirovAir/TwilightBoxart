@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.Formats.Gif;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
 
@@ -19,13 +21,15 @@ namespace TwilightBoxart.Helpers
     {
         private int _width;
         private int _height;
-        private bool _keepAspectRatio;
+        private readonly bool _keepAspectRatio;
+        private readonly BorderSettings _borderSettings;
 
-        public ImgDownloader(int width, int height, bool keepAspectRatio = true)
+        public ImgDownloader(int width, int height, bool keepAspectRatio = true, BorderSettings borderSettings = null)
         {
             _width = width;
             _height = height;
             _keepAspectRatio = keepAspectRatio;
+            _borderSettings = borderSettings;
         }
 
         public void DownloadAndResize(string url, string targetFile)
@@ -37,20 +41,61 @@ namespace TwilightBoxart.Helpers
 
                 using (var image = decoder == null ? Image.Load(data) : Image.Load(data, decoder))
                 {
+                    var encoder = GetEncoder(image, targetFile);
                     image.Metadata.ExifProfile = null;
 
-                    var width = _width;
-                    var height = _height;
+                    var targetSize = new Size(_width, _height);
                     if (_keepAspectRatio)
                     {
-                        (width, height) = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _width, _height);
+                        targetSize = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _width, _height);
                     }
 
-                    image.Mutate(x => x.Resize(width, height));
-
-                    var encoder = GetEncoder(image, targetFile);
-                    image.Save(targetFile, encoder);
+                    if (_borderSettings == null)
+                    {
+                        ResizeOnly(image, encoder, targetSize, targetFile);
+                    }
+                    else
+                    {
+                        ResizeWithBorder(image, encoder, targetSize, targetFile);
+                    }
                 }
+            }
+        }
+
+        private void ResizeOnly(Image image, IImageEncoder encoder, Size size, string targetFile)
+        {
+            image.Mutate(x => x.Resize(size));
+            image.Save(targetFile, encoder);
+        }
+
+        private void ResizeWithBorder(Image image, IImageEncoder encoder, Size size, string targetFile)
+        {
+            var (width, height) = size;
+            var adjustment = _borderSettings.Thickness * 2;
+
+            image.Mutate(x => x.Resize(width - adjustment, height - adjustment));
+
+            using (var canvas = new Image<Rgba32>(width, height))
+            {
+                canvas.Mutate(x => x.DrawImage(image, new Point(_borderSettings.Thickness, _borderSettings.Thickness), new GraphicsOptions()));
+
+                for (var i = 0; i < _borderSettings.Thickness; i++)
+                {
+                    var adj = i;
+                    canvas.Mutate(x => x.DrawLines(
+                            _borderSettings.Color,
+                            1,
+                            new Vector2(adj, adj),
+                            new Vector2(width - adj, adj),
+                            new Vector2(width - adj, height - adj),
+                            new Vector2(adj, height - adj),
+                            new Vector2(adj, adj)
+                        )
+                    );
+                }
+                
+                //canvas[1, 1] = _borderSettings.Color;
+                canvas.Save(targetFile, encoder);
             }
         }
 
@@ -151,5 +196,11 @@ namespace TwilightBoxart.Helpers
             _width = newWidth;
             _height = newHeight;
         }
+    }
+
+    public class BorderSettings
+    {
+        public int Thickness { get; set; }
+        public Rgba32 Color { get; set; }
     }
 }

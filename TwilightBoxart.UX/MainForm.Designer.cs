@@ -41,27 +41,35 @@
             this.btnDetect = new System.Windows.Forms.Button();
             this.folderBrowseDlg = new System.Windows.Forms.FolderBrowserDialog();
             this.btnStart = new System.Windows.Forms.Button();
-            this.numWidth = new System.Windows.Forms.NumericUpDown();
-            this.numHeight = new System.Windows.Forms.NumericUpDown();
-            this.lblSize2 = new System.Windows.Forms.Label();
-            this.lblSize1 = new System.Windows.Forms.Label();
             this.btnGithub = new System.Windows.Forms.Button();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             this.chkKeepAspectRatio = new System.Windows.Forms.CheckBox();
-            this.rbtDefault = new System.Windows.Forms.RadioButton();
-            this.lblSize = new System.Windows.Forms.Label();
-            this.rbtLarge = new System.Windows.Forms.RadioButton();
+            this.chkBorder = new System.Windows.Forms.CheckBox();
+            this.chkBorderThick = new System.Windows.Forms.CheckBox();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.rbtCustom = new System.Windows.Forms.RadioButton();
-            ((System.ComponentModel.ISupportInitialize)(this.numWidth)).BeginInit();
+            this.rbtLarge = new System.Windows.Forms.RadioButton();
+            this.rbtDefault = new System.Windows.Forms.RadioButton();
+            this.lblSize1 = new System.Windows.Forms.Label();
+            this.lblSize2 = new System.Windows.Forms.Label();
+            this.numHeight = new System.Windows.Forms.NumericUpDown();
+            this.numWidth = new System.Windows.Forms.NumericUpDown();
+            this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.rbtBorderWhite = new System.Windows.Forms.RadioButton();
+            this.rbtBorderBlack = new System.Windows.Forms.RadioButton();
+            this.colorDialog = new System.Windows.Forms.ColorDialog();
+            this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numHeight)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numWidth)).BeginInit();
+            this.groupBox2.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnBrowseSd
             // 
-            this.btnBrowseSd.Location = new System.Drawing.Point(349, 18);
-            this.btnBrowseSd.Margin = new System.Windows.Forms.Padding(2);
+            this.btnBrowseSd.Location = new System.Drawing.Point(698, 35);
+            this.btnBrowseSd.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseSd.Name = "btnBrowseSd";
-            this.btnBrowseSd.Size = new System.Drawing.Size(76, 30);
+            this.btnBrowseSd.Size = new System.Drawing.Size(152, 58);
             this.btnBrowseSd.TabIndex = 2;
             this.btnBrowseSd.Text = "Browse...";
             this.btnBrowseSd.UseVisualStyleBackColor = true;
@@ -70,60 +78,61 @@
             // txtSdRoot
             // 
             this.txtSdRoot.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtSdRoot.Location = new System.Drawing.Point(6, 24);
-            this.txtSdRoot.Margin = new System.Windows.Forms.Padding(2);
+            this.txtSdRoot.Location = new System.Drawing.Point(12, 46);
+            this.txtSdRoot.Margin = new System.Windows.Forms.Padding(4);
             this.txtSdRoot.Name = "txtSdRoot";
-            this.txtSdRoot.Size = new System.Drawing.Size(339, 20);
+            this.txtSdRoot.Size = new System.Drawing.Size(674, 31);
             this.txtSdRoot.TabIndex = 1;
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(3, 9);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Location = new System.Drawing.Point(6, 17);
+            this.label1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(129, 13);
+            this.label1.Size = new System.Drawing.Size(252, 25);
             this.label1.TabIndex = 2;
             this.label1.Text = "SD Root / Roms location:";
             // 
             // txtLog
             // 
             this.txtLog.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtLog.Location = new System.Drawing.Point(6, 145);
+            this.txtLog.Location = new System.Drawing.Point(8, 404);
+            this.txtLog.Margin = new System.Windows.Forms.Padding(6);
             this.txtLog.Multiline = true;
             this.txtLog.Name = "txtLog";
             this.txtLog.ReadOnly = true;
             this.txtLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.txtLog.Size = new System.Drawing.Size(500, 189);
+            this.txtLog.Size = new System.Drawing.Size(996, 360);
             this.txtLog.TabIndex = 13;
             // 
             // txtBoxart
             // 
             this.txtBoxart.BackColor = System.Drawing.SystemColors.ControlLightLight;
-            this.txtBoxart.Location = new System.Drawing.Point(6, 71);
-            this.txtBoxart.Margin = new System.Windows.Forms.Padding(2);
+            this.txtBoxart.Location = new System.Drawing.Point(12, 137);
+            this.txtBoxart.Margin = new System.Windows.Forms.Padding(4);
             this.txtBoxart.Name = "txtBoxart";
             this.txtBoxart.ReadOnly = true;
-            this.txtBoxart.Size = new System.Drawing.Size(339, 20);
+            this.txtBoxart.Size = new System.Drawing.Size(674, 31);
             this.txtBoxart.TabIndex = 4;
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(3, 56);
-            this.label2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label2.Location = new System.Drawing.Point(6, 108);
+            this.label2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(80, 13);
+            this.label2.Size = new System.Drawing.Size(161, 25);
             this.label2.TabIndex = 5;
             this.label2.Text = "Boxart location:";
             // 
             // btnBrowseBoxart
             // 
             this.btnBrowseBoxart.Enabled = false;
-            this.btnBrowseBoxart.Location = new System.Drawing.Point(349, 65);
-            this.btnBrowseBoxart.Margin = new System.Windows.Forms.Padding(2);
+            this.btnBrowseBoxart.Location = new System.Drawing.Point(698, 125);
+            this.btnBrowseBoxart.Margin = new System.Windows.Forms.Padding(4);
             this.btnBrowseBoxart.Name = "btnBrowseBoxart";
-            this.btnBrowseBoxart.Size = new System.Drawing.Size(76, 30);
+            this.btnBrowseBoxart.Size = new System.Drawing.Size(152, 58);
             this.btnBrowseBoxart.TabIndex = 5;
             this.btnBrowseBoxart.Text = "Browse...";
             this.btnBrowseBoxart.UseVisualStyleBackColor = true;
@@ -132,9 +141,10 @@
             // chkManualBoxartLocation
             // 
             this.chkManualBoxartLocation.AutoSize = true;
-            this.chkManualBoxartLocation.Location = new System.Drawing.Point(430, 71);
+            this.chkManualBoxartLocation.Location = new System.Drawing.Point(860, 137);
+            this.chkManualBoxartLocation.Margin = new System.Windows.Forms.Padding(6);
             this.chkManualBoxartLocation.Name = "chkManualBoxartLocation";
-            this.chkManualBoxartLocation.Size = new System.Drawing.Size(87, 17);
+            this.chkManualBoxartLocation.Size = new System.Drawing.Size(169, 29);
             this.chkManualBoxartLocation.TabIndex = 6;
             this.chkManualBoxartLocation.Text = "Set Manually";
             this.chkManualBoxartLocation.UseVisualStyleBackColor = true;
@@ -142,10 +152,10 @@
             // 
             // btnDetect
             // 
-            this.btnDetect.Location = new System.Drawing.Point(429, 18);
-            this.btnDetect.Margin = new System.Windows.Forms.Padding(2);
+            this.btnDetect.Location = new System.Drawing.Point(858, 35);
+            this.btnDetect.Margin = new System.Windows.Forms.Padding(4);
             this.btnDetect.Name = "btnDetect";
-            this.btnDetect.Size = new System.Drawing.Size(76, 30);
+            this.btnDetect.Size = new System.Drawing.Size(152, 58);
             this.btnDetect.TabIndex = 3;
             this.btnDetect.Text = "Detect SD";
             this.toolTip.SetToolTip(this.btnDetect, "Will try to detect your (Twilight++) SD card");
@@ -155,79 +165,23 @@
             // btnStart
             // 
             this.btnStart.Enabled = false;
-            this.btnStart.Location = new System.Drawing.Point(429, 337);
-            this.btnStart.Margin = new System.Windows.Forms.Padding(2);
+            this.btnStart.Location = new System.Drawing.Point(856, 777);
+            this.btnStart.Margin = new System.Windows.Forms.Padding(4);
             this.btnStart.Name = "btnStart";
-            this.btnStart.Size = new System.Drawing.Size(76, 30);
+            this.btnStart.Size = new System.Drawing.Size(152, 58);
             this.btnStart.TabIndex = 15;
             this.btnStart.Text = "Start";
             this.btnStart.UseVisualStyleBackColor = true;
             this.btnStart.Click += new System.EventHandler(this.btnStart_Click);
             // 
-            // numWidth
-            // 
-            this.numWidth.Enabled = false;
-            this.numWidth.Location = new System.Drawing.Point(430, 100);
-            this.numWidth.Maximum = new decimal(new int[] {
-            9999,
-            0,
-            0,
-            0});
-            this.numWidth.Name = "numWidth";
-            this.numWidth.Size = new System.Drawing.Size(75, 20);
-            this.numWidth.TabIndex = 11;
-            this.numWidth.Value = new decimal(new int[] {
-            128,
-            0,
-            0,
-            0});
-            // 
-            // numHeight
-            // 
-            this.numHeight.Enabled = false;
-            this.numHeight.Location = new System.Drawing.Point(430, 121);
-            this.numHeight.Maximum = new decimal(new int[] {
-            9999,
-            0,
-            0,
-            0});
-            this.numHeight.Name = "numHeight";
-            this.numHeight.Size = new System.Drawing.Size(75, 20);
-            this.numHeight.TabIndex = 12;
-            this.numHeight.Value = new decimal(new int[] {
-            115,
-            0,
-            0,
-            0});
-            // 
-            // lblSize2
-            // 
-            this.lblSize2.AutoSize = true;
-            this.lblSize2.Location = new System.Drawing.Point(346, 123);
-            this.lblSize2.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lblSize2.Name = "lblSize2";
-            this.lblSize2.Size = new System.Drawing.Size(41, 13);
-            this.lblSize2.TabIndex = 13;
-            this.lblSize2.Text = "Height:";
-            // 
-            // lblSize1
-            // 
-            this.lblSize1.AutoSize = true;
-            this.lblSize1.Location = new System.Drawing.Point(346, 102);
-            this.lblSize1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lblSize1.Name = "lblSize1";
-            this.lblSize1.Size = new System.Drawing.Size(38, 13);
-            this.lblSize1.TabIndex = 14;
-            this.lblSize1.Text = "Width:";
-            // 
             // btnGithub
             // 
             this.btnGithub.BackgroundImage = global::TwilightBoxart.UX.Properties.Resources.GitHub_Mark_64px;
             this.btnGithub.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnGithub.Location = new System.Drawing.Point(6, 337);
-            this.btnGithub.Margin = new System.Windows.Forms.Padding(2);
+            this.btnGithub.Location = new System.Drawing.Point(8, 777);
+            this.btnGithub.Margin = new System.Windows.Forms.Padding(4);
             this.btnGithub.Name = "btnGithub";
-            this.btnGithub.Size = new System.Drawing.Size(29, 30);
+            this.btnGithub.Size = new System.Drawing.Size(58, 58);
             this.btnGithub.TabIndex = 14;
             this.toolTip.SetToolTip(this.btnGithub, "Visit the Github Repository.");
             this.btnGithub.UseVisualStyleBackColor = true;
@@ -238,76 +192,208 @@
             this.chkKeepAspectRatio.AutoSize = true;
             this.chkKeepAspectRatio.Checked = true;
             this.chkKeepAspectRatio.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.chkKeepAspectRatio.Location = new System.Drawing.Point(69, 121);
+            this.chkKeepAspectRatio.Location = new System.Drawing.Point(12, 73);
+            this.chkKeepAspectRatio.Margin = new System.Windows.Forms.Padding(6);
             this.chkKeepAspectRatio.Name = "chkKeepAspectRatio";
-            this.chkKeepAspectRatio.Size = new System.Drawing.Size(221, 17);
-            this.chkKeepAspectRatio.TabIndex = 10;
+            this.chkKeepAspectRatio.Size = new System.Drawing.Size(444, 29);
+            this.chkKeepAspectRatio.TabIndex = 23;
             this.chkKeepAspectRatio.Text = "Keep original aspect ratio (recommended)";
             this.toolTip.SetToolTip(this.chkKeepAspectRatio, "Enabling this will keep the original aspect ratio for much better boxart sizes. T" +
         "his will only work on the latest (2020) TwilightMenu++ releases.");
             this.chkKeepAspectRatio.UseVisualStyleBackColor = true;
             this.chkKeepAspectRatio.CheckedChanged += new System.EventHandler(this.chkKeepAspectRatio_CheckedChanged);
             // 
+            // chkBorder
+            // 
+            this.chkBorder.AutoSize = true;
+            this.chkBorder.Location = new System.Drawing.Point(10, 34);
+            this.chkBorder.Margin = new System.Windows.Forms.Padding(6);
+            this.chkBorder.Name = "chkBorder";
+            this.chkBorder.Size = new System.Drawing.Size(162, 29);
+            this.chkBorder.TabIndex = 23;
+            this.chkBorder.Text = "Add border?";
+            this.toolTip.SetToolTip(this.chkBorder, "Enabling this will add a small border around the boxart for a more aesthetic look" +
+        ".");
+            this.chkBorder.UseVisualStyleBackColor = true;
+            this.chkBorder.CheckedChanged += new System.EventHandler(this.chkBorder_CheckedChanged);
+            // 
+            // chkBorderThick
+            // 
+            this.chkBorderThick.AutoSize = true;
+            this.chkBorderThick.Enabled = false;
+            this.chkBorderThick.Location = new System.Drawing.Point(542, 33);
+            this.chkBorderThick.Margin = new System.Windows.Forms.Padding(6);
+            this.chkBorderThick.Name = "chkBorderThick";
+            this.chkBorderThick.Size = new System.Drawing.Size(183, 29);
+            this.chkBorderThick.TabIndex = 24;
+            this.chkBorderThick.Text = "Thicker border";
+            this.toolTip.SetToolTip(this.chkBorderThick, "Enabling this make the border 1px thicker.");
+            this.chkBorderThick.UseVisualStyleBackColor = true;
+            // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.rbtCustom);
+            this.groupBox1.Controls.Add(this.rbtLarge);
+            this.groupBox1.Controls.Add(this.rbtDefault);
+            this.groupBox1.Controls.Add(this.chkKeepAspectRatio);
+            this.groupBox1.Controls.Add(this.lblSize1);
+            this.groupBox1.Controls.Add(this.lblSize2);
+            this.groupBox1.Controls.Add(this.numHeight);
+            this.groupBox1.Controls.Add(this.numWidth);
+            this.groupBox1.Location = new System.Drawing.Point(12, 192);
+            this.groupBox1.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBox1.Size = new System.Drawing.Size(996, 119);
+            this.groupBox1.TabIndex = 21;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Boxart Size:";
+            // 
+            // rbtCustom
+            // 
+            this.rbtCustom.AutoSize = true;
+            this.rbtCustom.Location = new System.Drawing.Point(544, 33);
+            this.rbtCustom.Margin = new System.Windows.Forms.Padding(6);
+            this.rbtCustom.Name = "rbtCustom";
+            this.rbtCustom.Size = new System.Drawing.Size(116, 29);
+            this.rbtCustom.TabIndex = 22;
+            this.rbtCustom.Text = "Custom";
+            this.rbtCustom.UseVisualStyleBackColor = true;
+            this.rbtCustom.CheckedChanged += new System.EventHandler(this.rbtCustom_CheckedChanged);
+            // 
+            // rbtLarge
+            // 
+            this.rbtLarge.AutoSize = true;
+            this.rbtLarge.Location = new System.Drawing.Point(284, 33);
+            this.rbtLarge.Margin = new System.Windows.Forms.Padding(6);
+            this.rbtLarge.Name = "rbtLarge";
+            this.rbtLarge.Size = new System.Drawing.Size(98, 29);
+            this.rbtLarge.TabIndex = 21;
+            this.rbtLarge.Text = "Large";
+            this.rbtLarge.UseVisualStyleBackColor = true;
+            this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
+            // 
             // rbtDefault
             // 
             this.rbtDefault.AutoSize = true;
             this.rbtDefault.Checked = true;
-            this.rbtDefault.Location = new System.Drawing.Point(69, 100);
+            this.rbtDefault.Location = new System.Drawing.Point(12, 33);
+            this.rbtDefault.Margin = new System.Windows.Forms.Padding(6);
             this.rbtDefault.Name = "rbtDefault";
-            this.rbtDefault.Size = new System.Drawing.Size(58, 17);
-            this.rbtDefault.TabIndex = 7;
+            this.rbtDefault.Size = new System.Drawing.Size(113, 29);
+            this.rbtDefault.TabIndex = 20;
             this.rbtDefault.TabStop = true;
             this.rbtDefault.Text = "Classic";
             this.rbtDefault.UseVisualStyleBackColor = true;
             this.rbtDefault.CheckedChanged += new System.EventHandler(this.rbtDefault_CheckedChanged);
             // 
-            // lblSize
+            // lblSize1
             // 
-            this.lblSize.AutoSize = true;
-            this.lblSize.Location = new System.Drawing.Point(3, 100);
-            this.lblSize.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.lblSize.Name = "lblSize";
-            this.lblSize.Size = new System.Drawing.Size(61, 13);
-            this.lblSize.TabIndex = 18;
-            this.lblSize.Text = "Boxart size:";
+            this.lblSize1.AutoSize = true;
+            this.lblSize1.Location = new System.Drawing.Point(682, 37);
+            this.lblSize1.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSize1.Name = "lblSize1";
+            this.lblSize1.Size = new System.Drawing.Size(73, 25);
+            this.lblSize1.TabIndex = 27;
+            this.lblSize1.Text = "Width:";
             // 
-            // rbtLarge
+            // lblSize2
             // 
-            this.rbtLarge.AutoSize = true;
-            this.rbtLarge.Location = new System.Drawing.Point(177, 100);
-            this.rbtLarge.Name = "rbtLarge";
-            this.rbtLarge.Size = new System.Drawing.Size(52, 17);
-            this.rbtLarge.TabIndex = 8;
-            this.rbtLarge.Text = "Large";
-            this.rbtLarge.UseVisualStyleBackColor = true;
-            this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
+            this.lblSize2.AutoSize = true;
+            this.lblSize2.Location = new System.Drawing.Point(682, 79);
+            this.lblSize2.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.lblSize2.Name = "lblSize2";
+            this.lblSize2.Size = new System.Drawing.Size(80, 25);
+            this.lblSize2.TabIndex = 26;
+            this.lblSize2.Text = "Height:";
             // 
-            // rbtCustom
+            // numHeight
             // 
-            this.rbtCustom.AutoSize = true;
-            this.rbtCustom.Location = new System.Drawing.Point(281, 100);
-            this.rbtCustom.Name = "rbtCustom";
-            this.rbtCustom.Size = new System.Drawing.Size(60, 17);
-            this.rbtCustom.TabIndex = 9;
-            this.rbtCustom.Text = "Custom";
-            this.rbtCustom.UseVisualStyleBackColor = true;
-            this.rbtCustom.CheckedChanged += new System.EventHandler(this.rbtCustom_CheckedChanged);
+            this.numHeight.Enabled = false;
+            this.numHeight.Location = new System.Drawing.Point(848, 73);
+            this.numHeight.Margin = new System.Windows.Forms.Padding(6);
+            this.numHeight.Maximum = new decimal(new int[] {
+            9999,
+            0,
+            0,
+            0});
+            this.numHeight.Name = "numHeight";
+            this.numHeight.Size = new System.Drawing.Size(138, 31);
+            this.numHeight.TabIndex = 25;
+            this.numHeight.Value = new decimal(new int[] {
+            115,
+            0,
+            0,
+            0});
+            // 
+            // numWidth
+            // 
+            this.numWidth.Enabled = false;
+            this.numWidth.Location = new System.Drawing.Point(846, 33);
+            this.numWidth.Margin = new System.Windows.Forms.Padding(6);
+            this.numWidth.Maximum = new decimal(new int[] {
+            9999,
+            0,
+            0,
+            0});
+            this.numWidth.Name = "numWidth";
+            this.numWidth.Size = new System.Drawing.Size(140, 31);
+            this.numWidth.TabIndex = 24;
+            this.numWidth.Value = new decimal(new int[] {
+            128,
+            0,
+            0,
+            0});
+            // 
+            // groupBox2
+            // 
+            this.groupBox2.Controls.Add(this.chkBorderThick);
+            this.groupBox2.Controls.Add(this.rbtBorderWhite);
+            this.groupBox2.Controls.Add(this.rbtBorderBlack);
+            this.groupBox2.Controls.Add(this.chkBorder);
+            this.groupBox2.Location = new System.Drawing.Point(14, 319);
+            this.groupBox2.Margin = new System.Windows.Forms.Padding(4);
+            this.groupBox2.Name = "groupBox2";
+            this.groupBox2.Padding = new System.Windows.Forms.Padding(4);
+            this.groupBox2.Size = new System.Drawing.Size(996, 75);
+            this.groupBox2.TabIndex = 22;
+            this.groupBox2.TabStop = false;
+            this.groupBox2.Text = "Extra:";
+            // 
+            // rbtBorderWhite
+            // 
+            this.rbtBorderWhite.AutoSize = true;
+            this.rbtBorderWhite.Enabled = false;
+            this.rbtBorderWhite.Location = new System.Drawing.Point(390, 34);
+            this.rbtBorderWhite.Margin = new System.Windows.Forms.Padding(6);
+            this.rbtBorderWhite.Name = "rbtBorderWhite";
+            this.rbtBorderWhite.Size = new System.Drawing.Size(98, 29);
+            this.rbtBorderWhite.TabIndex = 21;
+            this.rbtBorderWhite.Text = "White";
+            this.rbtBorderWhite.UseVisualStyleBackColor = true;
+            // 
+            // rbtBorderBlack
+            // 
+            this.rbtBorderBlack.AutoSize = true;
+            this.rbtBorderBlack.Checked = true;
+            this.rbtBorderBlack.Enabled = false;
+            this.rbtBorderBlack.Location = new System.Drawing.Point(282, 33);
+            this.rbtBorderBlack.Margin = new System.Windows.Forms.Padding(6);
+            this.rbtBorderBlack.Name = "rbtBorderBlack";
+            this.rbtBorderBlack.Size = new System.Drawing.Size(96, 29);
+            this.rbtBorderBlack.TabIndex = 20;
+            this.rbtBorderBlack.TabStop = true;
+            this.rbtBorderBlack.Text = "Black";
+            this.rbtBorderBlack.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(514, 376);
-            this.Controls.Add(this.rbtCustom);
-            this.Controls.Add(this.rbtLarge);
-            this.Controls.Add(this.lblSize);
-            this.Controls.Add(this.rbtDefault);
-            this.Controls.Add(this.chkKeepAspectRatio);
+            this.ClientSize = new System.Drawing.Size(1028, 846);
+            this.Controls.Add(this.groupBox2);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.btnGithub);
-            this.Controls.Add(this.lblSize1);
-            this.Controls.Add(this.lblSize2);
-            this.Controls.Add(this.numHeight);
-            this.Controls.Add(this.numWidth);
             this.Controls.Add(this.btnStart);
             this.Controls.Add(this.btnDetect);
             this.Controls.Add(this.chkManualBoxartLocation);
@@ -321,13 +407,17 @@
             this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "TwilightBoxart";
             this.Load += new System.EventHandler(this.MainForm_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.numWidth)).EndInit();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numHeight)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numWidth)).EndInit();
+            this.groupBox2.ResumeLayout(false);
+            this.groupBox2.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -346,17 +436,23 @@
         private System.Windows.Forms.Button btnDetect;
         private System.Windows.Forms.FolderBrowserDialog folderBrowseDlg;
         private System.Windows.Forms.Button btnStart;
-        private System.Windows.Forms.NumericUpDown numWidth;
-        private System.Windows.Forms.NumericUpDown numHeight;
-        private System.Windows.Forms.Label lblSize2;
-        private System.Windows.Forms.Label lblSize1;
         private System.Windows.Forms.Button btnGithub;
         private System.Windows.Forms.ToolTip toolTip;
-        private System.Windows.Forms.CheckBox chkKeepAspectRatio;
-        private System.Windows.Forms.RadioButton rbtDefault;
-        private System.Windows.Forms.Label lblSize;
-        private System.Windows.Forms.RadioButton rbtLarge;
+        private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.RadioButton rbtCustom;
+        private System.Windows.Forms.RadioButton rbtLarge;
+        private System.Windows.Forms.RadioButton rbtDefault;
+        private System.Windows.Forms.CheckBox chkKeepAspectRatio;
+        private System.Windows.Forms.Label lblSize1;
+        private System.Windows.Forms.Label lblSize2;
+        private System.Windows.Forms.NumericUpDown numHeight;
+        private System.Windows.Forms.NumericUpDown numWidth;
+        private System.Windows.Forms.GroupBox groupBox2;
+        private System.Windows.Forms.RadioButton rbtBorderWhite;
+        private System.Windows.Forms.RadioButton rbtBorderBlack;
+        private System.Windows.Forms.CheckBox chkBorder;
+        private System.Windows.Forms.ColorDialog colorDialog;
+        private System.Windows.Forms.CheckBox chkBorderThick;
     }
 }
 

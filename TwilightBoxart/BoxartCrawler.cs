@@ -30,7 +30,7 @@ namespace TwilightBoxart
             _romDb.Initialize(_progress);
         }
 
-        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool keepAspectRatio = true)
+        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool keepAspectRatio = true, BorderSettings borderSettings = null)
         {
             _cancelToken = new CancellationTokenSource();
             _progress?.Report($"Started! Using width: {defaultWidth} height: {defaultHeight}. Scanning {romsPath}..");
@@ -70,7 +70,7 @@ namespace TwilightBoxart
                         var rom = Rom.FromFile(romFile);
                         _romDb.AddMetadata(rom);
 
-                        var downloader = new ImgDownloader(defaultWidth, defaultHeight, keepAspectRatio);
+                        var downloader = new ImgDownloader(defaultWidth, defaultHeight, keepAspectRatio, borderSettings);
                         rom.SetDownloader(downloader);
 
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));

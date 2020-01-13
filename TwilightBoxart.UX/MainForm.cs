@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using KirovAir.Core.Utilities;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.UX
@@ -62,13 +64,6 @@ namespace TwilightBoxart.UX
             this.UIThread(() => txtLog.AppendText($"{DateTime.Now:HH:mm:ss} - {text}{Environment.NewLine}"));
         }
 
-        private void Go()
-        {
-            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkKeepAspectRatio.Checked);
-            _isRunning = false;
-            this.UIThread(SetUx);
-        }
-
         // UI STUFF
         private void SetUx()
         {
@@ -86,6 +81,10 @@ namespace TwilightBoxart.UX
 
             numHeight.Enabled = rbtCustom.Checked;
             numWidth.Enabled = rbtCustom.Checked;
+
+            rbtBorderWhite.Enabled = chkBorder.Checked;
+            rbtBorderBlack.Enabled = chkBorder.Checked;
+            chkBorderThick.Enabled = chkBorder.Checked;
 
             btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized;
             btnStart.Text = _isRunning ? "Stop" : "Start";
@@ -187,6 +186,22 @@ namespace TwilightBoxart.UX
             }
         }
 
+        private void Go()
+        {
+            BorderSettings settings = null;
+            if (chkBorder.Checked)
+            {
+                settings = new BorderSettings
+                {
+                    Color = rbtBorderBlack.Checked ? Rgba32.Black : Rgba32.White,
+                    Thickness = chkBorderThick.Checked ? 2 : 1
+                };
+            }
+            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkKeepAspectRatio.Checked, settings);
+            _isRunning = false;
+            this.UIThread(SetUx);
+        }
+
         private void btnBrowseSd_Click(object sender, EventArgs e)
         {
             if (folderBrowseDlg.ShowDialog() != DialogResult.OK) return;
@@ -248,6 +263,11 @@ namespace TwilightBoxart.UX
             {
                 MessageBox.Show("Warning: Disabling this might give ugly results when searching for mixed boxart types (For example: SNES and NDS) as they will be resized to the exact defined measurements.", "Keep aspect ratio");
             }
+        }
+
+        private void chkBorder_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
         }
     }
 }
