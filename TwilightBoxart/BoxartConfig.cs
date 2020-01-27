@@ -2,19 +2,37 @@
 using System.Collections.Generic;
 using System.IO;
 using KirovAir.Core.Config;
+using TwilightBoxart.Helpers;
 using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
 {
-    public class BoxartConfig : IniSettings
+    public interface IBoxartConfig
+    {
+        string SdRoot { get; set; }
+        string BoxartPath { get; set; }
+        int BoxartWidth { get; set; }
+        int BoxartHeight { get; set; }
+        bool KeepAspectRatio { get; set; }
+        bool OverwriteExisting { get; set; }
+        BoxartBorderStyle BoxartBorderStyle { get; set; }
+        int BoxartBorderThickness { get; set; }
+        uint BoxartBorderColor { get; set; }
+    }
+
+    public class BoxartConfig : IniSettings, IBoxartConfig
     {
         public string SdRoot { get; set; } = "";
         public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
         public bool KeepAspectRatio { get; set; } = true;
+        public bool OverwriteExisting { get; set; } = false;
+        public BoxartBorderStyle BoxartBorderStyle { get; set; }
+        public int BoxartBorderThickness { get; set; }
+        public uint BoxartBorderColor { get; set; }
         public bool DisableUpdates { get; set; } = false;
-
+        
         public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
         public const string Repository = "KirovAir/TwilightBoxart";

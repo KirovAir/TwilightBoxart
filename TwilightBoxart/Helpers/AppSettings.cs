@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 
 namespace KirovAir.Core.Config
@@ -36,6 +37,21 @@ namespace KirovAir.Core.Config
                     {
                         property.SetValue(this, Convert.ToInt32(value));
                     }
+                    else if (property.PropertyType == typeof(uint))
+                    {
+                        uint parsed;
+                        if (value.StartsWith("0x", StringComparison.CurrentCultureIgnoreCase))
+                        {
+                            value = value.Substring(2);
+                            parsed = uint.Parse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                        }
+                        else
+                        {
+                            parsed = Convert.ToUInt32(value);
+                        }
+
+                        property.SetValue(this, parsed);
+                    }
                     else if (property.PropertyType == typeof(bool))
                     {
                         property.SetValue(this, Convert.ToBoolean(value));
@@ -54,10 +70,14 @@ namespace KirovAir.Core.Config
 
                         property.SetValue(this, list);
                     }
+                    else if (property.PropertyType.BaseType == typeof(Enum))
+                    {
+                        property.SetValue(this, Enum.Parse(property.PropertyType, value, true));
+                    }
                 }
                 catch (Exception e)
                 {
-                    throw new Exception($"Unable not load appsetting: {keyName} with value {value}. Is the property type correct?", e);
+                    throw new Exception($"Unable not load app setting: {keyName} with value {value}. Is the property type correct?", e);
                 }
             }
         }

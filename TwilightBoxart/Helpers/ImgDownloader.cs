@@ -20,17 +20,11 @@ namespace TwilightBoxart.Helpers
     /// </summary>
     public class ImgDownloader
     {
-        private int _width;
-        private int _height;
-        private readonly bool _keepAspectRatio;
-        private readonly BorderSettings _borderSettings;
+        private readonly IBoxartConfig _boxartConfig;
 
-        public ImgDownloader(int width, int height, bool keepAspectRatio = true, BorderSettings borderSettings = null)
+        public ImgDownloader(IBoxartConfig boxartConfig)
         {
-            _width = width;
-            _height = height;
-            _keepAspectRatio = keepAspectRatio;
-            _borderSettings = borderSettings;
+            _boxartConfig = boxartConfig;
         }
 
         public void DownloadAndResize(string url, string targetFile)
@@ -45,21 +39,26 @@ namespace TwilightBoxart.Helpers
                     var encoder = GetEncoder(image, targetFile);
                     image.Metadata.ExifProfile = null;
 
-                    var targetSize = new Size(_width, _height);
-                    if (_keepAspectRatio)
+                    var targetSize = new Size(_boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
+                    if (_boxartConfig.KeepAspectRatio)
                     {
-                        targetSize = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _width, _height);
+                        targetSize = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
                     }
 
-                    ResizeWithDSiBorder(image, encoder, targetSize, targetFile);
-
-                    if (_borderSettings == null)
+                    switch (_boxartConfig.BoxartBorderStyle)
                     {
-                        ResizeOnly(image, encoder, targetSize, targetFile);
-                    }
-                    else
-                    {
-                        ResizeWithBorder(image, encoder, targetSize, targetFile);
+                        case BoxartBorderStyle.Line:
+                            ResizeWithLineBorder(image, encoder, targetSize, targetFile);
+                            break;
+                        case BoxartBorderStyle.NintendoDSi:
+                            ResizeWithDSiBorder(image, encoder, targetSize, targetFile);
+                            break;
+                        case BoxartBorderStyle.Nintendo3DS:
+                            ResizeWith3DSBorder(image, encoder, targetSize, targetFile);
+                            break;
+                        default:
+                            ResizeOnly(image, encoder, targetSize, targetFile);
+                            break;
                     }
                 }
             }
@@ -71,7 +70,7 @@ namespace TwilightBoxart.Helpers
             image.Save(targetFile, encoder);
         }
 
-        private void ResizeWithBorder(Image image, IImageEncoder encoder, Size size, string targetFile)
+        private void ResizeWithLineBorder(Image image, IImageEncoder encoder, Size size, string targetFile)
         {
             image.Mutate(x => x.Resize(size));
 
@@ -80,16 +79,20 @@ namespace TwilightBoxart.Helpers
             {
                 canvas.Mutate(x => x.DrawImage(image, new Point(0, 0), new GraphicsOptions()));
 
-                for (var i = 0; i < _borderSettings.Thickness; i++)
+                for (var i = 0; i < _boxartConfig.BoxartBorderThickness; i++)
                 {
+                    var opacity = 1f;
+                    if (i == _boxartConfig.BoxartBorderThickness - 1)
+                        opacity = 0.95f;
+
                     var adj = i;
                     canvas.Mutate(x => x.DrawLines(
-                            new GraphicsOptions(false, 1),
-                            Pens.Solid(_borderSettings.Color, 2),
-                            new Vector2(adj, adj), 
+                            new GraphicsOptions(false, opacity),
+                            Pens.Solid(new Color(new Rgba32(_boxartConfig.BoxartBorderColor)), 2),
+                            new Vector2(adj, adj),
                             new Vector2(width - adj, adj),
                             new Vector2(width - adj, height - adj),
-                            new Vector2(adj, height - adj), 
+                            new Vector2(adj, height - adj),
                             new Vector2(adj, adj)
                         )
                     );
@@ -110,10 +113,25 @@ namespace TwilightBoxart.Helpers
                 canvas.Mutate(x => x.DrawImage(image, new Point(4, 4), new GraphicsOptions()));
 
                 // Draw corners
-
                 WriteCorner(canvas, ImgLib.DSi);
 
+                canvas.Save(targetFile, encoder);
+            }
+        }
 
+        private void ResizeWith3DSBorder(Image image, IImageEncoder encoder, Size size, string targetFile)
+        {
+            var (width, height) = size;
+
+            image.Mutate(x => x.Resize(width - 12, height - 11));
+
+            using (var canvas = new Image<Rgba32>(width, height))
+            {
+                canvas.Mutate(c => c.Fill(Color.White));
+                // Draw corners
+                canvas.Mutate(x => x.DrawImage(image, new Point(6, 4), new GraphicsOptions()));
+                WriteCorner(canvas, ImgLib.N3DS);
+              
                 canvas.Save(targetFile, encoder);
             }
         }
@@ -198,8 +216,8 @@ namespace TwilightBoxart.Helpers
                 }
             }
         }
-        
-        private IImageDecoder GetDecoder(string sourceFile)
+
+        private static IImageDecoder GetDecoder(string sourceFile)
         {
             var ext = Path.GetExtension(sourceFile)?.ToLower();
 
@@ -232,7 +250,7 @@ namespace TwilightBoxart.Helpers
             return encoder;
         }
 
-        private void SetPngSettings(PngEncoder encoder)
+        private static void SetPngSettings(PngEncoder encoder)
         {
             encoder.CompressionLevel = 9;
             encoder.InterlaceMethod = PngInterlaceMode.None;
@@ -241,7 +259,7 @@ namespace TwilightBoxart.Helpers
             encoder.FilterMethod = PngFilterMethod.Adaptive;
         }
 
-        private Size GetSizeWithCorrectAspectRatio(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
+        private static Size GetSizeWithCorrectAspectRatio(int sourceWidth, int sourceHeight, int targetWidth, int targetHeight)
         {
             var widthRatio = (float)targetWidth / (float)sourceWidth;
             var heightRatio = (float)targetHeight / (float)sourceHeight;
@@ -266,17 +284,17 @@ namespace TwilightBoxart.Helpers
 
         public void SetSizeAdjustedToAspectRatio(Size aspectRatio)
         {
-            if (_width == aspectRatio.Width || _height == aspectRatio.Height)
+            if (_boxartConfig.BoxartWidth == aspectRatio.Width || _boxartConfig.BoxartHeight == aspectRatio.Height)
             {
-                _height = aspectRatio.Height;
-                _width = aspectRatio.Width;
+                _boxartConfig.BoxartHeight = aspectRatio.Height;
+                _boxartConfig.BoxartWidth = aspectRatio.Width;
                 return;
             }
 
             var sourceWidth = aspectRatio.Width;
             var sourceHeight = aspectRatio.Height;
-            var dWidth = _width;
-            var dHeight = _height;
+            var dWidth = _boxartConfig.BoxartWidth;
+            var dHeight = _boxartConfig.BoxartHeight;
 
             var isLandscape = sourceWidth > sourceHeight;
 
@@ -293,17 +311,16 @@ namespace TwilightBoxart.Helpers
                 newHeight = dHeight;
             }
 
-            _width = newWidth;
-            _height = newHeight;
+            _boxartConfig.BoxartWidth = newWidth;
+            _boxartConfig.BoxartHeight = newHeight;
         }
     }
 
-    public class BorderSettings
+    public enum BoxartBorderStyle
     {
-        public int Thickness { get; set; }
-        public Rgba32 Color { get; set; }
+        None,
+        Line,
+        NintendoDSi,
+        Nintendo3DS
     }
-
-
-
 }

@@ -30,20 +30,20 @@ namespace TwilightBoxart
             _romDb.Initialize(_progress);
         }
 
-        public void DownloadArt(string romsPath, string boxArtPath, int defaultWidth, int defaultHeight, bool keepAspectRatio = true, BorderSettings borderSettings = null)
+        public void DownloadArt(IBoxartConfig downloadConfig)
         {
             _cancelToken = new CancellationTokenSource();
-            _progress?.Report($"Started! Using width: {defaultWidth} height: {defaultHeight}. Scanning {romsPath}..");
+            _progress?.Report($"Started! Using width: {downloadConfig.BoxartWidth} height: {downloadConfig.BoxartHeight}. Scanning {downloadConfig.SdRoot}..");
 
             try
             {
-                if (!Directory.Exists(romsPath))
+                if (!Directory.Exists(downloadConfig.SdRoot))
                 {
-                    _progress?.Report($"Could not open {romsPath}.");
+                    _progress?.Report($"Could not open {downloadConfig.SdRoot}.");
                     return;
                 }
 
-                foreach (var romFile in Directory.EnumerateFiles(romsPath, "*.*", SearchOption.AllDirectories))
+                foreach (var romFile in Directory.EnumerateFiles(downloadConfig.SdRoot, "*.*", SearchOption.AllDirectories))
                 {
                     if (_cancelToken.IsCancellationRequested)
                     {
@@ -55,8 +55,8 @@ namespace TwilightBoxart
                     if (!BoxartConfig.ExtensionMapping.Keys.Contains(ext))
                         continue;
 
-                    var targetArtFile = Path.Combine(boxArtPath, Path.GetFileName(romFile) + ".png");
-                    if (File.Exists(targetArtFile))
+                    var targetArtFile = Path.Combine(downloadConfig.BoxartPath, Path.GetFileName(romFile) + ".png");
+                    if (!downloadConfig.OverwriteExisting && File.Exists(targetArtFile))
                     {
                         // We already have it.
                         _progress?.Report($"Skipping {Path.GetFileName(romFile)}.. (We already have it)");
@@ -70,7 +70,7 @@ namespace TwilightBoxart
                         var rom = Rom.FromFile(romFile);
                         _romDb.AddMetadata(rom);
 
-                        var downloader = new ImgDownloader(defaultWidth, defaultHeight, keepAspectRatio, borderSettings);
+                        var downloader = new ImgDownloader(downloadConfig);
                         rom.SetDownloader(downloader);
 
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));

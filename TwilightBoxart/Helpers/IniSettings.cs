@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System;
+using System.Collections.Specialized;
 using System.IO;
 
 namespace KirovAir.Core.Config
@@ -21,12 +22,17 @@ namespace KirovAir.Core.Config
                 if (line.StartsWith(";") || line.StartsWith("/") || !line.Contains("="))
                     continue;
 
-                var s = line.Split('=');
+                var s = line.Split(new [] { '=' }, StringSplitOptions.RemoveEmptyEntries);
                 if (s.Length <= 1)
                     continue;
 
-                var key = s[0];
-                var value = s[1];
+                if (s[1].Contains(";"))
+                {
+                    s[1] = s[1].Split(';')[0];
+                }
+
+                var key = s[0].Trim();
+                var value = s[1].Trim();
 
                 if (s.Length > 2) // Handle values with '=' in it.
                 {

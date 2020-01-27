@@ -84,7 +84,10 @@ namespace TwilightBoxart.UX
 
             rbtBorderWhite.Enabled = chkBorder.Checked;
             rbtBorderBlack.Enabled = chkBorder.Checked;
-            chkBorderThick.Enabled = chkBorder.Checked;
+            rbtBorderDSi.Enabled = chkBorder.Checked;
+            rbtBorder3DS.Enabled = chkBorder.Checked;
+
+            chkBorderThick.Enabled = rbtBorderWhite.Checked || rbtBorderBlack.Checked;
 
             btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized;
             btnStart.Text = _isRunning ? "Stop" : "Start";
@@ -188,16 +191,20 @@ namespace TwilightBoxart.UX
 
         private void Go()
         {
-            BorderSettings settings = null;
-            if (chkBorder.Checked)
+            var config = new BoxartConfig
             {
-                settings = new BorderSettings
-                {
-                    Color = rbtBorderBlack.Checked ? Rgba32.Black : Rgba32.White,
-                    Thickness = chkBorderThick.Checked ? 2 : 1
-                };
-            }
-            _crawler.DownloadArt(txtSdRoot.Text, txtBoxart.Text, (int)numWidth.Value, (int)numHeight.Value, chkKeepAspectRatio.Checked, settings);
+                SdRoot = txtSdRoot.Text,
+                BoxartPath = txtBoxart.Text,
+                BoxartWidth = (int) numWidth.Value,
+                BoxartHeight = (int) numHeight.Value,
+                KeepAspectRatio = chkKeepAspectRatio.Checked,
+                OverwriteExisting = chkOverwriteExisting.Checked,
+                BoxartBorderColor = rbtBorderBlack.Checked ? Rgba32.Black.PackedValue : Rgba32.White.PackedValue,
+                BoxartBorderThickness = chkBorderThick.Checked ? 2 : 1,
+                BoxartBorderStyle = chkBorder.Checked ? rbtBorder3DS.Checked ? BoxartBorderStyle.Nintendo3DS : rbtBorderDSi.Checked ? BoxartBorderStyle.NintendoDSi : BoxartBorderStyle.Line : BoxartBorderStyle.None
+            };
+            _crawler.DownloadArt(config);
+
             _isRunning = false;
             this.UIThread(SetUx);
         }
@@ -245,8 +252,8 @@ namespace TwilightBoxart.UX
 
         private void rbtLarge_CheckedChanged(object sender, EventArgs e)
         {
-            numWidth.Value = 256;
-            numHeight.Value = 192;
+            numWidth.Value = 210;   // 200
+            numHeight.Value = 146;  // 180
             SetUx();
         }
 
@@ -254,6 +261,13 @@ namespace TwilightBoxart.UX
         {
             numWidth.Value = 128;
             numHeight.Value = 115;
+            SetUx();
+        }
+
+        private void rbtFullscreen_CheckedChanged(object sender, EventArgs e)
+        {
+            numWidth.Value = 256;
+            numHeight.Value = 192;
             SetUx();
         }
 
@@ -266,6 +280,16 @@ namespace TwilightBoxart.UX
         }
 
         private void chkBorder_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
+        }
+
+        private void rbtDSi_CheckedChanged(object sender, EventArgs e)
+        {
+            SetUx();
+        }
+
+        private void rbtBorder3DS_CheckedChanged(object sender, EventArgs e)
         {
             SetUx();
         }
