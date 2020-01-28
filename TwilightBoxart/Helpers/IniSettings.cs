@@ -2,7 +2,7 @@
 using System.Collections.Specialized;
 using System.IO;
 
-namespace KirovAir.Core.Config
+namespace TwilightBoxart.Helpers
 {
     public abstract class IniSettings : AppSettings
     {

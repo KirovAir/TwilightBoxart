@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using KirovAir.Core.ConsoleApp;
-using KirovAir.Core.Utilities;
 using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.CLI

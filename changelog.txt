@@ -1,0 +1,39 @@
+0.7
+- Removed old Twilight++ aspect ratio's. Pure 1:1 ratio's are used now since the latest TWL++ (2020 and onwards) supports these! THIS BREAKS COMPATIBILITY WITH OLDER VERSIONS! Use 0.6 if your TWL++ is on a lower version.
+- Added update checker.
+- Added option to cancel searching and to overwrite existing boxart.
+- Added border support. (This is some experimental trickery which makes boxart a bit more aesthetic on some themes, maybe in the future I'm able to do some tricks with 3d boxart and such)
+- Moved No-Intro DB crawling to this repo.
+
+0.6
+- Uses 1:1 boxart size for gba roms which should work with TwilightMenu++ v11.2.0 ('TWL Christmas release') and up! Please remove all old GBA boxart from previous versions so they will be redownloaded!
+- Fixes some other small bugs as well.
+
+0.5.3
+- Finally fixed a really annoying issue where some images would appear to be corrupted in TWLM++. (Adobe Metadata issue, these are now stripped when images are downloaded)
+
+0.5.2
+- Fixed title matching for titles with '&' or '/' in the name.
+- Detect correct aspect ratio for some japanese snes titles.
+
+0.5.1
+- Fixes SSL compatibility issues on older Windows versions. (Framework issue..)
+- Improved some other code.
+
+0.5 - Filename searching
+- Added matching by file name.
+- I've noticed that the NoIntro dat is not always a holy-match even when sha1 matches. (Tetris for the gameboy for example) As a final measure matching will be done on filename in this release, which should up the matching rate.
+
+0.4 - LibRetro dat added
+- Added LibRetro .dat format parsing for future data.
+- Currently only added extra NES data as a test.
+
+0.3
+- Fixes Github SSL error for some users.
+- Better error handling (and message) when there is no DB match.
+
+0.2
+- This version fetches the correct boxart for TwilightMenu++ 9.5.0 and onwards. Make sure you have 'Adjust to correct aspect ratio' checked.
+
+0.1
+- First release.

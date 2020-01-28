@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 
-namespace KirovAir.Core.Extensions
+namespace TwilightBoxart.Helpers
 {
     public static class ByteExtensions
     {

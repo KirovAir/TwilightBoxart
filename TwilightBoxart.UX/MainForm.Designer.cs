@@ -243,8 +243,7 @@
             this.chkOverwriteExisting.Size = new System.Drawing.Size(280, 29);
             this.chkOverwriteExisting.TabIndex = 20;
             this.chkOverwriteExisting.Text = "Overwrite existing boxart?";
-            this.toolTip.SetToolTip(this.chkOverwriteExisting, "Enabling this will add a small border around the boxart for a more aesthetic look" +
-        ".");
+            this.toolTip.SetToolTip(this.chkOverwriteExisting, "Enabling this will overwrite existing boxart files.");
             this.chkOverwriteExisting.UseVisualStyleBackColor = true;
             // 
             // groupBox1
@@ -396,7 +395,7 @@
             // 
             this.rbtBorder3DS.AutoSize = true;
             this.rbtBorder3DS.Enabled = false;
-            this.rbtBorder3DS.Location = new System.Drawing.Point(194, 32);
+            this.rbtBorder3DS.Location = new System.Drawing.Point(180, 32);
             this.rbtBorder3DS.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorder3DS.Name = "rbtBorder3DS";
             this.rbtBorder3DS.Size = new System.Drawing.Size(143, 29);
@@ -411,7 +410,7 @@
             this.rbtBorderDSi.AutoSize = true;
             this.rbtBorderDSi.Checked = true;
             this.rbtBorderDSi.Enabled = false;
-            this.rbtBorderDSi.Location = new System.Drawing.Point(366, 32);
+            this.rbtBorderDSi.Location = new System.Drawing.Point(344, 32);
             this.rbtBorderDSi.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorderDSi.Name = "rbtBorderDSi";
             this.rbtBorderDSi.Size = new System.Drawing.Size(136, 29);
@@ -425,7 +424,7 @@
             // 
             this.rbtBorderWhite.AutoSize = true;
             this.rbtBorderWhite.Enabled = false;
-            this.rbtBorderWhite.Location = new System.Drawing.Point(684, 32);
+            this.rbtBorderWhite.Location = new System.Drawing.Point(685, 32);
             this.rbtBorderWhite.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorderWhite.Name = "rbtBorderWhite";
             this.rbtBorderWhite.Size = new System.Drawing.Size(85, 29);

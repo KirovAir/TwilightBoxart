@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
-using KirovAir.Core.Utilities;
 using TwilightBoxart.Data;
 using TwilightBoxart.Helpers;
 using TwilightBoxart.Models.Base;
@@ -30,7 +29,7 @@ namespace TwilightBoxart
             _romDb.Initialize(_progress);
         }
 
-        public void DownloadArt(IBoxartConfig downloadConfig)
+        public void DownloadArt(IAppConfig downloadConfig)
         {
             _cancelToken = new CancellationTokenSource();
             _progress?.Report($"Started! Using width: {downloadConfig.BoxartWidth} height: {downloadConfig.BoxartHeight}. Scanning {downloadConfig.SdRoot}..");
@@ -93,6 +92,18 @@ namespace TwilightBoxart
             {
                 _progress?.Report("Unhandled exception occured! " + e);
             }
+        }
+
+        public void DownloadSingle(IRequestModel request, string targetFile)
+        {
+            var rom = Rom.FromMetadata(request.Filename, request.Sha1, request.Header);
+            _romDb.AddMetadata(rom);
+
+            var downloader = new ImgDownloader(request);
+            rom.SetDownloader(downloader);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(targetFile));
+            rom.DownloadBoxArt(targetFile);
         }
 
         public void Stop()

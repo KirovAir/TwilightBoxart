@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 
-namespace KirovAir.Core.Extensions
+namespace TwilightBoxart.Helpers
 {
     public static class StringExtensions
     {

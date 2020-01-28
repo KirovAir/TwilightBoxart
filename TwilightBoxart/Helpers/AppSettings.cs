@@ -4,7 +4,7 @@ using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 
-namespace KirovAir.Core.Config
+namespace TwilightBoxart.Helpers
 {
     /// <summary>
     /// Base class for key/value application/web config files. Inherit this class and add config properties where needed.

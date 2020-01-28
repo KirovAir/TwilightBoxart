@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 
-namespace KirovAir.Core.Utilities
+namespace TwilightBoxart.Helpers
 {
     public class RetryHelper
     {

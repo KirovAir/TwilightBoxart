@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace KirovAir.Core.Utilities
+namespace TwilightBoxart.Helpers
 {
     public static class OSHelper
     {

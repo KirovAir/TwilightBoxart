@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using KirovAir.Core.Utilities;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using TwilightBoxart.Helpers;
@@ -201,7 +200,8 @@ namespace TwilightBoxart.UX
                 OverwriteExisting = chkOverwriteExisting.Checked,
                 BoxartBorderColor = rbtBorderBlack.Checked ? Rgba32.Black.PackedValue : Rgba32.White.PackedValue,
                 BoxartBorderThickness = chkBorderThick.Checked ? 2 : 1,
-                BoxartBorderStyle = chkBorder.Checked ? rbtBorder3DS.Checked ? BoxartBorderStyle.Nintendo3DS : rbtBorderDSi.Checked ? BoxartBorderStyle.NintendoDSi : BoxartBorderStyle.Line : BoxartBorderStyle.None
+                BoxartBorderStyle = chkBorder.Checked ? rbtBorder3DS.Checked ? BoxartBorderStyle.Nintendo3DS : rbtBorderDSi.Checked ? BoxartBorderStyle.NintendoDSi : BoxartBorderStyle.Line : BoxartBorderStyle.None,
+                CachePath = _config.CachePath
             };
             _crawler.DownloadArt(config);
 

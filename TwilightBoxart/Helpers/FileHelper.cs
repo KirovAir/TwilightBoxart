@@ -2,7 +2,7 @@
 using System.IO.Compression;
 using System.Reflection;
 
-namespace KirovAir.Core.Utilities
+namespace TwilightBoxart.Helpers
 {
     public static class FileHelper
     {

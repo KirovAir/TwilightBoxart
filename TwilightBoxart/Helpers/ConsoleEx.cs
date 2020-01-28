@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Linq;
-using KirovAir.Core.Extensions;
 
-namespace KirovAir.Core.ConsoleApp
+namespace TwilightBoxart.Helpers
 {
     public static class ConsoleEx
     {

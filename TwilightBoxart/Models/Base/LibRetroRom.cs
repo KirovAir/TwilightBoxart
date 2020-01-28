@@ -1,6 +1,4 @@
-﻿using System;
-using KirovAir.Core.Extensions;
-using KirovAir.Core.Utilities;
+﻿using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.Models.Base
 {
@@ -23,7 +21,7 @@ namespace TwilightBoxart.Models.Base
                 // Try NoIntroName first.
                 DownloadWithRetry(NoIntroName, targetFile);
             }
-            catch
+            catch (NoMatchException)
             {
                 if (NoIntroName == SearchName)
                 {
@@ -57,7 +55,7 @@ namespace TwilightBoxart.Models.Base
             {
                 Download(ConsoleType, name, targetFile);
             }
-            catch (Exception e)
+            catch (NoMatchException)
             {
                 if (NoIntroConsoleType == ConsoleType.Unknown || ConsoleType == NoIntroConsoleType) throw;
 

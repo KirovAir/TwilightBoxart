@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 
-namespace KirovAir.Core.Extensions
+namespace TwilightBoxart.Helpers
 {
     public static class EnumEx
     {

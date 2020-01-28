@@ -12,6 +12,7 @@ using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.Primitives;
+using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart.Helpers
 {
@@ -29,39 +30,76 @@ namespace TwilightBoxart.Helpers
 
         public void DownloadAndResize(string url, string targetFile)
         {
-            using (var webClient = new WebClient())
+            var data = DownloadCached(url);
+            var decoder = GetDecoder(url);
+
+            using (var image = decoder == null ? Image.Load(data) : Image.Load(data, decoder))
             {
-                var data = webClient.DownloadData(url);
-                var decoder = GetDecoder(url);
+                var encoder = GetEncoder(image, targetFile);
+                image.Metadata.ExifProfile = null;
 
-                using (var image = decoder == null ? Image.Load(data) : Image.Load(data, decoder))
+                var targetSize = new Size(_boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
+                if (_boxartConfig.KeepAspectRatio)
                 {
-                    var encoder = GetEncoder(image, targetFile);
-                    image.Metadata.ExifProfile = null;
+                    targetSize = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
+                }
 
-                    var targetSize = new Size(_boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
-                    if (_boxartConfig.KeepAspectRatio)
-                    {
-                        targetSize = GetSizeWithCorrectAspectRatio(image.Width, image.Height, _boxartConfig.BoxartWidth, _boxartConfig.BoxartHeight);
-                    }
-
-                    switch (_boxartConfig.BoxartBorderStyle)
-                    {
-                        case BoxartBorderStyle.Line:
-                            ResizeWithLineBorder(image, encoder, targetSize, targetFile);
-                            break;
-                        case BoxartBorderStyle.NintendoDSi:
-                            ResizeWithDSiBorder(image, encoder, targetSize, targetFile);
-                            break;
-                        case BoxartBorderStyle.Nintendo3DS:
-                            ResizeWith3DSBorder(image, encoder, targetSize, targetFile);
-                            break;
-                        default:
-                            ResizeOnly(image, encoder, targetSize, targetFile);
-                            break;
-                    }
+                switch (_boxartConfig.BoxartBorderStyle)
+                {
+                    case BoxartBorderStyle.Line:
+                        ResizeWithLineBorder(image, encoder, targetSize, targetFile);
+                        break;
+                    case BoxartBorderStyle.NintendoDSi:
+                        ResizeWithDSiBorder(image, encoder, targetSize, targetFile);
+                        break;
+                    case BoxartBorderStyle.Nintendo3DS:
+                        ResizeWith3DSBorder(image, encoder, targetSize, targetFile);
+                        break;
+                    default:
+                        ResizeOnly(image, encoder, targetSize, targetFile);
+                        break;
                 }
             }
+
+        }
+
+        private byte[] DownloadCached(string url)
+        {
+            byte[] data = null;
+            string cacheFile = null;
+
+            if (!string.IsNullOrEmpty(_boxartConfig.CachePath))
+            {
+                var uri = new Uri(url);
+                cacheFile = Path.Combine(_boxartConfig.CachePath, uri.Host, uri.LocalPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(cacheFile));
+                if (File.Exists(cacheFile))
+                {
+                    data = File.ReadAllBytes(cacheFile);
+                }
+            }
+
+            if (data == null)
+            {
+                try
+                {
+                    using (var webClient = new WebClient())
+                    {
+                        data = webClient.DownloadData(url);
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw new NoMatchException("Could not find/download boxart! " + e);
+                }
+
+                if (cacheFile != null)
+                {
+                    File.WriteAllBytes(cacheFile, data);
+                }
+            }
+
+            return data;
         }
 
         private void ResizeOnly(Image image, IImageEncoder encoder, Size size, string targetFile)
@@ -131,7 +169,7 @@ namespace TwilightBoxart.Helpers
                 // Draw corners
                 canvas.Mutate(x => x.DrawImage(image, new Point(6, 4), new GraphicsOptions()));
                 WriteCorner(canvas, ImgLib.N3DS);
-              
+
                 canvas.Save(targetFile, encoder);
             }
         }
