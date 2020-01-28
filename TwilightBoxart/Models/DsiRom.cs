@@ -10,20 +10,29 @@ namespace TwilightBoxart.Models
         {
         }
 
+        public DsiRom(string titleId) : base(titleId)
+        {
+        }
+
         public override void DownloadBoxArt(string targetFile)
         {
             try
             {
                 base.DownloadBoxArt(targetFile);
             }
-            catch
+            catch (NoMatchException)
             {
                 // Todo: Make this less ugly, embedded and optional.
-                if (TitleId[0] == 'K' || TitleId[0] == 'H') // This is DSiWare. There is no BoxArt available (probably) so use a default image.
+                if (IsDsiWare(TitleId)) // This is DSiWare. There is no BoxArt available (probably) so use a default image.
                 {
                     ImgDownloader.DownloadAndResize(BoxartConfig.DsiWareBoxartUrl, targetFile);
                 }
             }
+        }
+
+        public static bool IsDsiWare(string titleId)
+        {
+            return titleId[0] == 'K' || titleId[0] == 'H';
         }
     }
 }

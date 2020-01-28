@@ -16,6 +16,12 @@ namespace TwilightBoxart.Models
             RegionId = (char)header[15];
         }
 
+        public NdsRom(string titleId)
+        {
+            TitleId = titleId;
+            RegionId = titleId.Length > 3 ? titleId[3] : 'O';
+        }
+
         public override void DownloadBoxArt(string targetFile)
         {
             try
@@ -36,7 +42,7 @@ namespace TwilightBoxart.Models
                     throw;
                 }
             }
-            catch
+            catch (NoMatchException)
             {
                 base.DownloadBoxArt(targetFile);
             }

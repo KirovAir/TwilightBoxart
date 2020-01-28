@@ -17,6 +17,7 @@ namespace TwilightBoxart
     {
         string Sha1 { get; set; }
         string Filename { get; set; }
+        string TitleId { get; set; }
         byte[] Header { get; set; }
     }
 

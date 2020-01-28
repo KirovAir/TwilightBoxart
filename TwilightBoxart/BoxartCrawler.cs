@@ -96,7 +96,7 @@ namespace TwilightBoxart
 
         public void DownloadSingle(IRequestModel request, string targetFile)
         {
-            var rom = Rom.FromMetadata(request.Filename, request.Sha1, request.Header);
+            var rom = Rom.FromMetadata(request.Filename, request.Sha1, request.Header, request.TitleId);
             _romDb.AddMetadata(rom);
 
             var downloader = new ImgDownloader(request);

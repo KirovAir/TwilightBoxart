@@ -45,12 +45,11 @@ namespace TwilightBoxart.Models.Base
 
                 // This header is sufficient for most roms.
                 var header = reader.ReadBytes(328);
-
                 return FromMetadata(filename, hash, header);
             }
         }
 
-        public static IRom FromMetadata(string filename, string sha1, byte[] header)
+        public static IRom FromMetadata(string filename, string sha1, byte[] header, string titleId = null)
         {
             IRom result = null;
             if (header != null && header.Length >= 328)
@@ -87,15 +86,21 @@ namespace TwilightBoxart.Models.Base
                 BoxartConfig.ExtensionMapping.TryGetValue(Path.GetExtension(filename)?.ToLower(), out var consoleType) &&
                 consoleType != ConsoleType.Unknown)
             {
-                // Backup mapper. Only supports sha1 matching.
-                result = new UnknownRom { ConsoleType = consoleType };
+                if (titleId != null)
+                {
+                    result = DsiRom.IsDsiWare(titleId) ? new DsiRom(titleId) { ConsoleType = ConsoleType.NintendoDSi } : new NdsRom(titleId) { ConsoleType = ConsoleType.NintendoDS };
+                }
+                else
+                {
+                    // Backup mapper. Only supports sha1 matching.
+                    result = new UnknownRom {ConsoleType = consoleType};
+                }
             }
 
             if (result == null) throw new Exception("Unknown ROM type.");
 
             result.FileName = filename;
             result.Sha1 = sha1;
-
             return result;
         }
 
