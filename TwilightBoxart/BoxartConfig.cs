@@ -2,28 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using TwilightBoxart.Helpers;
-using TwilightBoxart.Models.Base;
 
 namespace TwilightBoxart
 {
-    public interface IAppConfig : IBoxartConfig
+    public interface ISharedConfig
     {
-        string SdRoot { get; set; }
-        string BoxartPath { get; set; }
-        bool OverwriteExisting { get; set; }
-    }
-
-    public interface IRequestModel : IBoxartConfig
-    {
-        string Sha1 { get; set; }
-        string Filename { get; set; }
-        string TitleId { get; set; }
-        byte[] Header { get; set; }
-    }
-
-    public interface IBoxartConfig
-    {
-        string CachePath { get; set; }
         int BoxartWidth { get; set; }
         int BoxartHeight { get; set; }
         bool KeepAspectRatio { get; set; }
@@ -32,11 +15,17 @@ namespace TwilightBoxart
         uint BoxartBorderColor { get; set; }
     }
 
+    public interface IAppConfig : ISharedConfig
+    {
+        string SdRoot { get; set; }
+        string BoxartPath { get; set; }
+        bool OverwriteExisting { get; set; }
+    }
+
     public class BoxartConfig : IniSettings, IAppConfig
     {
         public string SdRoot { get; set; } = "";
         public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
-        public string CachePath { get; set; }
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
         public bool KeepAspectRatio { get; set; } = true;
@@ -53,10 +42,9 @@ namespace TwilightBoxart
         public static Version Version = new Version(0, 7, 0);
         public static string Credits = "TwilightBoxart - Created by KirovAir." + Environment.NewLine + "Loads of love to the devs of TwilightMenu++, LibRetro, GameTDB and the maintainers of the No-Intro DB.";
 
+        public static string ApiUrl = "https://boxart.kirovair.com/api";
         public static string RepositoryUrl = $"https://github.com/{Repository}";
         public static string RepositoryReleasesUrl = $"https://github.com/{Repository}/releases";
-        public static string NoIntroDbUrl = $"{RepositoryUrl}/raw/master/TwilightBoxart/NoIntro.db";
-        public static string DsiWareBoxartUrl = $"{RepositoryUrl}/raw/master/img/dsiware.jpg";
 
         public void Load()
         {
@@ -104,26 +92,25 @@ namespace TwilightBoxart
 
             return Path.Combine(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, BoxartPath.Replace("{sdroot}", "").TrimStart(Path.DirectorySeparatorChar));
         }
-
-        // Used as backup mapping.
-        public static readonly Dictionary<string, ConsoleType> ExtensionMapping = new Dictionary<string, ConsoleType>
+        
+        public static readonly List<string> SupportedFiles = new List<string>
         {
-            {".nes", ConsoleType.NintendoEntertainmentSystem},
-            {".sfc", ConsoleType.SuperNintendoEntertainmentSystem},
-            {".smc", ConsoleType.SuperNintendoEntertainmentSystem},
-            {".snes", ConsoleType.SuperNintendoEntertainmentSystem},
-            {".gb", ConsoleType.GameBoy},
-            {".sgb", ConsoleType.GameBoy},
-            {".gbc", ConsoleType.GameBoyColor},
-            {".gba", ConsoleType.GameBoyAdvance},
-            {".nds", ConsoleType.NintendoDS},
-            {".ds", ConsoleType.NintendoDS},
-            {".dsi", ConsoleType.NintendoDSi},
-            {".gg", ConsoleType.SegaGameGear},
-            {".gen", ConsoleType.SegaGenesis},
-            {".sms", ConsoleType.SegaMasterSystem},
-            {".fds", ConsoleType.FamicomDiskSystem},
-            {".zip", ConsoleType.Unknown }
+            ".nes",
+            ".sfc",
+            ".smc",
+            ".snes",
+            ".gb",
+            ".sgb",
+            ".gbc",
+            ".gba",
+            ".nds",
+            ".ds",
+            ".dsi",
+            ".gg",
+            ".gen",
+            ".sms",
+            ".fds",
+            ".zip"
         };
     }
 }

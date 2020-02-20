@@ -1,35 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading;
-using TwilightBoxart.Data;
-using TwilightBoxart.Helpers;
-using TwilightBoxart.Models.Base;
+using System.Threading.Tasks;
 
 namespace TwilightBoxart
 {
     public class BoxartCrawler
     {
         private readonly IProgress<string> _progress;
-        private static RomDatabase _romDb;
         private CancellationTokenSource _cancelToken;
+        private readonly HttpClient _httpClient = new HttpClient();
 
         public BoxartCrawler(IProgress<string> progress = null)
         {
-            // Disable all SSL cert pinning for now as users have reported problems with github.
+            // Disable certs.
             ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
 
             _progress = progress;
-            _romDb = new RomDatabase(Path.Combine(FileHelper.GetCurrentDirectory(), "NoIntro.db"));
         }
 
-        public void InitializeDb()
-        {
-            _romDb.Initialize(_progress);
-        }
-
-        public void DownloadArt(IAppConfig downloadConfig)
+        public async Task DownloadArt(IAppConfig downloadConfig)
         {
             _cancelToken = new CancellationTokenSource();
             _progress?.Report($"Started! Using width: {downloadConfig.BoxartWidth} height: {downloadConfig.BoxartHeight}. Scanning {downloadConfig.SdRoot}..");
@@ -51,38 +44,57 @@ namespace TwilightBoxart
                     }
 
                     var ext = Path.GetExtension(romFile).ToLower();
-                    if (!BoxartConfig.ExtensionMapping.Keys.Contains(ext))
+                    if (!BoxartConfig.SupportedFiles.Contains(ext))
                         continue;
 
-                    var targetArtFile = Path.Combine(downloadConfig.BoxartPath, Path.GetFileName(romFile) + ".png");
+
+                    var fileName = Path.GetFileName(romFile);
+                    var targetArtFile = Path.Combine(downloadConfig.BoxartPath, fileName + ".png");
                     if (!downloadConfig.OverwriteExisting && File.Exists(targetArtFile))
                     {
                         // We already have it.
-                        _progress?.Report($"Skipping {Path.GetFileName(romFile)}.. (We already have it)");
+                        _progress?.Report($"Skipping {fileName}.. (We already have it)");
                         continue;
                     }
 
                     try
                     {
-                        _progress?.Report($"Searching art for {Path.GetFileName(romFile)}.. ");
+                        _progress?.Report($"Searching art for {fileName}.. ");
 
-                        var rom = Rom.FromFile(romFile);
-                        _romDb.AddMetadata(rom);
+                        var meta = FileMetaData.FromFile(romFile, BoxartConfig.SupportedFiles);
 
-                        var downloader = new ImgDownloader(downloadConfig);
-                        rom.SetDownloader(downloader);
+                        var formContent = new FormUrlEncodedContent(new[]
+                        {
+                            new KeyValuePair<string, string>("Filename", fileName),
+                            new KeyValuePair<string, string>("Sha1", meta.Sha1),
+                            new KeyValuePair<string, string>("Header", Convert.ToBase64String(meta.Header)),
+                            new KeyValuePair<string, string>("BoxartWidth", downloadConfig.BoxartWidth.ToString()),
+                            new KeyValuePair<string, string>("BoxartHeight", downloadConfig.BoxartHeight.ToString()),
+                            new KeyValuePair<string, string>("KeepAspectRatio", downloadConfig.KeepAspectRatio.ToString()),
+                            new KeyValuePair<string, string>("BoxartBorderStyle", downloadConfig.BoxartBorderStyle.ToString()),
+                            new KeyValuePair<string, string>("BoxartBorderColor", downloadConfig.BoxartBorderColor.ToString()),
+                            new KeyValuePair<string, string>("BoxartBorderThickness", downloadConfig.BoxartBorderThickness.ToString())
+                        });
+                        
+                        var result = await _httpClient.PostAsync(BoxartConfig.ApiUrl, formContent);
+                        if (result.StatusCode == HttpStatusCode.NotFound)
+                        {
+                            _progress?.Report("Could not find boxart. (404)");
+                        }
+                        result.EnsureSuccessStatusCode();
 
+                        // We got it!
                         Directory.CreateDirectory(Path.GetDirectoryName(targetArtFile));
-                        rom.DownloadBoxArt(targetArtFile);
+                        using (var fs = new FileStream(targetArtFile, FileMode.Create))
+                        {
+                            await result.Content.CopyToAsync(fs);
+                        }
+
                         _progress?.Report("Got it!");
-                    }
-                    catch (NoMatchException ex)
-                    {
-                        _progress?.Report(ex.Message);
                     }
                     catch (Exception e)
                     {
-                        _progress?.Report("Something bad happened: " + e.Message);
+                        _progress?.Report(e.Message);
                     }
                 }
 
@@ -92,18 +104,6 @@ namespace TwilightBoxart
             {
                 _progress?.Report("Unhandled exception occured! " + e);
             }
-        }
-
-        public void DownloadSingle(IRequestModel request, string targetFile)
-        {
-            var rom = Rom.FromMetadata(request.Filename, request.Sha1, request.Header, request.TitleId);
-            _romDb.AddMetadata(rom);
-
-            var downloader = new ImgDownloader(request);
-            rom.SetDownloader(downloader);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(targetFile));
-            rom.DownloadBoxArt(targetFile);
         }
 
         public void Stop()

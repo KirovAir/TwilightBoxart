@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.UX
@@ -13,7 +11,6 @@ namespace TwilightBoxart.UX
     public partial class MainForm : Form
     {
         private readonly BoxartCrawler _crawler;
-        private bool _isInitialized;
         private bool _isRunning;
         private readonly BoxartConfig _config = new BoxartConfig();
 
@@ -66,9 +63,6 @@ namespace TwilightBoxart.UX
         // UI STUFF
         private void SetUx()
         {
-            if (!_isInitialized)
-                return;
-
             btnBrowseBoxart.Enabled = chkManualBoxartLocation.Checked;
 
             if (!chkManualBoxartLocation.Checked && !string.IsNullOrEmpty(txtSdRoot.Text))
@@ -88,7 +82,7 @@ namespace TwilightBoxart.UX
 
             chkBorderThick.Enabled = rbtBorderWhite.Checked || rbtBorderBlack.Checked;
 
-            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text) && _isInitialized;
+            btnStart.Enabled = !string.IsNullOrEmpty(txtSdRoot.Text) && !string.IsNullOrEmpty(txtBoxart.Text);
             btnStart.Text = _isRunning ? "Stop" : "Start";
         }
 
@@ -123,29 +117,12 @@ namespace TwilightBoxart.UX
                 DetectSd();
             }
 
-            Task.Run(() =>
-            {
-                try
-                {
-                    _crawler.InitializeDb();
-                }
-                catch (Exception ex)
-                {
-                    var errorMsg = "Warning: Could not initialize NoIntro DB! Only DS boxart will be downloaded!" + Environment.NewLine +
-                                   "Try to delete NoIntro.db and restart TwilightBoxart.";
-                    Log($"{errorMsg}  Error: {ex}");
-                    this.UIThread(() => MessageBox.Show(errorMsg, "Oh no!"));
-                }
-
-                _isInitialized = true;
-                this.UIThread(SetUx);
-            });
-
-
             if (!_config.DisableUpdates)
             {
                 Task.Run(UpdateCheck);
             }
+
+            SetUx();
         }
 
         public void UpdateCheck()
@@ -198,12 +175,12 @@ namespace TwilightBoxart.UX
                 BoxartHeight = (int) numHeight.Value,
                 KeepAspectRatio = chkKeepAspectRatio.Checked,
                 OverwriteExisting = chkOverwriteExisting.Checked,
-                BoxartBorderColor = rbtBorderBlack.Checked ? Rgba32.Black.PackedValue : Rgba32.White.PackedValue,
+                BoxartBorderColor = rbtBorderBlack.Checked ? 0xFF000000 : 0xFFFFFFFF, // Todo Check
                 BoxartBorderThickness = chkBorderThick.Checked ? 2 : 1,
-                BoxartBorderStyle = chkBorder.Checked ? rbtBorder3DS.Checked ? BoxartBorderStyle.Nintendo3DS : rbtBorderDSi.Checked ? BoxartBorderStyle.NintendoDSi : BoxartBorderStyle.Line : BoxartBorderStyle.None,
-                CachePath = _config.CachePath
+                BoxartBorderStyle = chkBorder.Checked ? rbtBorder3DS.Checked ? BoxartBorderStyle.Nintendo3DS : rbtBorderDSi.Checked ? BoxartBorderStyle.NintendoDSi : BoxartBorderStyle.Line : BoxartBorderStyle.None
             };
-            _crawler.DownloadArt(config);
+
+            _crawler.DownloadArt(config).Wait();
 
             _isRunning = false;
             this.UIThread(SetUx);

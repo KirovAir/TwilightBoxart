@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TwilightBoxart.Helpers;
 
 namespace TwilightBoxart.CLI
@@ -53,7 +54,7 @@ namespace TwilightBoxart.CLI
                 }
                 catch { }
                 
-                var choice = FileHelper.GetCurrentDirectory();
+                var choice = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 if (allDrives.Count > 0)
                 {
                     var choices = allDrives.Select(c => c.Name).ToList();
@@ -86,7 +87,6 @@ namespace TwilightBoxart.CLI
             
             var progress = new Progress<string>(Console.WriteLine);
             var crawler = new BoxartCrawler(progress);
-            crawler.InitializeDb();
             crawler.DownloadArt(config);
         }
 
