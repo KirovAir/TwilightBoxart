@@ -87,19 +87,7 @@ namespace TwilightBoxart.CLI
             
             var progress = new Progress<string>(Console.WriteLine);
             var crawler = new BoxartCrawler(progress);
-            crawler.DownloadArt(config);
+            crawler.DownloadArt(config).Wait();
         }
-
-        // Todo: Implement as CLI and add Progress<> to MetaCrawler.
-        //public void AddMeta()
-        //{
-        //    Console.WriteLine("This program will generate a sha1/title/id DB based on the path:");
-        //    Console.WriteLine("");
-        //    if (!ConsoleEx.YesNoMenu("Start now?"))
-        //        return;
-        //    var crawler = new LocalMetaCrawler("", "");
-        //    crawler.Go();
-        //    Console.WriteLine("Done.");
-        //}
     }
 }

@@ -12,13 +12,16 @@ namespace TwilightBoxart
     {
         private readonly IProgress<string> _progress;
         private CancellationTokenSource _cancelToken;
-        private readonly HttpClient _httpClient = new HttpClient();
+        private readonly HttpClientHandler _handler = new HttpClientHandler
+        {
+            // This is BAD practice but needed for some users. Don't use this for production apps. ;)
+            ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
+        };
+        private readonly HttpClient _httpClient;
 
         public BoxartCrawler(IProgress<string> progress = null)
         {
-            // Disable certs.
-            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-
+            _httpClient = new HttpClient(_handler);
             _progress = progress;
         }
 
@@ -72,14 +75,15 @@ namespace TwilightBoxart
                             new KeyValuePair<string, string>("BoxartHeight", downloadConfig.BoxartHeight.ToString()),
                             new KeyValuePair<string, string>("KeepAspectRatio", downloadConfig.KeepAspectRatio.ToString()),
                             new KeyValuePair<string, string>("BoxartBorderStyle", downloadConfig.BoxartBorderStyle.ToString()),
-                            new KeyValuePair<string, string>("BoxartBorderColor", downloadConfig.BoxartBorderColor.ToString()),
+                            new KeyValuePair<string, string>("BoxartBorderColor", "0x" + downloadConfig.BoxartBorderColor.ToString("X")),
                             new KeyValuePair<string, string>("BoxartBorderThickness", downloadConfig.BoxartBorderThickness.ToString())
                         });
-                        
+
                         var result = await _httpClient.PostAsync(BoxartConfig.ApiUrl, formContent);
                         if (result.StatusCode == HttpStatusCode.NotFound)
                         {
                             _progress?.Report("Could not find boxart. (404)");
+                            continue;
                         }
                         result.EnsureSuccessStatusCode();
 
@@ -94,7 +98,13 @@ namespace TwilightBoxart
                     }
                     catch (Exception e)
                     {
-                        _progress?.Report(e.Message);
+                        var fullError = e.Message;
+                        while (e.InnerException != null)
+                        {
+                            e = e.InnerException;
+                            fullError += " " + e.Message;
+                        }
+                        _progress?.Report(fullError);
                     }
                 }
 

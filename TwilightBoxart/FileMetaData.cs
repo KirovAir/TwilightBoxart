@@ -65,7 +65,7 @@ namespace TwilightBoxart
                 stream.Seek(0, SeekOrigin.Begin);
 
                 // This header is sufficient for most roms.
-                var header = reader.ReadBytes(328);
+                var header = reader.ReadBytes(512);
                 return new FileMetaData
                 {
                     Filename = Path.GetFileName(filename),
