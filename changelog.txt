@@ -3,7 +3,7 @@
 - Added update checker.
 - Added option to cancel searching and to overwrite existing boxart.
 - Added border support. (This is some experimental trickery which makes boxart a bit more aesthetic on some themes, maybe in the future I'm able to do some tricks with 3d boxart and such)
-- Moved No-Intro DB crawling to this repo.
+- Moved parts of code to server. These will be open sourced later.
 
 0.6
 - Uses 1:1 boxart size for gba roms which should work with TwilightMenu++ v11.2.0 ('TWL Christmas release') and up! Please remove all old GBA boxart from previous versions so they will be redownloaded!

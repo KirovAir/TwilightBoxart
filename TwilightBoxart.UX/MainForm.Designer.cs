@@ -61,7 +61,6 @@
             this.rbtBorderDSi = new System.Windows.Forms.RadioButton();
             this.rbtBorderWhite = new System.Windows.Forms.RadioButton();
             this.rbtBorderBlack = new System.Windows.Forms.RadioButton();
-            this.colorDialog = new System.Windows.Forms.ColorDialog();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numHeight)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numWidth)).BeginInit();
@@ -148,7 +147,7 @@
             this.chkManualBoxartLocation.Location = new System.Drawing.Point(860, 137);
             this.chkManualBoxartLocation.Margin = new System.Windows.Forms.Padding(6);
             this.chkManualBoxartLocation.Name = "chkManualBoxartLocation";
-            this.chkManualBoxartLocation.Size = new System.Drawing.Size(156, 29);
+            this.chkManualBoxartLocation.Size = new System.Drawing.Size(169, 29);
             this.chkManualBoxartLocation.TabIndex = 6;
             this.chkManualBoxartLocation.Text = "Set Manually";
             this.chkManualBoxartLocation.UseVisualStyleBackColor = true;
@@ -199,7 +198,7 @@
             this.chkKeepAspectRatio.Location = new System.Drawing.Point(12, 73);
             this.chkKeepAspectRatio.Margin = new System.Windows.Forms.Padding(6);
             this.chkKeepAspectRatio.Name = "chkKeepAspectRatio";
-            this.chkKeepAspectRatio.Size = new System.Drawing.Size(431, 29);
+            this.chkKeepAspectRatio.Size = new System.Drawing.Size(444, 29);
             this.chkKeepAspectRatio.TabIndex = 12;
             this.chkKeepAspectRatio.Text = "Keep original aspect ratio (recommended)";
             this.toolTip.SetToolTip(this.chkKeepAspectRatio, "Enabling this will keep the original aspect ratio for much better boxart sizes. T" +
@@ -213,7 +212,7 @@
             this.chkBorder.Location = new System.Drawing.Point(10, 34);
             this.chkBorder.Margin = new System.Windows.Forms.Padding(6);
             this.chkBorder.Name = "chkBorder";
-            this.chkBorder.Size = new System.Drawing.Size(149, 29);
+            this.chkBorder.Size = new System.Drawing.Size(162, 29);
             this.chkBorder.TabIndex = 14;
             this.chkBorder.Text = "Add border?";
             this.toolTip.SetToolTip(this.chkBorder, "Enabling this will add a small border around the boxart for a more aesthetic look" +
@@ -228,7 +227,7 @@
             this.chkBorderThick.Location = new System.Drawing.Point(803, 33);
             this.chkBorderThick.Margin = new System.Windows.Forms.Padding(6);
             this.chkBorderThick.Name = "chkBorderThick";
-            this.chkBorderThick.Size = new System.Drawing.Size(170, 29);
+            this.chkBorderThick.Size = new System.Drawing.Size(183, 29);
             this.chkBorderThick.TabIndex = 18;
             this.chkBorderThick.Text = "Thicker border";
             this.toolTip.SetToolTip(this.chkBorderThick, "Enabling this make the border 1px thicker.");
@@ -240,7 +239,7 @@
             this.chkOverwriteExisting.Location = new System.Drawing.Point(553, 793);
             this.chkOverwriteExisting.Margin = new System.Windows.Forms.Padding(6);
             this.chkOverwriteExisting.Name = "chkOverwriteExisting";
-            this.chkOverwriteExisting.Size = new System.Drawing.Size(280, 29);
+            this.chkOverwriteExisting.Size = new System.Drawing.Size(293, 29);
             this.chkOverwriteExisting.TabIndex = 20;
             this.chkOverwriteExisting.Text = "Overwrite existing boxart?";
             this.toolTip.SetToolTip(this.chkOverwriteExisting, "Enabling this will overwrite existing boxart files.");
@@ -272,10 +271,11 @@
             this.rbtFullscreen.Location = new System.Drawing.Point(346, 33);
             this.rbtFullscreen.Margin = new System.Windows.Forms.Padding(6);
             this.rbtFullscreen.Name = "rbtFullscreen";
-            this.rbtFullscreen.Size = new System.Drawing.Size(130, 29);
+            this.rbtFullscreen.Size = new System.Drawing.Size(143, 29);
             this.rbtFullscreen.TabIndex = 9;
             this.rbtFullscreen.Text = "Fullscreen";
             this.rbtFullscreen.UseVisualStyleBackColor = true;
+            this.rbtFullscreen.Visible = false;
             this.rbtFullscreen.CheckedChanged += new System.EventHandler(this.rbtFullscreen_CheckedChanged);
             // 
             // rbtCustom
@@ -284,7 +284,7 @@
             this.rbtCustom.Location = new System.Drawing.Point(544, 33);
             this.rbtCustom.Margin = new System.Windows.Forms.Padding(6);
             this.rbtCustom.Name = "rbtCustom";
-            this.rbtCustom.Size = new System.Drawing.Size(103, 29);
+            this.rbtCustom.Size = new System.Drawing.Size(116, 29);
             this.rbtCustom.TabIndex = 10;
             this.rbtCustom.Text = "Custom";
             this.rbtCustom.UseVisualStyleBackColor = true;
@@ -296,10 +296,11 @@
             this.rbtLarge.Location = new System.Drawing.Point(182, 33);
             this.rbtLarge.Margin = new System.Windows.Forms.Padding(6);
             this.rbtLarge.Name = "rbtLarge";
-            this.rbtLarge.Size = new System.Drawing.Size(85, 29);
+            this.rbtLarge.Size = new System.Drawing.Size(98, 29);
             this.rbtLarge.TabIndex = 8;
             this.rbtLarge.Text = "Large";
             this.rbtLarge.UseVisualStyleBackColor = true;
+            this.rbtLarge.Visible = false;
             this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
             // 
             // rbtDefault
@@ -309,7 +310,7 @@
             this.rbtDefault.Location = new System.Drawing.Point(12, 33);
             this.rbtDefault.Margin = new System.Windows.Forms.Padding(6);
             this.rbtDefault.Name = "rbtDefault";
-            this.rbtDefault.Size = new System.Drawing.Size(100, 29);
+            this.rbtDefault.Size = new System.Drawing.Size(113, 29);
             this.rbtDefault.TabIndex = 7;
             this.rbtDefault.TabStop = true;
             this.rbtDefault.Text = "Classic";
@@ -398,7 +399,7 @@
             this.rbtBorder3DS.Location = new System.Drawing.Point(180, 32);
             this.rbtBorder3DS.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorder3DS.Name = "rbtBorder3DS";
-            this.rbtBorder3DS.Size = new System.Drawing.Size(143, 29);
+            this.rbtBorder3DS.Size = new System.Drawing.Size(156, 29);
             this.rbtBorder3DS.TabIndex = 19;
             this.rbtBorder3DS.Text = "3DS Theme";
             this.rbtBorder3DS.UseVisualStyleBackColor = true;
@@ -413,7 +414,7 @@
             this.rbtBorderDSi.Location = new System.Drawing.Point(344, 32);
             this.rbtBorderDSi.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorderDSi.Name = "rbtBorderDSi";
-            this.rbtBorderDSi.Size = new System.Drawing.Size(136, 29);
+            this.rbtBorderDSi.Size = new System.Drawing.Size(149, 29);
             this.rbtBorderDSi.TabIndex = 15;
             this.rbtBorderDSi.TabStop = true;
             this.rbtBorderDSi.Text = "DSi Theme";
@@ -427,7 +428,7 @@
             this.rbtBorderWhite.Location = new System.Drawing.Point(685, 32);
             this.rbtBorderWhite.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorderWhite.Name = "rbtBorderWhite";
-            this.rbtBorderWhite.Size = new System.Drawing.Size(85, 29);
+            this.rbtBorderWhite.Size = new System.Drawing.Size(98, 29);
             this.rbtBorderWhite.TabIndex = 17;
             this.rbtBorderWhite.Text = "White";
             this.rbtBorderWhite.UseVisualStyleBackColor = true;
@@ -439,7 +440,7 @@
             this.rbtBorderBlack.Location = new System.Drawing.Point(542, 32);
             this.rbtBorderBlack.Margin = new System.Windows.Forms.Padding(6);
             this.rbtBorderBlack.Name = "rbtBorderBlack";
-            this.rbtBorderBlack.Size = new System.Drawing.Size(83, 29);
+            this.rbtBorderBlack.Size = new System.Drawing.Size(96, 29);
             this.rbtBorderBlack.TabIndex = 16;
             this.rbtBorderBlack.Text = "Black";
             this.rbtBorderBlack.UseVisualStyleBackColor = true;
@@ -510,7 +511,6 @@
         private System.Windows.Forms.RadioButton rbtBorderWhite;
         private System.Windows.Forms.RadioButton rbtBorderBlack;
         private System.Windows.Forms.CheckBox chkBorder;
-        private System.Windows.Forms.ColorDialog colorDialog;
         private System.Windows.Forms.CheckBox chkBorderThick;
         private System.Windows.Forms.RadioButton rbtBorderDSi;
         private System.Windows.Forms.CheckBox chkOverwriteExisting;
