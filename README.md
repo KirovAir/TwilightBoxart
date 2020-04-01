@@ -4,7 +4,7 @@
 A boxart downloader written in C#. Uses various sources and scan methods to determine the correct boxart. 
 Written for [TwilightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) but can be used for other loader UI's with some config changes. 😊
 
-## Supported rom types
+## Supported boxart types
  System | Matching (in order)
  --- | ---
  Nintendo - Game Boy | (sha1 / filename)
