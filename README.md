@@ -27,6 +27,10 @@ Written for [TwilightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) but ca
 ## Download
 [Here](https://github.com/KirovAir/TwilightBoxart/releases).
 
+## Is there a 3DS version?
+I have created a modified version of TwilightMenu-Updater which supports all boxart types. It has the same features as TwilightBoxart.
+[Download here](https://github.com/KirovAir/TWiLightMenu-Updater/releases)
+
 ## To-do
 * Add support for more consoles. (redump.org as disc source)
 * Prefilled config support for different loaders. (RetroArch, Wii etc.)
