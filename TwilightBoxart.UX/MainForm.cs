@@ -67,7 +67,7 @@ namespace TwilightBoxart.UX
 
             if (!chkManualBoxartLocation.Checked && !string.IsNullOrEmpty(txtSdRoot.Text))
             {
-                txtBoxart.Text = _config.GetBoxartPath(txtSdRoot.Text);
+                txtBoxart.Text = _config.GetCorrectBoxartPath(txtSdRoot.Text);
             }
 
             txtBoxart.ReadOnly = !chkManualBoxartLocation.Checked;
@@ -171,6 +171,7 @@ namespace TwilightBoxart.UX
             {
                 SdRoot = txtSdRoot.Text,
                 BoxartPath = txtBoxart.Text,
+                SettingsPath = _config.GetCorrectSettingsIniPath(txtSdRoot.Text),
                 BoxartWidth = (int) numWidth.Value,
                 BoxartHeight = (int) numHeight.Value,
                 KeepAspectRatio = chkKeepAspectRatio.Checked,
@@ -229,8 +230,9 @@ namespace TwilightBoxart.UX
 
         private void rbtLarge_CheckedChanged(object sender, EventArgs e)
         {
-            numWidth.Value = 210;   // 200
-            numHeight.Value = 146;  // 180
+
+            numWidth.Value = 168;
+            numHeight.Value = 130;  
             SetUx();
         }
 
@@ -243,8 +245,8 @@ namespace TwilightBoxart.UX
 
         private void rbtFullscreen_CheckedChanged(object sender, EventArgs e)
         {
-            numWidth.Value = 256;
-            numHeight.Value = 192;
+            numWidth.Value = 208;
+            numHeight.Value = 143;
             SetUx();
         }
 

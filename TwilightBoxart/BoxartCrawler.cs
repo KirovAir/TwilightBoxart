@@ -19,6 +19,8 @@ namespace TwilightBoxart
         };
         private readonly HttpClient _httpClient;
 
+        private const long MaxCacheSizeForTwilight = 43000;
+
         public BoxartCrawler(IProgress<string> progress = null)
         {
             _httpClient = new HttpClient(_handler);
@@ -38,6 +40,7 @@ namespace TwilightBoxart
                     return;
                 }
 
+                long maxLength = 0;
                 foreach (var romFile in Directory.EnumerateFiles(downloadConfig.SdRoot, "*.*", SearchOption.AllDirectories))
                 {
                     if (_cancelToken.IsCancellationRequested)
@@ -92,6 +95,10 @@ namespace TwilightBoxart
                         using (var fs = new FileStream(targetArtFile, FileMode.Create))
                         {
                             await result.Content.CopyToAsync(fs);
+                            if (fs.Length > maxLength)
+                            {
+                                maxLength = fs.Length;
+                            }
                         }
 
                         _progress?.Report("Got it!");
@@ -108,12 +115,37 @@ namespace TwilightBoxart
                     }
                 }
 
+                if (maxLength >= MaxCacheSizeForTwilight)
+                {
+                    try
+                    {
+                        FixTwilightSettings(downloadConfig.SettingsPath);
+                    }
+                    catch (Exception e)
+                    {
+                        _progress.Report($"Error while fixing TwilightMenu++ settings: {e}");
+                    }
+                }
+
                 _progress?.Report("Finished scan.");
             }
             catch (Exception e)
             {
                 _progress?.Report("Unhandled exception occured! " + e);
             }
+        }
+
+        private void FixTwilightSettings(string path)
+        {
+            if (!File.Exists(path)) return;
+
+            var settings = File.ReadAllText(path);
+            if (!settings.Contains("CACHE_BOX_ART = 1")) return;
+
+            _progress?.Report("Detected large boxart size in output files. Disabling boxart cache in TwilightMenu++ settings so these will be displayed correctly.");
+
+            settings = settings.Replace("CACHE_BOX_ART = 1", "CACHE_BOX_ART = 0");
+            File.WriteAllText(path, settings);
         }
 
         public void Stop()

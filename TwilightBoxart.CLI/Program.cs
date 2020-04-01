@@ -73,7 +73,7 @@ namespace TwilightBoxart.CLI
                 config.SdRoot = choice;
             }
 
-            var boxArtPath = config.GetBoxartPath();
+            var boxArtPath = config.GetCorrectBoxartPath();
             ConsoleEx.WriteGreenLine("Loaded settings:");
             Console.WriteLine("SDRoot / Roms location: \t" + config.SdRoot);
             Console.WriteLine("BoxArt location: \t\t" + boxArtPath);
@@ -87,6 +87,8 @@ namespace TwilightBoxart.CLI
             
             var progress = new Progress<string>(Console.WriteLine);
             var crawler = new BoxartCrawler(progress);
+            config.BoxartPath = boxArtPath;
+            config.SettingsPath = config.GetCorrectSettingsIniPath();
             crawler.DownloadArt(config).Wait();
         }
     }

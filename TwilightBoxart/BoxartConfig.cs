@@ -19,6 +19,7 @@ namespace TwilightBoxart
     {
         string SdRoot { get; set; }
         string BoxartPath { get; set; }
+        string SettingsPath { get; set; }
         bool OverwriteExisting { get; set; }
     }
 
@@ -26,6 +27,7 @@ namespace TwilightBoxart
     {
         public string SdRoot { get; set; } = "";
         public string BoxartPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\boxart";
+        public string SettingsPath { get; set; } = @"{sdroot}\_nds\TWiLightMenu\settings.ini";
         public int BoxartWidth { get; set; } = 128;
         public int BoxartHeight { get; set; } = 115;
         public bool KeepAspectRatio { get; set; } = true;
@@ -34,7 +36,6 @@ namespace TwilightBoxart
         public int BoxartBorderThickness { get; set; }
         public uint BoxartBorderColor { get; set; }
         public bool DisableUpdates { get; set; } = false;
-        
         public const string MagicDir = "_nds";
         public const string FileName = "TwilightBoxart.ini";
         public const string Repository = "KirovAir/TwilightBoxart";
@@ -51,16 +52,26 @@ namespace TwilightBoxart
             Load(FileName);
         }
 
-        public string GetBoxartPath(string root = "")
+        public string GetCorrectBoxartPath(string root = "")
+        {
+            return GetCorrectPath(BoxartPath, root);
+        }
+
+        public string GetCorrectSettingsIniPath(string root = "")
+        {
+            return GetCorrectPath(SettingsPath, root);
+        }
+
+        public string GetCorrectPath(string pathMask, string root = "")
         {
             if (root == "")
             {
                 root = SdRoot;
             }
 
-            if (!BoxartPath.StartsWith("{sdroot}"))
+            if (!pathMask.StartsWith("{sdroot}"))
             {
-                return BoxartPath;
+                return pathMask;
             }
 
             if (root.Contains(Path.DirectorySeparatorChar.ToString()))
@@ -90,9 +101,9 @@ namespace TwilightBoxart
                 catch { }
             }
 
-            return Path.Combine(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, BoxartPath.Replace("{sdroot}", "").TrimStart(Path.DirectorySeparatorChar));
+            return Path.Combine(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, pathMask.Replace("{sdroot}", "").TrimStart(Path.DirectorySeparatorChar));
         }
-        
+
         public static readonly List<string> SupportedFiles = new List<string>
         {
             ".nes",

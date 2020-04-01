@@ -271,11 +271,10 @@
             this.rbtFullscreen.Location = new System.Drawing.Point(346, 33);
             this.rbtFullscreen.Margin = new System.Windows.Forms.Padding(6);
             this.rbtFullscreen.Name = "rbtFullscreen";
-            this.rbtFullscreen.Size = new System.Drawing.Size(143, 29);
+            this.rbtFullscreen.Size = new System.Drawing.Size(69, 29);
             this.rbtFullscreen.TabIndex = 9;
-            this.rbtFullscreen.Text = "Fullscreen";
+            this.rbtFullscreen.Text = "XL";
             this.rbtFullscreen.UseVisualStyleBackColor = true;
-            this.rbtFullscreen.Visible = false;
             this.rbtFullscreen.CheckedChanged += new System.EventHandler(this.rbtFullscreen_CheckedChanged);
             // 
             // rbtCustom
@@ -296,11 +295,10 @@
             this.rbtLarge.Location = new System.Drawing.Point(182, 33);
             this.rbtLarge.Margin = new System.Windows.Forms.Padding(6);
             this.rbtLarge.Name = "rbtLarge";
-            this.rbtLarge.Size = new System.Drawing.Size(98, 29);
+            this.rbtLarge.Size = new System.Drawing.Size(105, 29);
             this.rbtLarge.TabIndex = 8;
-            this.rbtLarge.Text = "Large";
+            this.rbtLarge.Text = "Larger";
             this.rbtLarge.UseVisualStyleBackColor = true;
-            this.rbtLarge.Visible = false;
             this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
             // 
             // rbtDefault
