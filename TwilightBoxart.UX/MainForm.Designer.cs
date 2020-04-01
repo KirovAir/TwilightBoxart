@@ -295,9 +295,9 @@
             this.rbtLarge.Location = new System.Drawing.Point(182, 33);
             this.rbtLarge.Margin = new System.Windows.Forms.Padding(6);
             this.rbtLarge.Name = "rbtLarge";
-            this.rbtLarge.Size = new System.Drawing.Size(105, 29);
+            this.rbtLarge.Size = new System.Drawing.Size(98, 29);
             this.rbtLarge.TabIndex = 8;
-            this.rbtLarge.Text = "Larger";
+            this.rbtLarge.Text = "Large";
             this.rbtLarge.UseVisualStyleBackColor = true;
             this.rbtLarge.CheckedChanged += new System.EventHandler(this.rbtLarge_CheckedChanged);
             // 

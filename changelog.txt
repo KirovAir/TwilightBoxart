@@ -1,6 +1,7 @@
 0.7
 - Removed old Twilight++ aspect ratio's. Pure 1:1 ratio's are used now since the latest TWL++ (2020 and onwards) supports these! THIS BREAKS COMPATIBILITY WITH OLDER VERSIONS! Use 0.6 if your TWL++ is on a lower version.
 - Added update checker.
+- Added more sizes. (Will autofix twilightmenu++ settings when bigger sizes are used)
 - Added option to cancel searching and to overwrite existing boxart.
 - Added border support. (This is some experimental trickery which makes boxart a bit more aesthetic on some themes, maybe in the future I'm able to do some tricks with 3d boxart and such)
 - Moved parts of code to server. These will be open sourced later.
