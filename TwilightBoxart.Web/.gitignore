@@ -1,0 +1,4 @@
+# The development data directory (appsettings.Development.json points DataPath here): the generated
+# index, both cache layers, art records and the report log. All of it is either regenerated or
+# refetched, so none of it belongs in the repository.
+data/

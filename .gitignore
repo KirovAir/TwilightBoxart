@@ -1,35 +1,42 @@
-*.swp
-*.*~
-project.lock.json
-.DS_Store
-*.pyc
-nupkg/
-
-# Visual Studio Code
-.vscode
-
-# User-specific files
-*.suo
+## .NET
+bin/
+obj/
 *.user
-*.userosscache
-*.sln.docstates
-
-# Build results
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-build/
-bld/
-[Bb]in/
-[Oo]bj/
-[Oo]ut/
-msbuild.log
-msbuild.err
-msbuild.wrn
-
-# Visual Studio 2015
 .vs/
-packages/
+.idea/
+*.DotSettings.user
+
+## Publish output
+publish/
+TestResults/
+
+## Database & storage
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+storage/
+data/
+## The DSi build's embedded audio is the one data/ directory that IS source.
+!TwilightBoxart.DSi/data/
+!TwilightBoxart.DSi/data/**
+
+## The generated No-Intro index: the server builds its own on first boot, so it is never committed.
+nointro.db
+
+## Art cache: originals and renders are transient, and the originals layer holds full-resolution
+## covers we do not own; retention is capped at 7 days for that reason.
+cache/
+originals/
+renders/
+
+## Atomic-write temporaries. AtomicFile sweeps these at startup, but a hard kill can leave them.
+*.tmp
+
+## Environment
+.env
+.env.*
+
+## OS
+.DS_Store
+Thumbs.db

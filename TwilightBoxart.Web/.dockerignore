@@ -1,0 +1,14 @@
+**/.git
+**/.gitignore
+**/.vs
+**/.idea
+**/bin
+**/obj
+**/*.md
+**/data
+**/*.db
+**/*.db-wal
+**/*.db-shm
+_analysis
+_proto
+archive

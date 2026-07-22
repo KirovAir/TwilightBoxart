@@ -1,0 +1,15 @@
+{
+  "name": "TwilightBoxart",
+  "short_name": "TwilightBoxart",
+  "description": "Download box art straight onto a TWiLightMenu++ SD card, from your browser.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F1EFFA",
+  "theme_color": "#5D4FB8",
+  "categories": ["utilities"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

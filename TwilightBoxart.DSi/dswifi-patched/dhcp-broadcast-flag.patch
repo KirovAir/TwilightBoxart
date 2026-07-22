@@ -1,0 +1,19 @@
+diff --git a/lwip/source/core/ipv4/dhcp.c b/lwip/source/core/ipv4/dhcp.c
+index 12e0068..3b4fe1f 100644
+--- a/lwip/source/core/ipv4/dhcp.c
++++ b/lwip/source/core/ipv4/dhcp.c
+@@ -1937,8 +1937,12 @@ dhcp_create_msg(struct netif *netif, struct dhcp *dhcp, u8_t message_type, u16_t
+   msg_out->htype = LWIP_IANA_HWTYPE_ETHERNET;
+   msg_out->hlen = netif->hwaddr_len;
+   msg_out->xid = lwip_htonl(dhcp->xid);
+-  /* we don't need the broadcast flag since we can receive unicast traffic
+-     before being fully configured! */
++  /* The DS radio path drops unicast frames before an address is configured, so ask the
++     server to broadcast its replies while we have no address (RFC 2131 broadcast flag).
++     Without this, servers that unicast their offers (udhcpd, phone hotspots) never get
++     through and DHCP hangs forever. */
++  if (ip4_addr_isany_val(*netif_ip4_addr(netif)))
++    msg_out->flags = PP_HTONS(0x8000);
+   /* set ciaddr to netif->ip_addr based on message_type and state */
+   if ((message_type == DHCP_INFORM) || (message_type == DHCP_DECLINE) || (message_type == DHCP_RELEASE) ||
+       ((message_type == DHCP_REQUEST) && /* DHCP_STATE_BOUND not used for sending! */

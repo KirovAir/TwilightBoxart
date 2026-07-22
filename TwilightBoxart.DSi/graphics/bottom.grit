@@ -1,0 +1,5 @@
+# Bottom-screen background: 8-bit bitmap capped at 240 colours so palette line 15
+# stays free for the console font.
+-gb
+-gB8
+-pn 120

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Two pages, so no lastmod and no priorities: both are invented numbers that search engines
+     ignore anyway, and a wrong lastmod is worse than none. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://boxart.kirovair.com/</loc>
+    </url>
+    <url>
+        <loc>https://boxart.kirovair.com/support.html</loc>
+    </url>
+</urlset>

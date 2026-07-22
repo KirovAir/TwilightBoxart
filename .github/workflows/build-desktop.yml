@@ -1,0 +1,71 @@
+# Publishes the desktop client for every OS as self-contained single-file builds, attached to the
+# GitHub release when one is published. Plain pushes only compile-check the desktop through ci.yml;
+# packaging four platforms is release work.
+name: Desktop client
+
+on:
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [ win-x64, linux-x64, osx-x64, osx-arm64 ]
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish
+        run: |
+          dotnet publish TwilightBoxart.Desktop -c Release -r ${{ matrix.rid }} \
+            --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true \
+            -p:DebugType=none -o publish/${{ matrix.rid }}
+
+      # macOS wants a real .app bundle: without one there is no Dock icon and Finder shows a bare
+      # executable. The two osx RIDs get wrapped; Windows and Linux ship the publish folder as-is.
+      - name: Bundle .app (macOS)
+        if: startsWith(matrix.rid, 'osx-')
+        run: |
+          APP=publish/${{ matrix.rid }}/TwilightBoxart.app
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          mv publish/${{ matrix.rid }}/TwilightBoxart.Desktop "$APP/Contents/MacOS/TwilightBoxart"
+          find publish/${{ matrix.rid }} -maxdepth 1 -type f -exec mv {} "$APP/Contents/MacOS/" \;
+          cp TwilightBoxart.Desktop/macos/Info.plist "$APP/Contents/"
+          cp TwilightBoxart.Desktop/macos/logo.icns "$APP/Contents/Resources/"
+          chmod +x "$APP/Contents/MacOS/TwilightBoxart"
+
+      - name: Zip
+        run: |
+          cd publish/${{ matrix.rid }}
+          zip -ry ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: TwilightBoxart-Desktop-${{ matrix.rid }}.zip
+
+  release:
+    if: github.event_name == 'release'
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- BackgroundService, for the two out-of-band cache services. Abstractions only: this project
+             hosts nothing itself, it just needs the base class the host will run. -->
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TwilightBoxart.Core\TwilightBoxart.Core.csproj"/>
+        <ProjectReference Include="..\TwilightBoxart.Data\TwilightBoxart.Data.csproj"/>
+    </ItemGroup>
+
+</Project>

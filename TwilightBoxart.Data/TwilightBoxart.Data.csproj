@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"/>
+        <!-- Pull a patched native SQLite ahead of EF's vulnerable transitive (see Directory.Packages.props). -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TwilightBoxart.Core\TwilightBoxart.Core.csproj"/>
+    </ItemGroup>
+
+</Project>

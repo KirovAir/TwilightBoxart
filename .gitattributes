@@ -1,0 +1,20 @@
+# Normalize line endings on commit; check out native on each platform.
+* text=auto
+
+# Must stay LF or they break inside the Linux container / on a POSIX host.
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+entrypoint.sh text eol=lf
+
+# Binary assets: never munge these.
+*.png binary
+*.jpg binary
+*.ico binary
+*.db  binary
+*.bin binary
+*.a   binary
+*.icns binary
+
+# Vendored third-party code: keep it out of language stats and diffs-by-default.
+TwilightBoxart.DSi/mbedtls/** linguist-vendored
+TwilightBoxart.DSi/dswifi-patched/** linguist-vendored

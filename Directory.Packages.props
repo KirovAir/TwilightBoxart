@@ -1,0 +1,59 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Core. 1.x rather than 0.41: 0.41 carries GHSA-6c8g-7p36-r338 (moderate), and the whole of our
+         surface is SevenZipArchive.Open plus a handful of entry properties in SevenZipRomProbe. -->
+    <PackageVersion Include="SharpCompress" Version="1.0.0" />
+    <!-- CRC32 for loose ROMs and for the tests that verify the container-supplied digests. -->
+    <PackageVersion Include="System.IO.Hashing" Version="10.0.10" />
+    <!-- 3.1 rather than 4.0: 4.0 fails the build without a purchased license key. 3.1 is the last
+         line under the Split License, which is free for open source use. -->
+    <PackageVersion Include="SixLabors.ImageSharp" Version="3.1.12" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <!-- Pipeline: BackgroundService for the out-of-band cache accounting and eviction services,
+         without dragging the full hosting stack into a project a desktop client has to reference. -->
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <!-- Data -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
+    <!-- Pin the native SQLite bundle ahead of EF's transitive (2.1.11), which carries a known
+         vulnerability (GHSA-2m69-gcr7-jv3q). 3.0.x bundles a patched SQLite. -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
+    <!-- Web -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Seq" Version="9.1.0" />
+    <!-- Tests -->
+    <PackageVersion Include="MSTest.TestAdapter" Version="4.3.2" />
+    <PackageVersion Include="MSTest.TestFramework" Version="4.3.2" />
+    <!-- WebApplicationFactory: boots the real TwilightBoxart.Web host in-process, so the API tests
+         exercise the actual middleware pipeline (rate limiter, CORS, body limits) rather than calling
+         handlers directly. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <!-- App: the cross-platform Avalonia desktop client. Avalonia.Desktop pulls the per-OS windowing
+         backends (Win32, X11, Avalonia.Native), which is what makes one build run on all three. -->
+    <PackageVersion Include="Avalonia" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.0" />
+    <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.18" />
+    <!-- Pin ahead of Avalonia's transitive 0.21.2, which carries CVE-2026-39959 / GHSA-xrw6-gwf8-vvr9
+         (a same-bus peer can spoof signals, spill file descriptors, or crash the app). 0.21.3 is the
+         patched release on the same line, so it stays API-compatible with Avalonia's Linux backend.
+         Only reached on Linux (DBus), but pinned unconditionally so no RID ships the vulnerable copy. -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.94.2" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <!-- FluentAvalonia gives the app a genuine Windows 11 / WinUI look (SettingsExpander, ToggleSwitch,
+         native controls) instead of a hand-rolled theme, on all three OSes. -->
+    <!-- 2.x is the Avalonia 11 line; 3.x requires Avalonia 12. -->
+    <PackageVersion Include="FluentAvaloniaUI" Version="3.0.2" />
+    <!-- Dev-only: renders the window to a PNG headlessly so the layout can be verified without a display. -->
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+  </ItemGroup>
+</Project>

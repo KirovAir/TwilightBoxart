@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#F1EFFA">
+
+    <title>TwilightBoxart · Box art for TWiLightMenu++</title>
+    <meta name="description"
+        content="Scans your SD card, works out what your games actually are, and writes the right covers into TWiLightMenu++. Runs in the browser, nothing to install.">
+
+    <!-- Absolute and hardcoded on purpose. A self-hosted instance is not a rival copy of the site
+         competing for the same results, it is this app run privately, so it points at the original. -->
+    <link rel="canonical" href="https://boxart.kirovair.com/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="TwilightBoxart">
+    <meta property="og:url" content="https://boxart.kirovair.com/">
+    <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++">
+    <meta property="og:description"
+        content="Point it at your SD card and it works out what your games are, then writes the right covers straight onto it. 27 systems, nothing to install.">
+    <meta property="og:image" content="https://boxart.kirovair.com/og.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="TwilightBoxart: box art for TWiLightMenu++, straight onto your SD card.">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <!-- The display font paints the header, so fetching it in parallel with the stylesheet is the
+         difference between the title arriving styled and it swapping in after. -->
+    <link rel="preload" href="fonts/baloo2-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="style.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "TwilightBoxart",
+        "url": "https://boxart.kirovair.com/",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web, Windows, macOS, Linux",
+        "description": "Downloads box art for TWiLightMenu++ by identifying games from their contents rather than their filenames, and writes the covers straight onto the SD card.",
+        "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+    }
+    </script>
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <img src="icon.png" alt="" width="58" height="58">
+            <div>
+                <h1>Twilight<span class="pop">Boxart</span></h1>
+                <p class="tag">TwilightMenu++ Boxart Downloader</p>
+            </div>
+        </div>
+        <nav class="topbar-actions">
+            <button id="install" class="ghost" hidden>Install app</button>
+            <a class="ghost iconbtn" href="https://github.com/KirovAir/TwilightBoxart" target="_blank"
+                rel="noopener">
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                    <path fill="currentColor"
+                        d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" />
+                </svg>
+                GitHub
+            </a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="panel note" id="unsupported" hidden>
+            <h2>This browser cannot save onto your SD card</h2>
+            <p>
+                Chrome or Edge on a computer can write straight onto the card; this browser cannot,
+                and that will not change. You can still use this page: pick your card below, and at
+                the end you get one <code>.zip</code> to copy onto the card yourself. Or use the
+                desktop app, which works everywhere.
+            </p>
+            <p class="muted">The full story is in the <a href="support.html">browser support notes</a>.</p>
+        </section>
+
+        <section class="panel">
+            <h2><span class="step">1</span> Your SD card</h2>
+            <p class="muted">
+                Pick the card itself, not a folder inside it. Covers go into TWiLightMenu's box art
+                folder and nothing else on the card is ever touched: not your games, not your
+                settings.
+            </p>
+            <div class="row">
+                <button id="pick" class="primary">Choose SD card folder…</button>
+                <button id="reconnect" class="ghost" hidden>Reconnect to “<span id="reconnect-name"></span>”</button>
+                <label id="fallback-pick" class="filebtn" hidden>
+                    Choose folder to scan (read-only)
+                    <input type="file" id="dirinput" webkitdirectory directory multiple hidden>
+                </label>
+                <span class="grow"></span>
+                <span class="chip" id="card-name"></span>
+            </div>
+            <div class="row" style="margin-top: 12px">
+                <label class="grow">Boxart location
+                    <input type="text" id="dest" value="_nds/TWiLightMenu/boxart" disabled>
+                </label>
+                <label class="check"><input type="checkbox" id="dest-custom"> Set manually</label>
+            </div>
+            <p id="card-status" class="status"></p>
+        </section>
+
+        <section class="panel">
+            <h2><span class="step">2</span> Box art settings</h2>
+            <fieldset>
+                <legend>Boxart Size:</legend>
+                <div class="row">
+                    <label class="check"><input type="radio" name="size" id="size-classic" value="classic" checked>
+                        Classic</label>
+                    <label class="check"><input type="radio" name="size" id="size-large" value="large"> Large</label>
+                    <label class="check"><input type="radio" name="size" id="size-xl" value="xl"> XL</label>
+                    <label class="check"><input type="radio" name="size" id="size-custom" value="custom"> Custom</label>
+                    <span class="grow"></span>
+                    <label>Width <input type="number" id="w" value="128" min="1" max="256"></label>
+                    <label>Height <input type="number" id="h" value="115" min="1" max="192"></label>
+                </div>
+                <label class="check" style="margin-top: 10px"><input type="checkbox" id="ar" checked> Keep original
+                    aspect ratio (recommended)</label>
+                <p class="muted" style="margin: 8px 0 0">The DS screen tops out at 256 × 192.</p>
+            </fieldset>
+            <fieldset>
+                <legend>Extra:</legend>
+                <div class="row">
+                    <label class="check"><input type="checkbox" id="border"> Add border?</label>
+                    <label class="check"><input type="radio" name="borderstyle" id="border-dsi" value="NintendoDsi"
+                            checked> DSi Theme</label>
+                    <label class="check"><input type="radio" name="borderstyle" id="border-3ds" value="Nintendo3Ds"> 3DS
+                        Theme</label>
+                    <label class="check"><input type="radio" name="borderstyle" id="border-black" value="Black">
+                        Black</label>
+                    <label class="check"><input type="radio" name="borderstyle" id="border-white" value="White">
+                        White</label>
+                    <label class="check"><input type="checkbox" id="thick"> Thicker border</label>
+                </div>
+            </fieldset>
+        </section>
+
+        <section class="panel">
+            <h2><span class="step">3</span> Run</h2>
+            <div class="row">
+                <button id="start" class="primary" disabled>Scan and download</button>
+                <button id="cancel" class="ghost" hidden>Stop</button>
+                <button id="retry" class="ghost" hidden>Retry the misses</button>
+                <span class="grow"></span>
+                <label class="check"><input type="checkbox" id="overwrite"> Overwrite existing boxart?</label>
+            </div>
+
+            <div class="bar"><div id="bar-fill"></div></div>
+
+            <ul class="counters">
+                <li><span id="c-found">0</span><em>games found</em></li>
+                <li class="ok"><span id="c-written">0</span><em>new art</em></li>
+                <li title="Already on the card, left alone"><span id="c-skipped">0</span><em>already there</em></li>
+                <li class="bad"><span id="c-missed">0</span><em>no art</em></li>
+            </ul>
+
+            <p id="zip-wrap" hidden>
+                <button id="zipbtn" class="primary">Download images as a .zip</button>
+                <span class="muted">Unzip it onto your card; the folders inside already match.</span>
+            </p>
+        </section>
+
+        <section class="panel" id="misses" hidden>
+            <h2>No art for these <span id="miss-count" class="muted"></span></h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Game</th>
+                            <th>Why</th>
+                        </tr>
+                    </thead>
+                    <tbody id="miss-body"></tbody>
+                </table>
+            </div>
+            <p id="miss-note" class="muted"></p>
+        </section>
+
+        <section class="panel">
+            <h2>Log</h2>
+            <div id="log" class="log" role="log" aria-live="polite"></div>
+            <p class="row muted">
+                <span id="cache-note" class="grow"></span>
+                <button id="clear-cache" class="ghost small">Forget earlier scans</button>
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            TwilightBoxart 2.0 · covers from <a href="https://www.gametdb.com">GameTDB</a> and
+            <a href="https://github.com/libretro-thumbnails">libretro-thumbnails</a> · game info from
+            <a href="https://no-intro.org">No-Intro</a> · made for
+            <a href="https://github.com/DS-Homebrew/TWiLightMenu">TWiLightMenu++</a> ·
+            <a href="support.html">browser support notes</a>
+        </p>
+        <p class="legal">
+            A fan-made tool, not affiliated with Nintendo. It distributes no games: it identifies
+            what is already on your card and fetches cover images, nothing more. © KirovAir 2026
+        </p>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

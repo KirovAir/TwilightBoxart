@@ -1,0 +1,21 @@
+<Project>
+
+    <PropertyGroup>
+        <Product>TwilightBoxart</Product>
+        <Version>2.0.0</Version>
+        <Authors>KirovAir</Authors>
+        <Copyright>Copyright © 2026 KirovAir</Copyright>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <!-- Run the IDE code-style analyzers at build time, so `dotnet format`/CI enforce the .editorconfig
+             rules (not just the IDE). Warning-level rules surface as build warnings. -->
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+
+        <!-- IDE0005 (remove unnecessary usings) only reports during build when the doc file is generated.
+             Turn it on, and silence the missing-XML-comment noise that would otherwise flood the build. -->
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+    </PropertyGroup>
+
+</Project>

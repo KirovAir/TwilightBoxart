@@ -1,0 +1,56 @@
+# TwilightBoxart - box art for TWiLightMenu++, as a service.
+#
+# One container, one /data volume, no database server. Run it with:
+#   docker compose up -d
+# then open http://localhost:8186 and point the page at your SD card.
+#
+# It works out of the box with no configuration at all. Everything below is optional.
+services:
+  twilightboxart:
+    # latest tracks published releases; use :dev to ride master, or :X.Y.Z to pin.
+    image: ghcr.io/kirovair/twilightboxart:latest
+    container_name: twilightboxart
+    restart: unless-stopped
+    ports:
+      - "8186:8186"
+    environment:
+      # Password for the admin panel at /admin.html (stats + the "update No-Intro index" button).
+      # Leave it unset and the panel answers 503 - it fails closed rather than falling back to
+      # something guessable. Put it in a .env file next to this compose file, never inline.
+      #Twilight__Security__AdminPassword: "${TWILIGHT_ADMIN_PASSWORD}"
+
+      # Browser origins allowed to POST to /v2/identify. GETs are open to everyone - they are public
+      # data served without credentials. The bundled web UI is served from this same origin and
+      # therefore needs no entry here; add one only if you host the UI separately.
+      #Twilight__Security__AllowedOrigins__0: "https://boxart.example.com"
+
+      # Cache budgets, in bytes - the only behavioural setting this server has. Disk space is the
+      # one thing that genuinely differs between a NAS and a Pi; everything else about the cache
+      # (sweep cadence, retention, hysteresis) is a constant in the code, because no operator has
+      # the information needed to pick a better value than the one that is there.
+      # "Originals" holds upstream art exactly as downloaded and is the expensive layer to refill,
+      # so it gets the room; "renders" holds resized and bordered output that takes about 5ms to
+      # recreate, so it is deliberately small and evicted hard. Defaults: 4 GiB and 256 MiB.
+      #Twilight__Cache__OriginalsBudgetBytes: "4294967296"
+      #Twilight__Cache__RendersBudgetBytes: "268435456"
+
+      # If, and only if, this instance sits behind a reverse proxy you control, name that proxy's IP
+      # here to enable X-Forwarded-For handling. The proxy must forward X-Forwarded-Proto too, so a
+      # TLS-terminating proxy yields secure requests (and cookies) downstream. Leave it unset
+      # otherwise: rate limiting partitions on the client IP, so trusting a forwarded header from an
+      # untrusted source lets any caller pick its own bucket.
+      #Twilight__TrustedProxy: "172.18.0.2"
+
+      # Optional structured logging to a Seq instance. Console logging is always on.
+      #Seq__ServerUrl: "http://seq:5341"
+      #Seq__ApiKey: "${SEQ_API_KEY}"
+
+      # Match these to the host user that should own the files on the volume.
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      # Everything the service owns lives here: the No-Intro index (nointro.db) the server builds
+      # for itself on first boot, both cache layers under cache/, and the title records in
+      # twilightboxart.db. Nothing is served from this directory as static files - it is not
+      # web-rooted. Everything in it is rebuildable, so losing the volume costs only a warm-up.
+      - ./data:/data

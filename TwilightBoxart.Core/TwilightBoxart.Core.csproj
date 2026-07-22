@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SharpCompress"/>
+        <PackageReference Include="System.IO.Hashing"/>
+        <PackageReference Include="SixLabors.ImageSharp"/>
+        <PackageReference Include="Microsoft.Data.Sqlite"/>
+        <!-- Explicit so the pinned 3.0.3 wins over Microsoft.Data.Sqlite's transitive 2.1.11, which
+             carries GHSA-2m69-gcr7-jv3q. It is also what guarantees the FTS5 trigram tokenizer the
+             generated index is built on. -->
+        <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3"/>
+        <PackageReference Include="Microsoft.Extensions.Http"/>
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"/>
+        <PackageReference Include="Microsoft.Extensions.Options"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Art\dsiware.jpg"/>
+    </ItemGroup>
+
+</Project>

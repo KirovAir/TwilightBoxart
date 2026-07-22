@@ -1,0 +1,8 @@
+<Solution>
+    <Project Path="TwilightBoxart.Core/TwilightBoxart.Core.csproj"/>
+    <Project Path="TwilightBoxart.Data/TwilightBoxart.Data.csproj"/>
+    <Project Path="TwilightBoxart.Pipeline/TwilightBoxart.Pipeline.csproj"/>
+    <Project Path="TwilightBoxart.Web/TwilightBoxart.Web.csproj"/>
+    <Project Path="TwilightBoxart.Desktop/TwilightBoxart.Desktop.csproj"/>
+    <Project Path="TwilightBoxart.Tests/TwilightBoxart.Tests.csproj"/>
+</Solution>

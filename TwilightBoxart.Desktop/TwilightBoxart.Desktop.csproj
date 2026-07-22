@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ApplicationManifest>app.manifest</ApplicationManifest>
+        <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+
+        <!-- Self-contained single-file publish per RID (win-x64, linux-x64, osx-arm64/osx-x64) is the
+             cross-platform delivery; CI passes -\-self-contained at publish. Not set here: it would
+             force a RID on every build and make this exe un-referenceable from the test project. -->
+        <PublishSingleFile>true</PublishSingleFile>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <!-- Halves the exe for a one-off decompression cost at first start. -->
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+
+        <ApplicationIcon>Assets/logo.ico</ApplicationIcon>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AvaloniaResource Include="Assets\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" />
+        <PackageReference Include="Avalonia.Desktop" />
+        <PackageReference Include="Avalonia.Fonts.Inter" />
+        <PackageReference Include="FluentAvaloniaUI" />
+        <!-- The screenshot dev aid in Debug only. -->
+        <PackageReference Include="Avalonia.Headless" Condition="'$(Configuration)' == 'Debug'" />
+        <!-- Security pin over Avalonia's transitive DBus lib; see Directory.Packages.props. -->
+        <PackageReference Include="Tmds.DBus.Protocol" />
+        <!-- DevTools (F12) in Debug only. -->
+        <PackageReference Include="Avalonia.Diagnostics" Condition="'$(Configuration)' == 'Debug'" />
+        <PackageReference Include="CommunityToolkit.Mvvm" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TwilightBoxart.Core\TwilightBoxart.Core.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="TwilightBoxart.Tests" />
+    </ItemGroup>
+
+</Project>

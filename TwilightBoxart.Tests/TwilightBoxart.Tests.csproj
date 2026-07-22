@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <OutputType>Exe</OutputType>
+        <EnableMSTestRunner>true</EnableMSTestRunner>
+
+        <!-- Bridges "dotnet test" to Microsoft.Testing.Platform. MTP forwards unrecognised flags to
+             the test host, so a stray VSTest-era flag reads as "Zero tests ran"; pass host arguments
+             after a bare double-dash. -->
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="MSTest.TestAdapter"/>
+        <PackageReference Include="MSTest.TestFramework"/>
+        <PackageReference Include="System.IO.Hashing"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\TwilightBoxart.Core\TwilightBoxart.Core.csproj"/>
+        <ProjectReference Include="..\TwilightBoxart.Data\TwilightBoxart.Data.csproj"/>
+        <ProjectReference Include="..\TwilightBoxart.Desktop\TwilightBoxart.Desktop.csproj"/>
+        <ProjectReference Include="..\TwilightBoxart.Pipeline\TwilightBoxart.Pipeline.csproj"/>
+        <ProjectReference Include="..\TwilightBoxart.Web\TwilightBoxart.Web.csproj"/>
+    </ItemGroup>
+
+</Project>

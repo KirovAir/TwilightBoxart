@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#F1EFFA">
+    <meta name="robots" content="noindex">
+    <title>TwilightBoxart · Admin</title>
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <img src="icon.png" alt="" width="58" height="58">
+            <div>
+                <h1>Twilight<span class="pop">Boxart</span></h1>
+                <p class="tag">Admin</p>
+            </div>
+        </div>
+        <button id="logout" class="ghost" hidden>Log out</button>
+    </header>
+
+    <main>
+        <!-- Login: shown until /v2/admin/stats answers 200. -->
+        <section class="panel" id="login-panel" hidden>
+            <h2>Owner login</h2>
+            <p id="login-note" class="admin-note">This panel is for whoever runs this instance.</p>
+            <form id="login-form" class="admin-login">
+                <input id="password" type="password" autocomplete="current-password" placeholder="Admin password">
+                <button type="submit" class="primary">Log in</button>
+            </form>
+            <p id="login-error" class="admin-error" hidden></p>
+        </section>
+
+        <section class="panel" id="stats-panel" hidden>
+            <h2>Index</h2>
+            <p class="admin-note">
+                Built by this server from the public No-Intro DAT files. Update it when No-Intro
+                has moved on; everything keeps serving while the new one builds.
+            </p>
+            <div class="admin-grid" id="index-grid"></div>
+            <div class="admin-actions">
+                <button id="rebuild" class="primary">Update No-Intro index</button>
+                <span id="build-state" class="admin-note"></span>
+            </div>
+            <pre id="build-log" class="admin-log" hidden></pre>
+        </section>
+
+        <section class="panel" id="stats-extra" hidden>
+            <h2>Instance</h2>
+            <div class="admin-grid" id="instance-grid"></div>
+            <h2>Upstreams</h2>
+            <div class="admin-grid" id="upstream-grid"></div>
+        </section>
+    </main>
+
+    <footer>
+        <p><a href="./">Back to TwilightBoxart</a></p>
+    </footer>
+
+    <script type="module" src="admin.js"></script>
+</body>
+
+</html>

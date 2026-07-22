@@ -1,0 +1,6 @@
+# The top-screen logo: a plain 16-bit bitmap, no compression. -gT! forces the ARGB1555 alpha bit
+# on for every pixel; without it an alpha-less PNG converts fully transparent and the screen stays
+# black.
+-gb
+-gB16
+-gT!

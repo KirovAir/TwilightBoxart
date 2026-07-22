@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# The admin panel is already noindex, but there is no reason to spend a crawl on it. Everything
+# under /v2/ is the API: art renders are generated per request and identify only answers POST, so
+# a crawler finds nothing there but work for the server.
+Disallow: /admin.html
+Disallow: /v2/
+
+Sitemap: https://boxart.kirovair.com/sitemap.xml

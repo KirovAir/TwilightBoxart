@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#F1EFFA">
+    <meta name="description" content="Which browsers can write box art straight onto an SD card, and what the fallback looks like everywhere else.">
+    <title>Browser support · TwilightBoxart</title>
+    <link rel="canonical" href="https://boxart.kirovair.com/support.html">
+
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="TwilightBoxart">
+    <meta property="og:url" content="https://boxart.kirovair.com/support.html">
+    <meta property="og:title" content="Browser support · TwilightBoxart">
+    <meta property="og:description" content="Which browsers can write box art straight onto an SD card, and what the fallback looks like everywhere else.">
+    <meta property="og:image" content="https://boxart.kirovair.com/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" href="icon.png" type="image/png">
+    <link rel="preload" href="fonts/baloo2-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <img src="icon.png" alt="" width="58" height="58">
+            <div>
+                <h1>Twilight<span class="pop">Boxart</span></h1>
+                <p class="tag">Browser support and what this page does to your card.</p>
+            </div>
+        </div>
+        <a href="./"><button class="ghost">Back to the app</button></a>
+    </header>
+
+    <main>
+        <section class="panel">
+            <h2>Which browsers can write to your card</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Browser</th>
+                            <th>Pick a folder</th>
+                            <th>Write to the card</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Chrome, Edge, Opera, Brave, Vivaldi (desktop)</td>
+                            <td>Yes</td>
+                            <td><strong>Yes, in place</strong></td>
+                            <td>The intended experience</td>
+                        </tr>
+                        <tr>
+                            <td>Firefox (all versions)</td>
+                            <td>No</td>
+                            <td>No</td>
+                            <td>Mozilla standards position #154: negative, closed. No flag exists.</td>
+                        </tr>
+                        <tr>
+                            <td>Safari, desktop</td>
+                            <td>No</td>
+                            <td>No</td>
+                            <td>WebKit standards position #28: oppose</td>
+                        </tr>
+                        <tr>
+                            <td>Anything on iOS / iPadOS</td>
+                            <td>No</td>
+                            <td>No</td>
+                            <td>Every iOS browser is WebKit underneath</td>
+                        </tr>
+                        <tr>
+                            <td>Chrome on Android</td>
+                            <td>Partial</td>
+                            <td>Not usefully</td>
+                            <td>Android hands back content URIs with no atomic writes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="muted" style="margin-top: 12px">
+                Writing into a folder you chose needs the File System Access API, which only Chromium
+                browsers implement. Mozilla and WebKit have both formally declined it; these are
+                published positions, not backlog items, so do not wait for this to change.
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>The fallback everywhere else</h2>
+            <p>On a browser without the API this page still works, read-only:</p>
+            <p>
+                1. Pick your card folder with the ordinary file chooser. The page reads it; it cannot
+                write to it.<br>
+                2. It identifies your ROMs and downloads the art exactly as it would otherwise.<br>
+                3. You get one <code>.zip</code>. Extract it at the <strong>root of the card</strong>;
+                the folders inside are already <code>_nds/TWiLightMenu/boxart/</code>, so everything
+                lands in the right place.
+            </p>
+            <p class="muted">The only thing you lose is the last step being automatic. The desktop app
+                has no such limitation.</p>
+        </section>
+
+        <section class="panel">
+            <h2>Install it as an app</h2>
+            <p>
+                If the browser offers <strong>Install app</strong>, take it. An installed app keeps
+                permission to your card folder between launches, so you pick the folder once, ever. An
+                ordinary tab loses the grant when its last window closes, and Chrome stops offering the
+                "remember this" prompt after three dismissals.
+            </p>
+            <p class="muted">
+                Installation caches only the page itself, never anything from the API. A cached
+                identity or a stale rendered PNG would end up written to your card and look permanent,
+                which is not a failure mode worth the offline convenience.
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>What it does to your card</h2>
+            <p>
+                It writes PNG files into <code>_nds/TWiLightMenu/boxart/</code> (or the folder you set
+                manually), creating it if it is missing, and it reads a few hundred bytes from each game
+                to work out what it is. <strong>It changes nothing else.</strong> No renaming, no
+                moving, no deleting, and specifically no rewriting of <code>settings.ini</code>: the
+                server guarantees every image fits TWiLightMenu's cache slot, so nothing needs
+                patching.
+            </p>
+            <p class="muted">
+                Every write goes through a swap file that is only swapped in on close, so pulling the
+                card mid-run cannot leave a half-written image behind. Images that already exist are
+                left alone unless you tick "Overwrite existing boxart?".
+            </p>
+        </section>
+
+        <section class="panel">
+            <h2>Why some ROMs get nothing</h2>
+            <p>Click through the misses list; each row says why. The common reasons:</p>
+            <p>
+                <strong>Not in the index.</strong> Romhacks, translations and homebrew often have
+                nothing to match against; roughly 60% of No-Intro entries carry no serial.<br>
+                <strong>No art exists upstream.</strong> The ROM was identified, but GameTDB and
+                libretro-thumbnails have no cover for it.<br>
+                <strong>A <code>.7z</code> with a compressed header.</strong> Browsers have no LZMA
+                decoder. Re-pack those as <code>.zip</code>, or use the desktop client.<br>
+                <strong>NES, SNES, Master System and Game Gear loose files.</strong> These have no
+                internal serial, so the scan checksums them automatically (files up to 64 MB) and
+                matches by content. A miss here usually means a romhack or a dump the index does
+                not know.
+            </p>
+        </section>
+    </main>
+
+    <footer>
+        <p><a href="./">Back to TwilightBoxart 2.0</a> · covers from <a href="https://www.gametdb.com">GameTDB</a> and
+            <a href="https://github.com/libretro-thumbnails">libretro-thumbnails</a> · game info from
+            <a href="https://no-intro.org">No-Intro</a></p>
+        <p class="legal">
+            A fan-made tool, not affiliated with Nintendo. It distributes no games. © KirovAir 2026
+        </p>
+    </footer>
+</body>
+
+</html>
