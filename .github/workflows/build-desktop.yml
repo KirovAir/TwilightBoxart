@@ -14,10 +14,17 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        rid: [ win-x64, linux-x64, osx-x64, osx-arm64 ]
+        # The osx legs run on macOS for codesign: assembling the .app invalidates the publish-time
+        # signature, and Gatekeeper reports a broken seal as "damaged". Re-sealing needs Apple's
+        # codesign, which does not exist on Linux.
+        include:
+          - { rid: win-x64, os: ubuntu-latest }
+          - { rid: linux-x64, os: ubuntu-latest }
+          - { rid: osx-x64, os: macos-latest }
+          - { rid: osx-arm64, os: macos-latest }
     steps:
       - uses: actions/checkout@v5
 
@@ -43,11 +50,20 @@ jobs:
           cp TwilightBoxart.Desktop/macos/Info.plist "$APP/Contents/"
           cp TwilightBoxart.Desktop/macos/logo.icns "$APP/Contents/Resources/"
           chmod +x "$APP/Contents/MacOS/TwilightBoxart"
+          # Ad-hoc, not notarized: users still clear quarantine once (see the README), but without
+          # a valid seal even that would not help.
+          codesign --force --deep -s - "$APP"
+          codesign --verify --deep --strict "$APP"
 
       - name: Zip
         run: |
           cd publish/${{ matrix.rid }}
-          zip -ry ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip .
+          if [[ "${{ matrix.rid }}" == osx-* ]]; then
+            # ditto is the zip Finder trusts: plain zip drops the metadata the signature seals.
+            ditto -c -k --keepParent TwilightBoxart.app ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip
+          else
+            zip -ry ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip .
+          fi
 
       - uses: actions/upload-artifact@v4
         with:

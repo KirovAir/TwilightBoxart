@@ -35,6 +35,13 @@ desktop. Firefox and Safari cannot write to a folder, so there you get the same 
 to extract onto the card yourself. The full story is on the
 [browser support page](TwilightBoxart.Web/wwwroot/support.html).
 
+**macOS:** the desktop app is not notarized with Apple, so Finder calls the download "damaged".
+It is not; clear the quarantine flag once and it opens normally:
+
+```bash
+xattr -rd com.apple.quarantine ~/Downloads/TwilightBoxart.app
+```
+
 **Your card is safe.** Every app only ever writes PNG files into `_nds/TWiLightMenu/boxart/` (or a
 folder you point it at). Nothing is renamed, moved or deleted, and your games and settings are
 never touched.
