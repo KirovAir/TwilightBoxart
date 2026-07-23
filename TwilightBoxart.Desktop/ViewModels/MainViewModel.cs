@@ -18,7 +18,9 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly BackendFactory _backendFactory;
     private readonly IndexManager _indexManager;
     private readonly IHttpClientFactory _httpFactory;
+    private readonly UpdateService _updateService;
     private readonly List<string> _log = [];
+    private bool _checkForUpdates = true;
     private CancellationTokenSource? _cts;
     private CancellationTokenSource? _refreshCts;
 
@@ -26,14 +28,23 @@ public sealed partial class MainViewModel : ObservableObject
         ScanService scanService,
         BackendFactory backendFactory,
         IndexManager indexManager,
-        IHttpClientFactory httpFactory)
+        IHttpClientFactory httpFactory,
+        UpdateService updateService)
     {
         _scanService = scanService;
         _backendFactory = backendFactory;
         _indexManager = indexManager;
         _httpFactory = httpFactory;
+        _updateService = updateService;
         Apply(AppSettings.Load());
     }
+
+    /// <summary>
+    /// One startup poll for a newer release; null when the user disabled it or the build is current. UI-free
+    /// so the view owns the dialog. Awaited off the window's load, never blocking the first paint.
+    /// </summary>
+    public Task<UpdateInfo?> CheckForUpdatesAsync() =>
+        _checkForUpdates ? _updateService.CheckAsync() : Task.FromResult<UpdateInfo?>(null);
 
     /// <summary>Maps stored settings onto the bound properties; shared by the constructor and the reset.</summary>
     private void Apply(AppSettings settings)
@@ -45,6 +56,7 @@ public sealed partial class MainViewModel : ObservableObject
         KeepAspectRatio = settings.KeepAspectRatio;
         Overwrite = settings.Overwrite;
         Concurrency = settings.Concurrency;
+        _checkForUpdates = settings.CheckForUpdates;
 
         (IsSizeClassic, IsSizeLarge, IsSizeXl) = (settings.Width, settings.Height) switch
         {
@@ -333,6 +345,7 @@ public sealed partial class MainViewModel : ObservableObject
         BorderColor = IsBorderWhite ? "#FFFFFF" : "#000000",
         Overwrite = Overwrite,
         Concurrency = Concurrency,
+        CheckForUpdates = _checkForUpdates,
     };
 
     private RenderOptions BuildRenderOptions() => ToSettings().ToRenderOptions();

@@ -231,4 +231,38 @@ public class DesktopServicesTests
         Directory.CreateDirectory(directory);
         File.WriteAllBytes(Path.Combine(directory, name), [0x42]);
     }
+
+    // ── UpdateService.TryGetNewer ────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void TryGetNewer_HigherTagIsAnUpdate()
+    {
+        Assert.IsTrue(UpdateService.TryGetNewer(new Version(2, 0, 0, 0), "2.1", out var version));
+        Assert.AreEqual(new Version(2, 1, 0, 0), version);
+    }
+
+    [TestMethod]
+    public void TryGetNewer_SameVersionDifferentPartCountIsNotAnUpdate()
+    {
+        // The real case: the app reports 2.0 (major.minor), the release tag is 2.0.0. Value-equal, so no nudge.
+        Assert.IsFalse(UpdateService.TryGetNewer(new Version(2, 0, 0, 0), "2.0.0", out _));
+    }
+
+    [TestMethod]
+    public void TryGetNewer_LowerTagIsNotAnUpdate()
+    {
+        Assert.IsFalse(UpdateService.TryGetNewer(new Version(2, 0, 0, 0), "1.9.9", out _));
+    }
+
+    [TestMethod]
+    public void TryGetNewer_ToleratesLeadingV()
+    {
+        Assert.IsTrue(UpdateService.TryGetNewer(new Version(2, 0, 0, 0), "v2.1.0", out _));
+    }
+
+    [TestMethod]
+    public void TryGetNewer_UnparseableTagIsNotAnUpdate()
+    {
+        Assert.IsFalse(UpdateService.TryGetNewer(new Version(2, 0, 0, 0), "latest-nightly", out _));
+    }
 }

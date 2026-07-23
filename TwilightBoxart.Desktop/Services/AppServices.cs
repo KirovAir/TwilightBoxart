@@ -21,6 +21,7 @@ public static class AppServices
         services.AddSingleton<IndexManager>();
         services.AddSingleton<BackendFactory>();
         services.AddSingleton<ScanService>();
+        services.AddSingleton<UpdateService>();
         services.AddSingleton<MainViewModel>();
 
         return services.BuildServiceProvider();

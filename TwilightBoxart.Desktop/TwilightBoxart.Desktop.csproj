@@ -49,4 +49,17 @@
         <InternalsVisibleTo Include="TwilightBoxart.Tests" />
     </ItemGroup>
 
+    <!-- The self-contained single-file exe already embeds everything it needs at runtime. The publish
+         folder otherwise also collects loose sidecars: native debug symbols shipped inside the SkiaSharp/
+         HarfBuzz NuGet packages (libSkiaSharp.pdb ~84MB, libHarfBuzzSharp.pdb ~20MB) and the .xml API
+         docs from GenerateDocumentationFile. None are used at runtime; drop them so the release ships a
+         plain exe instead of a 75MB folder. -->
+    <Target Name="TrimPublishSidecars" AfterTargets="Publish">
+        <ItemGroup>
+            <_PublishSidecars Include="$(PublishDir)**\*.pdb" />
+            <_PublishSidecars Include="$(PublishDir)**\*.xml" />
+        </ItemGroup>
+        <Delete Files="@(_PublishSidecars)" />
+    </Target>
+
 </Project>

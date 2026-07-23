@@ -39,7 +39,7 @@ jobs:
             -p:DebugType=none -o publish/${{ matrix.rid }}
 
       # macOS wants a real .app bundle: without one there is no Dock icon and Finder shows a bare
-      # executable. The two osx RIDs get wrapped; Windows and Linux ship the publish folder as-is.
+      # executable. The two osx RIDs get wrapped; Windows and Linux ship the single published file bare.
       - name: Bundle .app (macOS)
         if: startsWith(matrix.rid, 'osx-')
         run: |
@@ -55,20 +55,27 @@ jobs:
           codesign --force --deep -s - "$APP"
           codesign --verify --deep --strict "$APP"
 
-      - name: Zip
+      # win/linux publish to a single self-contained file (the csproj strips the loose .pdb/.xml
+      # sidecars), so ship that file bare — no zip to unpack, just download and run. Only macOS,
+      # whose .app is a directory that must stay sealed, still needs an archive.
+      - name: Package
         run: |
           cd publish/${{ matrix.rid }}
-          if [[ "${{ matrix.rid }}" == osx-* ]]; then
-            # ditto is the zip Finder trusts: plain zip drops the metadata the signature seals.
-            ditto -c -k --keepParent TwilightBoxart.app ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip
-          else
-            zip -ry ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip .
-          fi
+          case "${{ matrix.rid }}" in
+            win-x64)
+              mv TwilightBoxart.Desktop.exe ../../TwilightBoxart-${{ matrix.rid }}.exe ;;
+            linux-x64)
+              mv TwilightBoxart.Desktop ../../TwilightBoxart-${{ matrix.rid }}
+              chmod +x ../../TwilightBoxart-${{ matrix.rid }} ;;
+            osx-*)
+              # ditto is the zip Finder trusts: plain zip drops the metadata the signature seals.
+              ditto -c -k --keepParent TwilightBoxart.app ../../TwilightBoxart-Desktop-${{ matrix.rid }}.zip ;;
+          esac
 
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-${{ matrix.rid }}
-          path: TwilightBoxart-Desktop-${{ matrix.rid }}.zip
+          path: TwilightBoxart-*${{ matrix.rid }}*
 
   release:
     if: github.event_name == 'release'
@@ -84,4 +91,4 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/*.zip
+          files: dist/*

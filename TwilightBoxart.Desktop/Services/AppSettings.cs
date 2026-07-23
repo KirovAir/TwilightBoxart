@@ -40,6 +40,9 @@ public sealed class AppSettings
     /// <summary>Concurrent art fetches. Six is what a browser opens per origin; a polite default upstream.</summary>
     public int Concurrency { get; set; } = 6;
 
+    /// <summary>Check GitHub for a newer release once at startup. A JSON knob for anyone who would rather it did not.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
     /// <summary>The one mapping from stored settings to render parameters.</summary>
     public RenderOptions ToRenderOptions() => new RenderOptions
     {
