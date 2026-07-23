@@ -103,8 +103,21 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     [ObservableProperty] private string _backendUrl = "";
-    [ObservableProperty] private int _width;
-    [ObservableProperty] private int _height;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOversizeForTwilight))]
+    private int _width;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOversizeForTwilight))]
+    private int _height;
+
+    /// <summary>
+    /// True when the chosen size exceeds what TWiLightMenu++ can display. Such covers are for other
+    /// frontends; the view shows a warning so a DS user does not fill a card with invisible art.
+    /// </summary>
+    public bool IsOversizeForTwilight =>
+        Width > RenderOptions.TwilightMaxWidth || Height > RenderOptions.TwilightMaxHeight;
     [ObservableProperty] private bool _keepAspectRatio;
     [ObservableProperty] private bool _overwrite;
     [ObservableProperty] private int _concurrency;

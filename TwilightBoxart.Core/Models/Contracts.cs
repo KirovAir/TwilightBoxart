@@ -102,6 +102,18 @@ public sealed record RomIdentity
 /// <summary>Batch identification request: the wire envelope both the server and its clients speak.</summary>
 public sealed record IdentifyRequest
 {
+    /// <summary>
+    /// Most items either side puts in one batch. The single source: the server's item cap, its body
+    /// cap and the desktop's chunk size all derive from this number, so they cannot drift apart.
+    /// </summary>
+    public const int MaxItems = 500;
+
+    /// <summary>
+    /// Worst-case wire size of one item, rounded up: a 512-char file name, a 512-byte header sample
+    /// (~684 chars in base64) and the JSON envelope. <c>MaxItems * MaxItemBytes</c> is the body cap.
+    /// </summary>
+    public const int MaxItemBytes = 2048;
+
     public required IReadOnlyList<RomFingerprint> Items { get; init; }
 }
 
@@ -157,9 +169,26 @@ public sealed record RenderOptions
     /// </remarks>
     public int MaxPngBytes { get; init; } = TwilightMaxPngBytes;
 
-    /// <summary>Hard pixel ceiling enforced by TWiLightMenu++'s drawBoxArt (the DS screen).</summary>
-    public const int MaxWidth = 256;
-    public const int MaxHeight = 192;
+    /// <summary>
+    /// The most TWiLightMenu++'s drawBoxArt can display (the DS screen). Renders beyond this are
+    /// legitimate - other frontends want bigger covers - but can never appear on a DS, which is also
+    /// why <see cref="Normalized"/> stops holding them to the DS cache's byte cap.
+    /// </summary>
+    public const int TwilightMaxWidth = 256;
+    public const int TwilightMaxHeight = 192;
+
+    /// <summary>
+    /// Hard pixel ceiling on any render. An anti-abuse bound for buffer sizing, not a device
+    /// constraint: the DS's own display limit is <see cref="TwilightMaxWidth"/>x<see cref="TwilightMaxHeight"/>.
+    /// </summary>
+    public const int MaxWidth = 1000;
+    public const int MaxHeight = 1000;
+
+    /// <summary>
+    /// Byte budget for renders too large for TWiLightMenu++ anyway. Generous enough that the encoder
+    /// never quantizes at these sizes (a 1000x1000 PNG is far smaller), while still bounding a response.
+    /// </summary>
+    public const int OversizeMaxPngBytes = 4 * 1024 * 1024;
 
     /// <summary>
     /// Parses a border colour in any spelling a client has ever used, with or without a leading
@@ -205,10 +234,27 @@ public sealed record RenderOptions
         // nothing, which reads as a rendering bug rather than a bad parameter.
         var style = Enum.IsDefined(BorderStyle) ? BorderStyle : BoxartBorderStyle.None;
 
+        var width = Math.Clamp(Width, 1, MaxWidth);
+        var height = Math.Clamp(Height, 1, MaxHeight);
+
+        // Floor of 4 KiB: below that quantization cannot converge and the renderer would throw on
+        // every image. No upper bound: a caller that wants a large cover is not doing anything
+        // unsafe, since the pixel dimensions are what actually bound the work.
+        var pngBudget = Math.Max(MaxPngBytes, 4096);
+
+        // The TWiLightMenu++ byte cap exists because its cache slots are 0xB000 bytes; a render too
+        // large for its screen can never land in that cache, so holding it to the cap would only
+        // quantize the cover into mush for whatever frontend it IS for. Only the untouched default is
+        // widened - a caller that set its own budget keeps it.
+        if (pngBudget == TwilightMaxPngBytes && (width > TwilightMaxWidth || height > TwilightMaxHeight))
+        {
+            pngBudget = OversizeMaxPngBytes;
+        }
+
         return this with
         {
-            Width = Math.Clamp(Width, 1, MaxWidth),
-            Height = Math.Clamp(Height, 1, MaxHeight),
+            Width = width,
+            Height = height,
             BorderStyle = style,
 
             // Only Line reads the colour and thickness (the sprite frames carry their own metrics),
@@ -217,10 +263,7 @@ public sealed record RenderOptions
             BorderThickness = style == BoxartBorderStyle.Line ? Math.Clamp(BorderThickness, 0, 5) : 0,
             BorderColor = style == BoxartBorderStyle.Line ? BorderColor : 0,
 
-            // Floor of 4 KiB: below that quantization cannot converge and the renderer would throw on
-            // every image. No upper bound: a caller that wants a large cover is not doing anything
-            // unsafe, since the pixel dimensions are what actually bound the work.
-            MaxPngBytes = Math.Max(MaxPngBytes, 4096),
+            MaxPngBytes = pngBudget,
         };
     }
 

@@ -52,10 +52,11 @@ public class BoxartRendererTests
         // still full-colour and near-incompressible. A straight 24-bit encode of this is ~100 KB.
         var source = NoiseBlocks(1024, 768, block: 8);
 
+        // The largest DS-displayable size: the biggest render still held to the TWiLightMenu byte cap.
         var png = new BoxartRenderer().Render(source, new RenderOptions
         {
-            Width = RenderOptions.MaxWidth,
-            Height = RenderOptions.MaxHeight,
+            Width = RenderOptions.TwilightMaxWidth,
+            Height = RenderOptions.TwilightMaxHeight,
             KeepAspectRatio = false,
         });
 
@@ -67,8 +68,8 @@ public class BoxartRendererTests
 
         // The ladder must buy the reduction with colour, not with pixels - a smaller cover would be a
         // silent downgrade of the thing the caller asked for.
-        Assert.AreEqual(RenderOptions.MaxWidth, header.Width);
-        Assert.AreEqual(RenderOptions.MaxHeight, header.Height);
+        Assert.AreEqual(RenderOptions.TwilightMaxWidth, header.Width);
+        Assert.AreEqual(RenderOptions.TwilightMaxHeight, header.Height);
         Assert.AreEqual(ColorTypePalette, header.ColorType, "expected the quantization fallback to have run");
     }
 

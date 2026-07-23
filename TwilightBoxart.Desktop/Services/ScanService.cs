@@ -22,7 +22,7 @@ public sealed record ScanUpdate(ScanCounters Counters, string? Log = null, strin
 public sealed class ScanService(RomProbeService prober, ILogger<ScanService> logger)
 {
     /// <summary>The batch ceiling POST /v2/identify enforces; harmless (and free) for the local backend.</summary>
-    private const int IdentifyChunk = 500;
+    private const int IdentifyChunk = IdentifyRequest.MaxItems;
 
     /// <summary>Where the art goes under a card root. The one spelling of the TWiLightMenu path.</summary>
     public static string BoxartDirectory(string root) => Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
@@ -221,6 +221,15 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         var boxartRoot = Path.TrimEndingDirectorySeparator(boxartDir);
         var boxartPrefix = boxartRoot + Path.DirectorySeparatorChar;
 
+        // When the boxart folder IS the card root (someone points output straight at the SD root), the
+        // output and the ROMs live in one folder. Applying the self-output filter there would skip the
+        // whole card and find nothing; the generated .png never match a ROM extension anyway, so drop
+        // the filter in that case. Normalized so "E:\" and "E:" resolve to the same directory.
+        var boxartIsRoot = string.Equals(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)),
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(boxartDir)),
+            StringComparison.OrdinalIgnoreCase);
+
         var result = new List<string>();
         foreach (var path in Directory.EnumerateFiles(root, "*", options))
         {
@@ -237,9 +246,11 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 continue;
             }
 
-            // Never scan our own output back in.
-            if (path.StartsWith(boxartPrefix, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(path, boxartRoot, StringComparison.OrdinalIgnoreCase))
+            // Never scan our own output back in - unless the output folder is the card root itself,
+            // where that same test would swallow every ROM on the card.
+            if (!boxartIsRoot
+                && (path.StartsWith(boxartPrefix, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(path, boxartRoot, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
             }

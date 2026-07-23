@@ -43,37 +43,38 @@ public class ApiTests
     #region Identify - limits
 
     [TestMethod]
-    public async Task Identify_RejectsBatchOverFiveHundredItems()
+    public async Task Identify_RejectsBatchOneOverTheItemCap()
     {
-        var items = Enumerable.Range(0, 501)
+        var items = Enumerable.Range(0, IdentifyRequest.MaxItems + 1)
             .Select(i => new RomFingerprint { FileName = $"game{i}.nds" })
             .ToArray();
 
         var response = await _client.PostAsJsonAsync("/v2/identify", new { items });
 
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode,
-            "a 501-item batch must be refused, not truncated");
+            "a batch one over the cap must be refused, not truncated");
     }
 
     [TestMethod]
-    public async Task Identify_AcceptsBatchOfExactlyFiveHundredItems()
+    public async Task Identify_AcceptsBatchOfExactlyTheItemCap()
     {
-        var items = Enumerable.Range(0, 500)
+        var items = Enumerable.Range(0, IdentifyRequest.MaxItems)
             .Select(i => new RomFingerprint { FileName = $"game{i}.nds" })
             .ToArray();
 
         var response = await _client.PostAsJsonAsync("/v2/identify", new { items });
 
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, "500 is the documented maximum, not one over it");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
+            $"{IdentifyRequest.MaxItems} is the documented maximum, not one over it");
     }
 
     [TestMethod]
-    public async Task Identify_RejectsBodyOverOneMegabyte()
+    public async Task Identify_RejectsBodyOverTheByteCap()
     {
-        // A single fingerprint whose header alone blows the 1 MB body budget. The point is that the
-        // request dies on size before anything deserialises it.
+        // A single fingerprint whose tag alone blows the body budget. The point is that the request
+        // dies on size before anything deserialises it.
         var payload = new StringBuilder("{\"items\":[{\"fileName\":\"big.nds\",\"tag\":\"");
-        payload.Append('x', 1_200_000);
+        payload.Append('x', IdentifyRequest.MaxItems * IdentifyRequest.MaxItemBytes + 200_000);
         payload.Append("\"}]}");
 
         using var content = new StringContent(payload.ToString(), Encoding.UTF8, "application/json");

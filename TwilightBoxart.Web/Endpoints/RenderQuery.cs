@@ -35,8 +35,9 @@ public static class RenderQuery
             BorderStyle = Border(query, "b") ?? defaults.BorderStyle,
             BorderThickness = Int(query, "bt") ?? defaults.BorderThickness,
             BorderColor = RenderOptions.ParseColor(query["bc"]) ?? defaults.BorderColor,
-            // Not settable from the query: it is TWiLightMenu++'s hard constraint, not a preference,
-            // and a client raising it produces art the DS silently refuses to display.
+            // Not settable from the query: for DS-displayable sizes it is TWiLightMenu++'s hard
+            // constraint, not a preference, and a client raising it produces art the DS silently
+            // refuses to display. Oversize renders get their wider budget from Normalized() below.
             MaxPngBytes = defaults.MaxPngBytes,
         }.Normalized();
     }

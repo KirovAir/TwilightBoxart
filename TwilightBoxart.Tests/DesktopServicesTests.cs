@@ -108,6 +108,32 @@ public class DesktopServicesTests
     }
 
     [TestMethod]
+    public void CollectFiles_BoxartDirEqualToRoot_StillFindsRoms()
+    {
+        // Regression: pointing the boxart output at the SD root made the self-output filter match every
+        // path on the card, so a scan found nothing. Generated .png are excluded by extension, not folder.
+        var root = MakeTempRoot();
+        WriteFile(root, "game.nds");
+        WriteFile(Path.Combine(root, "games"), "deep.gba");
+
+        var names = CollectNames(root, root);
+
+        CollectionAssert.Contains(names, "game.nds");
+        CollectionAssert.Contains(names, "deep.gba");
+    }
+
+    [TestMethod]
+    public void CollectFiles_BoxartDirEqualToRootWithTrailingSeparator_StillFindsRoms()
+    {
+        var root = MakeTempRoot();
+        WriteFile(root, "game.nds");
+
+        var names = CollectNames(root, root + Path.DirectorySeparatorChar);
+
+        CollectionAssert.Contains(names, "game.nds");
+    }
+
+    [TestMethod]
     public void CollectFiles_SkipsAppleDoubleForksAndNonRoms()
     {
         var root = MakeTempRoot();

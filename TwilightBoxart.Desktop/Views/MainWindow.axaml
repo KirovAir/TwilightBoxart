@@ -86,13 +86,18 @@
                                 <RadioButton GroupName="size" Content="Custom" IsChecked="{Binding IsSizeCustom}" />
                             </StackPanel>
                             <CheckBox Content="Keep original aspect ratio (recommended)" IsChecked="{Binding KeepAspectRatio}" />
+                            <!-- Sizes past the DS screen are for other frontends; TWiLightMenu++
+                                 silently ignores such covers, so say so before a card fills with them. -->
+                            <TextBlock Text="Larger than 256×192: TWiLightMenu++ will not show these covers."
+                                       IsVisible="{Binding IsOversizeForTwilight}"
+                                       Foreground="#B25E09" FontSize="12" TextWrapping="Wrap" />
                         </StackPanel>
                         <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding Width}" Minimum="1" Maximum="256"
+                            <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding Width}" Minimum="1" Maximum="1000"
                                            Increment="1" FormatString="0" Width="120" IsEnabled="{Binding IsSizeCustom}" />
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Height:" VerticalAlignment="Center" Margin="0,8,10,0" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="1" Maximum="192"
+                            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="1" Maximum="1000"
                                            Increment="1" FormatString="0" Width="120" Margin="0,8,0,0" IsEnabled="{Binding IsSizeCustom}" />
                         </Grid>
                     </Grid>

@@ -306,12 +306,53 @@ public class DataTests
     }
 
     [TestMethod]
-    public void RenderOptions_ClampsDimensionsToTheDsScreen()
+    public void RenderOptions_ClampsDimensionsToTheCeiling()
     {
         var normalized = new RenderOptions { Width = 9999, Height = -5 }.Normalized();
 
         Assert.AreEqual(RenderOptions.MaxWidth, normalized.Width);
         Assert.AreEqual(1, normalized.Height);
+    }
+
+    [TestMethod]
+    public void RenderOptions_DsSizedRenderKeepsTheTwilightByteCap()
+    {
+        // Anything TWiLightMenu++ can display must stay under its 0xB000 cache slot, or the cover is
+        // silently dropped on the device.
+        var normalized = new RenderOptions
+        {
+            Width = RenderOptions.TwilightMaxWidth,
+            Height = RenderOptions.TwilightMaxHeight,
+        }.Normalized();
+
+        Assert.AreEqual(RenderOptions.TwilightMaxPngBytes, normalized.MaxPngBytes);
+    }
+
+    [TestMethod]
+    public void RenderOptions_OversizeRenderIsFreedFromTheTwilightByteCap()
+    {
+        // A cover too large for the DS screen can never land in TWiLightMenu's cache anyway; holding
+        // it to the 44 KB cap would only quantize it into mush for the frontend it IS for.
+        var normalized = new RenderOptions
+        {
+            Width = RenderOptions.TwilightMaxWidth + 1,
+            Height = RenderOptions.TwilightMaxHeight,
+        }.Normalized();
+
+        Assert.AreEqual(RenderOptions.OversizeMaxPngBytes, normalized.MaxPngBytes);
+    }
+
+    [TestMethod]
+    public void RenderOptions_OversizeRenderKeepsAnExplicitCallerBudget()
+    {
+        var normalized = new RenderOptions
+        {
+            Width = RenderOptions.MaxWidth,
+            Height = RenderOptions.MaxHeight,
+            MaxPngBytes = 100_000,
+        }.Normalized();
+
+        Assert.AreEqual(100_000, normalized.MaxPngBytes, "a deliberate budget must never be widened");
     }
 
     [TestMethod]

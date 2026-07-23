@@ -8,11 +8,15 @@ namespace TwilightBoxart.Web.Models;
 /// </summary>
 public static class ApiLimits
 {
-    /// <summary>Maximum fingerprints in one <c>POST /v2/identify</c> batch.</summary>
-    public const int MaxIdentifyItems = 500;
+    /// <summary>
+    /// Maximum fingerprints in one <c>POST /v2/identify</c> batch. Owned by
+    /// <see cref="IdentifyRequest.MaxItems"/> (the wire contract clients chunk against); re-exported
+    /// so the two cannot drift.
+    /// </summary>
+    public const int MaxIdentifyItems = IdentifyRequest.MaxItems;
 
-    /// <summary>Maximum <c>POST /v2/identify</c> body, in bytes (1 MB).</summary>
-    public const long MaxIdentifyBodyBytes = 1_048_576;
+    /// <summary>Maximum <c>POST /v2/identify</c> body: a full batch of worst-case items (~1 MB).</summary>
+    public const long MaxIdentifyBodyBytes = (long)IdentifyRequest.MaxItems * IdentifyRequest.MaxItemBytes;
 
     /// <summary>
     /// Maximum <c>POST /api</c> body. A real v0.7 request is ~1 KB (a 512-byte header sample in

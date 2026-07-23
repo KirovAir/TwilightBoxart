@@ -38,8 +38,9 @@ public sealed class BoxartRenderer : IBoxartRenderer
     ];
 
     /// <summary>
-    /// Renders <paramref name="source"/> to a PNG no larger than
-    /// <see cref="RenderOptions.TwilightMaxPngBytes"/>.
+    /// Renders <paramref name="source"/> to a PNG no larger than the options' normalized byte budget:
+    /// <see cref="RenderOptions.TwilightMaxPngBytes"/> for DS-displayable sizes, wider for renders
+    /// beyond what TWiLightMenu++ can show (see <see cref="RenderOptions.Normalized"/>).
     /// </summary>
     /// <exception cref="ImageFormatException">The blob is not an image this build can decode.</exception>
     public byte[] Render(ArtBlob source, RenderOptions options)
