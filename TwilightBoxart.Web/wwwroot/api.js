@@ -22,7 +22,7 @@ const API_KEY = 'tb2_9f4c1d7a3e8b5062';
  * bumped alongside <Version> in Directory.Build.props, which is where every other copy comes from.
  */
 const CLIENT_HEADER = 'X-Twilight-Client';
-const CLIENT = 'web/2.0';
+const CLIENT = 'web/2.1';
 
 /** Server-side limits: <=500 items and <=1 MB per identify call. */
 export const IDENTIFY_CHUNK = 200;

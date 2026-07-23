@@ -1,17 +1,21 @@
+using System.IO.Hashing;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TwilightBoxart.Core;
+using TwilightBoxart.Core.Identify;
 using TwilightBoxart.Core.Models;
 using TwilightBoxart.Core.Probe;
 using TwilightBoxart.Core.Index;
 using TwilightBoxart.Web.Services;
+using TwilightBoxart.Tests.Fixtures;
 
 namespace TwilightBoxart.Tests;
 
@@ -346,6 +350,108 @@ public class ApiTests
 
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode,
             "the resolved identity's canonical name must reach the art source on a cold cache");
+    }
+
+    [TestMethod]
+    public async Task ArtByFingerprint_PassesCrc32AndSizeThroughToTheIdentifier()
+    {
+        RomFingerprint? seen = null;
+        using var factory = new TwilightWebFactory(
+            identifier: new FakeIdentifier(fingerprint =>
+            {
+                seen = fingerprint;
+                return new RomIdentity
+                {
+                    ConsoleType = ConsoleType.NintendoDs,
+                    Key = "ASME",
+                    Serial = "ASME",
+                    MatchMethod = MatchMethod.Crc32,
+                    Tag = fingerprint.Tag,
+                };
+            }));
+        using var client = factory.CreateClient();
+
+        var response = await client.GetAsync("/v2/art.png?name=game.nes&crc32=89ABCDEF&size=40976");
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.IsNotNull(seen);
+        Assert.AreEqual(0x89ABCDEFu, seen.Crc32);
+        Assert.AreEqual(40976L, seen.Size);
+    }
+
+    [TestMethod]
+    public async Task ArtByFingerprint_TreatsAnUnusableCrc32OrSizeAsAbsent()
+    {
+        // The DSi retry must never make a request worse than not sending the field at all: a
+        // malformed, zero, signed or overflowing value degrades to "unknown", and the name still
+        // identifies the ROM exactly as it did before the field existed.
+        RomFingerprint? seen = null;
+        using var factory = new TwilightWebFactory(
+            identifier: new FakeIdentifier(fingerprint =>
+            {
+                seen = fingerprint;
+                return new RomIdentity
+                {
+                    ConsoleType = ConsoleType.NintendoDs,
+                    Key = "ASME",
+                    Serial = "ASME",
+                    MatchMethod = MatchMethod.Filename,
+                    Tag = fingerprint.Tag,
+                };
+            }));
+        using var client = factory.CreateClient();
+
+        foreach (var query in new[]
+        {
+            "crc32=&size=",
+            "crc32=0&size=0",
+            "crc32=zz&size=abc",
+            "crc32=123456789AB&size=-5",
+            "crc32=FFFFFFFFF&size=99999999999999999999",
+        })
+        {
+            seen = null;
+            var response = await client.GetAsync($"/v2/art.png?name=game.nes&{query}");
+
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode, query);
+            Assert.IsNotNull(seen, query);
+            Assert.IsNull(seen.Crc32, query);
+            Assert.IsNull(seen.Size, query);
+        }
+    }
+
+    [TestMethod]
+    public async Task ArtByFingerprint_Crc32AndSize_RecoverAHeaderedNesRomTheNameMissed()
+    {
+        // The DSi Complete-scan retry end to end, against the real ladder: the name matches
+        // nothing, No-Intro recorded the headerless CRC, and the whole-file CRC only becomes
+        // usable once the size anchors the header-stripping arithmetic. Size may only ever ADD
+        // a match: the identical request without it must stay the plain 404 it always was.
+        var rom = new byte[16 + 8_192];
+        ReadOnlySpan<byte> magic = [0x4E, 0x45, 0x53, 0x1A];
+        magic.CopyTo(rom);
+        rom[4] = 2; // PRG banks
+        rom[5] = 1; // CHR banks
+        new Random(8_192).NextBytes(rom.AsSpan(16));
+
+        using var file = NoIntroIndexFile.Create(
+            new IndexRow(ConsoleType.Nes, "Metroid (USA)", Crc32: Crc32.HashToUInt32(rom.AsSpan(16))));
+        using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+        using var factory = new TwilightWebFactory(
+            identifier: new IdentificationLadder(index, NullLogger<IdentificationLadder>.Instance));
+        using var client = factory.CreateClient();
+
+        var fingerprint =
+            $"name=unmatchable-name.nes&header={Uri.EscapeDataString(Convert.ToBase64String(rom[..512]))}" +
+            $"&crc32={Crc32.HashToUInt32(rom):X8}";
+
+        var without = await client.GetAsync($"/v2/art.png?{fingerprint}");
+        Assert.AreEqual(HttpStatusCode.NotFound, without.StatusCode,
+            "without a size the whole-file CRC cannot be stripped and nothing else matches");
+
+        var with = await client.GetAsync($"/v2/art.png?{fingerprint}&size={rom.Length}");
+        Assert.AreEqual(HttpStatusCode.OK, with.StatusCode,
+            "the size anchors the header-stripping CRC arithmetic and recovers the match");
     }
 
     #endregion

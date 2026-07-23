@@ -60,6 +60,7 @@ typedef struct {
     int border;     /* 0 none, 1 dsi, 2 3ds, 3 black, 4 white */
     bool thick;
     bool overwrite;
+    bool quick_scan;
     bool mute;
     char backend_host[128];
     int backend_port;
@@ -129,10 +130,71 @@ static bool user_aborted(void)
     return aborted;
 }
 
+/* Whole-file CRC32 plus the byte count that went into it: the server needs both, because
+   stripping a container header (iNES) out of the hash arithmetically only works when it
+   knows where the hashed bytes ended. Holding B cancels. */
+static bool file_crc32(const char *path, u32 *result, u32 *size, bool *cancelled)
+{
+    static u32 table[256];
+    static bool table_ready;
+    static unsigned char buffer[128 * 1024];
+
+    *cancelled = false;
+
+    if (!table_ready) {
+        for (u32 i = 0; i < 256; i++) {
+            u32 value = i;
+            for (int bit = 0; bit < 8; bit++)
+                value = (value >> 1) ^ ((value & 1) ? 0xEDB88320 : 0);
+            table[i] = value;
+        }
+        table_ready = true;
+    }
+
+    FILE *f = fopen(path, "rb");
+    if (!f)
+        return false;
+
+    u32 crc = 0xFFFFFFFF;
+    u32 total = 0;
+    size_t got;
+    while ((got = fread(buffer, 1, sizeof(buffer), f)) > 0) {
+        for (size_t i = 0; i < got; i++)
+            crc = table[(crc ^ buffer[i]) & 0xFF] ^ (crc >> 8);
+        total += got;
+
+        cothread_yield_irq(IRQ_VBLANK);
+        scanKeys();
+        if (keysHeld() & KEY_B) {
+            *cancelled = true;
+            fclose(f);
+            return false;
+        }
+    }
+
+    bool ok = !ferror(f);
+    fclose(f);
+    if (ok) {
+        *result = crc ^ 0xFFFFFFFF;
+        *size = total;
+    }
+    return ok;
+}
+
 static const char *file_ext(const char *name)
 {
     const char *dot = strrchr(name, '.');
     return dot ? dot : "";
+}
+
+static bool is_ds_ext(const char *ext)
+{
+    static const char *exts[] = { ".nds", ".ds", ".dsi", ".srl", ".ids", ".app" };
+    for (unsigned i = 0; i < sizeof(exts) / sizeof(exts[0]); i++) {
+        if (strcasecmp(ext, exts[i]) == 0)
+            return true;
+    }
+    return false;
 }
 
 /* The extension list the backend hands out at /v2/formats, normalised to ",.nds,.gba," - lowercase,
@@ -431,6 +493,162 @@ static void fetch_rom_extensions(void)
 /* Bytes of the file's head we hand the server. 512 covers every header its parsers read. */
 #define HEADER_SAMPLE 512
 
+#define VISIBLE_RESULTS 8
+#define MAX_SCAN_RESULTS 4096
+
+typedef struct {
+    char name[27];
+    char result;
+    char *path;
+    u32 crc32;
+    bool crc32_known;
+} ScanResult;
+
+static ScanResult *scan_results;
+static size_t scan_result_count;
+static size_t scan_result_capacity;
+static bool scan_history_complete = true;
+
+static void reset_scan_results(void)
+{
+    for (size_t i = 0; i < scan_result_count; i++)
+        free(scan_results[i].path);
+    free(scan_results);
+    scan_results = NULL;
+    scan_result_count = 0;
+    scan_result_capacity = 0;
+    scan_history_complete = true;
+}
+
+static void remember_result(
+    const char *path, const char *name, char result, bool crc32_known, u32 crc32)
+{
+    if (scan_result_count == MAX_SCAN_RESULTS) {
+        scan_history_complete = false;
+        return;
+    }
+
+    if (scan_result_count == scan_result_capacity) {
+        size_t capacity = scan_result_capacity == 0 ? 64 : scan_result_capacity * 2;
+        if (capacity > MAX_SCAN_RESULTS)
+            capacity = MAX_SCAN_RESULTS;
+        ScanResult *grown = realloc(scan_results, capacity * sizeof(*scan_results));
+        if (!grown) {
+            scan_history_complete = false;
+            return;
+        }
+        scan_results = grown;
+        scan_result_capacity = capacity;
+    }
+
+    char *saved_path = malloc(strlen(path) + 1);
+    if (!saved_path) {
+        scan_history_complete = false;
+        return;
+    }
+    strcpy(saved_path, path);
+
+    ScanResult *entry = &scan_results[scan_result_count++];
+    snprintf(entry->name, sizeof(entry->name), "%.26s", name);
+    entry->result = result;
+    entry->path = saved_path;
+    entry->crc32 = crc32;
+    entry->crc32_known = crc32_known;
+}
+
+static const char *result_label(char result)
+{
+    return result == '+' ? "got "
+           : result == '=' ? "have"
+           : result == '-' ? "miss"
+           : "fail";
+}
+
+static const char *result_colour(char result)
+{
+    return result == '+' ? "\x1b[32;1m"
+           : result == '=' ? "\x1b[36;1m"
+           : result == '-' ? "\x1b[33;1m"
+           : "\x1b[31;1m";
+}
+
+static void print_recent_results(void)
+{
+    printf("Recent:\n");
+    size_t first = scan_result_count > VISIBLE_RESULTS ? scan_result_count - VISIBLE_RESULTS : 0;
+    for (size_t i = first; i < scan_result_count; i++) {
+        const ScanResult *entry = &scan_results[i];
+        printf("%s%-4s \x1b[37;1m%s\n",
+               result_colour(entry->result), result_label(entry->result), entry->name);
+    }
+    for (size_t i = scan_result_count - first; i < VISIBLE_RESULTS; i++)
+        printf("\n");
+}
+
+static void print_scan_counts(void)
+{
+    printf("%d games scanned\n"
+           "\x1b[32;1m%d new\x1b[37;1m / \x1b[36;1m%d existing\x1b[37;1m\n"
+           "\x1b[33;1m%d missing\x1b[37;1m / \x1b[31;1m%d failed\x1b[37;1m\n",
+           counters.found, counters.written, counters.skipped, counters.missed, counters.failed);
+}
+
+static void scan_dashboard(const char *name, const char *status)
+{
+    consoleClear();
+    printf("\x1b[37;1mScanning...\n\n");
+    print_scan_counts();
+    printf("\n");
+
+    if (name && *name) {
+        printf("%.30s\n", name);
+        if (strlen(name) > 30)
+            printf("%.27s%s\n", name + 30, strlen(name) > 57 ? "..." : "");
+        else
+            printf("\n");
+    } else {
+        printf("Reading the card...\n\n");
+    }
+
+    printf(status ? "\x1b[36;1m%s\x1b[37;1m\n" : "\n", status);
+    print_recent_results();
+    printf("\nHold B to stop.");
+}
+
+static void scan_summary(bool stopped, size_t selected, size_t first, const char *debug_line)
+{
+    consoleClear();
+    printf(stopped ? "\x1b[33;1mScan stopped.\x1b[37;1m\n\n"
+                   : "\x1b[32;1mScan complete!\x1b[37;1m\n\n");
+    print_scan_counts();
+    printf("\n");
+
+    if (scan_result_count == 0) {
+        printf("No results.\n");
+        for (int i = 1; i < VISIBLE_RESULTS; i++)
+            printf("\n");
+    } else {
+        printf("Result %lu of %lu%s\n",
+               (unsigned long)(selected + 1), (unsigned long)scan_result_count,
+               scan_history_complete ? "" : " (partial)");
+        size_t end = first + VISIBLE_RESULTS;
+        if (end > scan_result_count)
+            end = scan_result_count;
+        for (size_t i = first; i < end; i++) {
+            const ScanResult *entry = &scan_results[i];
+            printf("%c%s%-4s \x1b[37;1m%.25s\n", i == selected ? '>' : ' ',
+                   result_colour(entry->result), result_label(entry->result), entry->name);
+        }
+        for (size_t i = end - first; i < VISIBLE_RESULTS; i++)
+            printf("\n");
+    }
+
+    printf("\n%s\n\n"
+           " \x1b[32;1mA:\x1b[37;1m Run again\n"
+           " \x1b[32;1mSTART:\x1b[37;1m Exit\n"
+           " \x1b[32;1mSELECT:\x1b[37;1m CRC32\n", debug_line);
+}
+
 static void fetch_art(const char *path, const char *name)
 {
     char out_path[512];
@@ -439,10 +657,8 @@ static void fetch_art(const char *path, const char *name)
     struct stat existing;
     if (!g_config.overwrite && stat(out_path, &existing) == 0) {
         counters.skipped++;
-        /* Say so rather than passing over it silently: the numbers in the margin are a running
-           count of games found, so a skipped one leaves a visible gap if it prints nothing. */
-        printf("\x1b[36;1m%3d\x1b[37;1m %s.. \x1b[30;1malready there\x1b[37;1m\n",
-               counters.found, name);
+        remember_result(path, name, '=', false, 0);
+        scan_dashboard(name, NULL);
         return;
     }
 
@@ -482,17 +698,41 @@ static void fetch_art(const char *path, const char *name)
         snprintf(query, sizeof(query), "/v2/art.png?name=%s%s", encoded_name, render);
     }
 
-    printf("\x1b[36;1m%3d\x1b[37;1m %s.. ", counters.found, name);
+    scan_dashboard(name, NULL);
     int status = http_get_to_file(query, out_path);
+    bool crc32_known = false;
+    u32 crc32 = 0;
+    if (status == 404 && !g_config.quick_scan && !is_ds_ext(file_ext(name))) {
+        scan_dashboard(name, "Calculating CRC32...");
+        bool cancelled;
+        u32 size;
+        if (file_crc32(path, &crc32, &size, &cancelled)) {
+            crc32_known = true;
+            size_t length = strlen(query);
+            snprintf(query + length, sizeof(query) - length, "&crc32=%08lX&size=%lu",
+                     (unsigned long)crc32, (unsigned long)size);
+            scan_dashboard(name, "Retrying with CRC32...");
+            status = http_get_to_file(query, out_path);
+        } else if (cancelled) {
+            aborted = true;
+            return;
+        } else {
+            status = -1;
+        }
+    }
+
     if (status == 200) {
         counters.written++;
-        printf("\x1b[32;1mgot it!\x1b[37;1m\n");
+        remember_result(path, name, '+', crc32_known, crc32);
+        scan_dashboard(name, NULL);
     } else if (status == 404) {
         counters.missed++;
-        printf("\x1b[33;1mno art\x1b[37;1m\n");
+        remember_result(path, name, '-', crc32_known, crc32);
+        scan_dashboard(name, NULL);
     } else {
         counters.failed++;
-        printf("\x1b[31;1mfailed (%d)\x1b[37;1m\n", status);
+        remember_result(path, name, '!', crc32_known, crc32);
+        scan_dashboard(name, NULL);
     }
 }
 
@@ -679,6 +919,8 @@ static bool load_config(AppConfig *config)
                 config->thick = atoi(value) != 0;
             } else if (strcasecmp(key, "overwrite") == 0) {
                 config->overwrite = atoi(value) != 0;
+            } else if (strcasecmp(key, "quick_scan") == 0) {
+                config->quick_scan = atoi(value) != 0;
             } else if (strcasecmp(key, "mute") == 0) {
                 config->mute = atoi(value) != 0;
             } else if (strcasecmp(key, "backend_host") == 0) {
@@ -712,9 +954,9 @@ static void save_config(const AppConfig *config)
     FILE *f = fopen(CONFIG_PATH, "w");
     if (!f)
         return;
-    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nmute = %d\n",
+    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nquick_scan = %d\nmute = %d\n",
             config->ssid, config->key, config->size, config->border, config->thick ? 1 : 0,
-            config->overwrite ? 1 : 0, config->mute ? 1 : 0);
+            config->overwrite ? 1 : 0, config->quick_scan ? 1 : 0, config->mute ? 1 : 0);
     /* Written out even when untouched, so the keys are on the card to edit. Self-hosters:
        point backend_host at your own server; backend_tls 0 means plain HTTP. */
     fprintf(f, "; backend override - edit to use your own server\nbackend_host = %s\nbackend_port = %d\nbackend_tls = %d\n",
@@ -1107,15 +1349,16 @@ static bool options_menu(void)
         printf("\x1b[37;1mWelcome to TwilightBoxart!\n\n");
         printf("How do you want your covers?\n\n");
 
-        const char *values[4] = {
+        const char *values[5] = {
             SIZE_NAMES[g_config.size],
             BORDER_NAMES[g_config.border],
             g_config.thick ? "On" : "Off",
             g_config.overwrite ? "Yes" : "No",
+            g_config.quick_scan ? "Quick" : "Complete",
         };
-        const char *labels[4] = { "Size", "Border", "Thicker border", "Overwrite existing" };
+        const char *labels[5] = { "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             bool dim = i == 2 && g_config.border == 0;
             if (i == row)
                 printf(" \x1b[33;1m> %-18s %s\n", labels[i], values[i]);
@@ -1125,7 +1368,10 @@ static bool options_menu(void)
                 printf(" \x1b[37;1m  %-18s %s\n", labels[i], values[i]);
         }
 
-        printf("\x1b[37;1m\n\n \x1b[32;1mA:\x1b[37;1m scan and download\n"
+        printf(g_config.quick_scan
+               ? "\x1b[30;1mQuick may miss some covers.\x1b[37;1m\n"
+               : "\n");
+        printf("\x1b[37;1m\n \x1b[32;1mA:\x1b[37;1m scan and download\n"
                " \x1b[32;1mX:\x1b[37;1m music %s\n"
                " \x1b[32;1mY:\x1b[37;1m reset settings\n"
                " \x1b[32;1mSTART:\x1b[37;1m quit\n", g_config.mute ? "off" : "on");
@@ -1135,11 +1381,11 @@ static bool options_menu(void)
             scanKeys();
             u32 down = keysDownRepeat();
             if (down & KEY_UP) {
-                row = (row + 3) % 4;
+                row = (row + 4) % 5;
                 break;
             }
             if (down & KEY_DOWN) {
-                row = (row + 1) % 4;
+                row = (row + 1) % 5;
                 break;
             }
             if (down & (KEY_LEFT | KEY_RIGHT)) {
@@ -1150,8 +1396,10 @@ static bool options_menu(void)
                     g_config.border = (g_config.border + step + 5) % 5;
                 else if (row == 2)
                     g_config.thick = !g_config.thick;
-                else
+                else if (row == 3)
                     g_config.overwrite = !g_config.overwrite;
+                else
+                    g_config.quick_scan = !g_config.quick_scan;
                 break;
             }
             if (down & KEY_A) {
@@ -1213,9 +1461,9 @@ static bool options_menu(void)
             if (down & KEY_TOUCH) {
                 touchPosition touch;
                 touchRead(&touch);
-                /* The four option rows sit on console lines 5 to 8, the scan line on 11. */
+                /* The five option rows sit on console lines 5 to 9, the scan line on 12. */
                 int line = touch.py / 8;
-                if (line >= 5 && line <= 8) {
+                if (line >= 5 && line <= 9) {
                     int tapped = line - 5;
                     if (tapped == row) {
                         if (row == 0)
@@ -1224,13 +1472,15 @@ static bool options_menu(void)
                             g_config.border = (g_config.border + 1) % 5;
                         else if (row == 2)
                             g_config.thick = !g_config.thick;
-                        else
+                        else if (row == 3)
                             g_config.overwrite = !g_config.overwrite;
+                        else
+                            g_config.quick_scan = !g_config.quick_scan;
                     }
                     row = tapped;
                     break;
                 }
-                if (line >= 10 && line <= 12) {
+                if (line >= 11 && line <= 13) {
                     consoleClear();
                     return true;
                 }
@@ -1451,9 +1701,8 @@ int main(void)
         return 0;
     save_config(&g_config);
 
-    printf("TwilightBoxart " APP_VERSION "\n\n");
-    printf("Backend: %s:%d\n", g_config.backend_host, g_config.backend_port);
-    printf("Starting WiFi..");
+    printf("Getting your box art ready...\n\n");
+    printf("Getting WiFi ready..");
     if (!connect_wifi()) {
         printf("\n\nNo WiFi connection.\n\n"
                "Check the console's WiFi\nsettings and try again.\n");
@@ -1485,34 +1734,82 @@ int main(void)
        run goes back to the settings rather than straight out of the program. */
     for (;;) {
         memset(&counters, 0, sizeof(counters));
+        reset_scan_results();
         aborted = false;
 
-        printf("Scanning (hold B to stop)..\n\n");
+        scan_dashboard(NULL, NULL);
         scan_directory(0);
 
-        /* The scan log above is a wall of per game lines, so the end of it needs to actually
-           read as the end rather than as one more line of the same. */
-        printf(aborted ? "\n\x1b[33;1mStopped.\x1b[37;1m\n"
-                       : "\n\x1b[32;1mAll done!\x1b[37;1m\n");
-        printf("%d found, %d written,\n%d already there, %d no art",
-               counters.found, counters.written, counters.skipped, counters.missed);
-        if (counters.failed > 0)
-            printf(",\n%d failed", counters.failed);
-        printf("\n");
-
-        printf("\n \x1b[32;1mA:\x1b[37;1m change settings and run again\n"
-               " \x1b[32;1mSTART:\x1b[37;1m exit\n");
+        size_t selected = scan_result_count > 0 ? scan_result_count - 1 : 0;
+        size_t first = scan_result_count > VISIBLE_RESULTS ? scan_result_count - VISIBLE_RESULTS : 0;
+        char debug_line[32] = "";
         bool again = false;
+        scan_summary(aborted, selected, first, debug_line);
         while (1) {
             cothread_yield_irq(IRQ_VBLANK);
             scanKeys();
-            u32 down = keysDown();
-            if (down & KEY_A) {
+            /* Only the browse keys repeat. A short scan can end while the A that started it is
+               still held, and repeat would read that held A as another "run again". */
+            u32 down = keysDownRepeat();
+            u32 pressed = keysDown();
+            if (pressed & KEY_A) {
                 again = true;
                 break;
             }
-            if (down & KEY_START)
+            if (pressed & KEY_START)
                 break;
+            if (scan_result_count == 0)
+                continue;
+
+            if (pressed & KEY_SELECT) {
+                ScanResult *entry = &scan_results[selected];
+                if (!entry->crc32_known) {
+                    strcpy(debug_line, "Calculating CRC32... B: Cancel");
+                    scan_summary(aborted, selected, first, debug_line);
+                    bool cancelled;
+                    u32 size;
+                    if (file_crc32(entry->path, &entry->crc32, &size, &cancelled)) {
+                        entry->crc32_known = true;
+                    } else {
+                        strcpy(debug_line, cancelled ? "CRC32 cancelled." : "CRC32 unavailable.");
+                    }
+                }
+                if (entry->crc32_known)
+                    snprintf(debug_line, sizeof(debug_line), "CRC32: %08lX", (unsigned long)entry->crc32);
+                scan_summary(aborted, selected, first, debug_line);
+                continue;
+            }
+
+            bool moved = false;
+            if ((down & KEY_UP) && selected > 0) {
+                selected--;
+                if (selected < first)
+                    first = selected;
+                moved = true;
+            }
+            if ((down & KEY_DOWN) && selected + 1 < scan_result_count) {
+                selected++;
+                if (selected >= first + VISIBLE_RESULTS)
+                    first = selected - VISIBLE_RESULTS + 1;
+                moved = true;
+            }
+            if (down & KEY_LEFT) {
+                size_t step = selected < VISIBLE_RESULTS ? selected : VISIBLE_RESULTS;
+                selected -= step;
+                first = selected < VISIBLE_RESULTS ? 0 : selected - VISIBLE_RESULTS + 1;
+                moved = step > 0;
+            }
+            if (down & KEY_RIGHT) {
+                size_t remaining = scan_result_count - selected - 1;
+                size_t step = remaining < VISIBLE_RESULTS ? remaining : VISIBLE_RESULTS;
+                selected += step;
+                first = selected < VISIBLE_RESULTS ? 0 : selected - VISIBLE_RESULTS + 1;
+                moved = step > 0;
+            }
+            if (moved) {
+                debug_line[0] = '\0';
+                scan_summary(aborted, selected, first, debug_line);
+            }
         }
         if (!again)
             break;

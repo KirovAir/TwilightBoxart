@@ -131,6 +131,8 @@ public static class ArtEndpoints
         }
 
         var header = TryDecodeHeader(query["header"]);
+        var crc32 = TryParseCrc32(query["crc32"]);
+        var size = TryParseSize(query["size"]);
 
         // Nothing to go on at all.
         if (name.Length == 0 && header is null)
@@ -139,9 +141,23 @@ public static class ArtEndpoints
         }
 
         var identity = await identifier.IdentifyAsync(
-            new RomFingerprint { FileName = name, Header = header }, ct);
+            new RomFingerprint { FileName = name, Header = header, Crc32 = crc32, Size = size }, ct);
         return identity.IsMatched && ArtKey.IsValid(identity.Key) ? identity : null;
     }
+
+    private static uint? TryParseCrc32(string? value) =>
+        uint.TryParse(value, System.Globalization.NumberStyles.HexNumber, null, out var crc32) && crc32 != 0
+            ? crc32
+            : null;
+
+    /// <summary>
+    /// The byte count that went into <c>crc32</c>, decimal digits only. The ladder needs it to derive
+    /// header-stripped CRCs; anything unparsable is treated as absent, never as a reason to reject.
+    /// </summary>
+    private static long? TryParseSize(string? value) =>
+        long.TryParse(value, System.Globalization.NumberStyles.None, null, out var size) && size > 0
+            ? size
+            : null;
 
     /// <summary>
     /// Decodes a base64 header sample (the ROM's leading bytes). Oversized input is rejected
