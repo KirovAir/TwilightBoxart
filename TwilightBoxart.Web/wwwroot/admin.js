@@ -58,6 +58,11 @@ function render(stats) {
     $('instance-grid').replaceChildren(
         ...stats.caches.map(c => tile(`${c.name} cache`, `${c.files.toLocaleString()} files · ${mb(c.bytes)}`)));
 
+    // Since boot, most recently active first; the label is whatever the client said it was.
+    $('client-grid').replaceChildren(
+        ...stats.clients.map(c => tile(c.client,
+            `${c.requests.toLocaleString()} requests · ${c.matched.toLocaleString()}/${c.lookups.toLocaleString()} identified`)));
+
     $('upstream-grid').replaceChildren(
         ...stats.upstreams.map(u => tile(u.name,
             `${u.successes.toLocaleString()} hits · ${u.misses.toLocaleString()} misses · ${u.failures.toLocaleString()} errors`)));

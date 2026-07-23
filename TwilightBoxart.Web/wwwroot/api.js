@@ -15,7 +15,8 @@ const API_KEY = 'tb2_9f4c1d7a3e8b5062';
 
 /**
  * Says which client is calling, the way the DSi build's User-Agent does. A browser cannot set
- * User-Agent from script, so it goes in a header of our own.
+ * User-Agent from script, so it goes in a header of our own (ClientHeader.cs server-side); the
+ * backend's anonymous activity counters group us under this label.
  *
  * The version is written out here because wwwroot has no build step to inject it. It has to be
  * bumped alongside <Version> in Directory.Build.props, which is where every other copy comes from.

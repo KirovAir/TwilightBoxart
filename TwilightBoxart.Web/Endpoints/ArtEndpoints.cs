@@ -3,6 +3,7 @@ using Microsoft.Net.Http.Headers;
 using TwilightBoxart.Pipeline;
 using TwilightBoxart.Web.Extensions;
 using TwilightBoxart.Web.Models;
+using TwilightBoxart.Web.Services;
 
 namespace TwilightBoxart.Web.Endpoints;
 
@@ -83,10 +84,16 @@ public static class ArtEndpoints
         HttpContext context,
         [FromServices] ArtPipeline pipeline,
         [FromServices] IRomIdentifier identifier,
+        [FromServices] ActivityMonitor activity,
         CancellationToken ct)
     {
         var query = context.Request.Query;
         var identity = await ResolveIdentityAsync(query, identifier, ct);
+
+        // One lookup per request on this route. Counted here because the middleware only sees
+        // the status code, which cannot tell "unidentified" from "identified but no art".
+        activity.RecordIdentify(Activity.ClientLabel(context), 1, identity is null ? 0 : 1);
+
         if (identity is null)
         {
             return EmptyNotFound(context);

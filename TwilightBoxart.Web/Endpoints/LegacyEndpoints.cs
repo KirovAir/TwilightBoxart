@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TwilightBoxart.Pipeline;
 using TwilightBoxart.Web.Extensions;
 using TwilightBoxart.Web.Models;
+using TwilightBoxart.Web.Services;
 
 namespace TwilightBoxart.Web.Endpoints;
 
@@ -37,6 +38,7 @@ public static class LegacyEndpoints
         [FromServices] IRomIdentifier identifier,
         [FromServices] ArtPipeline pipeline,
         [FromServices] SecuritySettings security,
+        [FromServices] ActivityMonitor activity,
         CancellationToken ct)
     {
         // A CORS-simple POST, so browsers send it cross-origin without a preflight. DS clients and
@@ -85,7 +87,10 @@ public static class LegacyEndpoints
             Header = header,
         }, ct);
 
-        if (!identity.IsMatched || !ArtKey.IsValid(identity.Key))
+        var matched = identity.IsMatched && ArtKey.IsValid(identity.Key);
+        activity.RecordIdentify(Activity.ClientLabel(context), 1, matched ? 1 : 0);
+
+        if (!matched)
         {
             return ArtEndpoints.EmptyNotFound(context);
         }

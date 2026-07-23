@@ -659,6 +659,47 @@ public class ApiTests
         Assert.IsTrue(stats.Index.Available);
     }
 
+    [TestMethod]
+    public async Task Admin_StatsCountUsagePerClient()
+    {
+        using var factory = new TwilightWebFactory(adminPassword: "owner-secret");
+
+        // Three callers: the web app declaring itself by header, a DSi build recognisable only by
+        // its User-Agent, and a 2020 client that says nothing and is identified by the route.
+        using var web = factory.CreateClient();
+        web.DefaultRequestHeaders.TryAddWithoutValidation("X-Twilight-Client", "web/2.0");
+        var identify = await web.PostAsJsonAsync("/v2/identify",
+            new { items = new[] { new { fileName = "Super Mario 64 DS (USA).nds" } } });
+        Assert.AreEqual(HttpStatusCode.OK, identify.StatusCode);
+
+        using var dsi = factory.CreateClient();
+        dsi.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", "TwilightBoxart-DSi/1.0");
+        var art = await dsi.GetAsync("/v2/art.png?name=Super%20Mario%2064%20DS%20(USA).nds");
+        Assert.AreEqual(HttpStatusCode.OK, art.StatusCode);
+
+        using var vintage = factory.CreateClient();
+        using var form = V07Form();
+        var legacy = await vintage.PostAsync("/api", form);
+        Assert.AreEqual(HttpStatusCode.OK, legacy.StatusCode);
+
+        var login = await web.PostAsJsonAsync("/v2/admin/login", new { password = "owner-secret" });
+        Assert.AreEqual(HttpStatusCode.NoContent, login.StatusCode);
+        var stats = await web.GetFromJsonAsync<AdminStatsDto>("/v2/admin/stats");
+
+        var webUsage = stats!.Clients.Single(c => c.Client == "web/2.0");
+        Assert.AreEqual(1, webUsage.Lookups);
+        Assert.AreEqual(1, webUsage.Matched);
+
+        var dsiUsage = stats.Clients.Single(c => c.Client == "dsi/1.0");
+        Assert.AreEqual(1, dsiUsage.Requests);
+        Assert.AreEqual(1, dsiUsage.ArtHits);
+
+        var vintageUsage = stats.Clients.Single(c => c.Client == "v0.7");
+        Assert.AreEqual(1, vintageUsage.Lookups);
+        Assert.AreEqual(1, vintageUsage.Matched);
+        Assert.AreEqual(1, vintageUsage.ArtHits);
+    }
+
     #endregion
 
     // Local DTOs rather than the server's own records: a test that deserialises into the production
@@ -671,7 +712,11 @@ public class ApiTests
 
     private sealed record IndexDto(string Version, int RowCount, bool Available);
 
-    private sealed record AdminStatsDto(IndexDto Index, BuildDto Build, int Titles);
+    private sealed record AdminStatsDto(IndexDto Index, BuildDto Build, int Titles, List<ActivityDto> Clients);
+
+    private sealed record ActivityDto(
+        string Client, long Requests, long Rejected, long ArtHits, long ArtMisses,
+        long Lookups, long Matched);
 
     private sealed record BuildDto(string State, string? Version, int? Rows, string? Error);
 }

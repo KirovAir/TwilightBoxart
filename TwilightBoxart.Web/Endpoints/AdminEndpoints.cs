@@ -69,7 +69,7 @@ public static class AdminEndpoints
         var expected = SHA256.HashData(Encoding.UTF8.GetBytes(security.AdminPassword));
         if (!CryptographicOperations.FixedTimeEquals(supplied, expected))
         {
-            logger.LogWarning("Failed admin login from {Ip}", context.Connection.RemoteIpAddress);
+            logger.LogWarning("Failed admin login");
             return Results.Unauthorized();
         }
 
@@ -98,6 +98,7 @@ public static class AdminEndpoints
         [FromServices] UpstreamMonitor upstream,
         [FromServices] ArtRecordStore records,
         [FromServices] IndexBuildService builds,
+        [FromServices] ActivityMonitor clients,
         CancellationToken ct)
     {
         var usage = await caches.UsageAsync(ct);
@@ -109,6 +110,7 @@ public static class AdminEndpoints
             Build = builds.Status,
             Caches = [.. usage.Select(u => new CacheHealth(u.Name, u.Files, u.Bytes, u.BudgetBytes, caches.Scanned))],
             Upstreams = upstream.Snapshot(),
+            Clients = clients.Snapshot(),
             Titles = titles,
         });
     }
@@ -134,6 +136,9 @@ public sealed record AdminStats
     public required IReadOnlyList<CacheHealth> Caches { get; init; }
 
     public required IReadOnlyList<UpstreamHealth> Upstreams { get; init; }
+
+    /// <summary>Aggregate activity since boot.</summary>
+    public required IReadOnlyList<ActivitySnapshot> Clients { get; init; }
 
     /// <summary>Rows in the title space - how many distinct games this instance has ever resolved.</summary>
     public required int Titles { get; init; }

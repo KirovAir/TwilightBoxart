@@ -109,6 +109,10 @@ await builder.RunWithLoggingAsync(async b =>
     b.Services.AddTwilightCors(settings.Security);
     b.Services.AddTwilightRateLimiting();
 
+    // Anonymous client activity, counted in memory and summarized once an hour.
+    b.Services.AddSingleton<ActivityMonitor>();
+    b.Services.AddHostedService<ActivitySummaryService>();
+
     // Deliberately NOT calling UseForwardedHeaders unless a specific proxy is named. The old
     // Startup.cs enabled ForwardedHeaders.All with KnownNetworks and KnownProxies cleared, which let
     // any client dictate its own IP, host and scheme - and rate limiting partitions on the remote IP.
@@ -164,6 +168,8 @@ await builder.RunWithLoggingAsync(async b =>
     }
 
     app.UseRouting();
+    // After routing so the endpoint is known; before everything else so a 401 or a 429 still counts.
+    app.UseActivity();
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();

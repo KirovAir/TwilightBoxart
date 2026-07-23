@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using TwilightBoxart.Pipeline;
 using TwilightBoxart.Web.Extensions;
 using TwilightBoxart.Web.Models;
+using TwilightBoxart.Web.Services;
 
 namespace TwilightBoxart.Web.Endpoints;
 
@@ -32,8 +33,10 @@ public static class IdentifyEndpoints
     /// <summary>Identifies a batch of ROM fingerprints and remembers every match.</summary>
     private static async Task<IResult> Identify(
         IdentifyRequest request,
+        HttpContext context,
         [FromServices] IRomIdentifier identifier,
         [FromServices] ArtRecordStore records,
+        [FromServices] ActivityMonitor activity,
         [FromServices] ILogger<IdentifyLog> logger,
         CancellationToken ct)
     {
@@ -67,7 +70,10 @@ public static class IdentifyEndpoints
         }
 
         var matched = identities.Count(i => i.IsMatched);
-        logger.LogInformation("Identified {Matched}/{Total} fingerprints", matched, identities.Count);
+        var client = Activity.ClientLabel(context);
+        activity.RecordIdentify(client, identities.Count, matched);
+        logger.LogInformation("Identified {Matched}/{Total} ROMs for {Client}",
+            matched, identities.Count, client);
 
         return Results.Ok(new IdentifyResponse { Items = identities, Matched = matched });
     }

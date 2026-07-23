@@ -101,8 +101,11 @@ public sealed class RemoteArtBackend : IArtBackend
     {
         _client = factory.CreateClient();
         // On the client rather than per request, so identify, art and anything added later all carry
-        // it and none of them can forget. See ApiKey for what this does and does not achieve.
+        // them and none can forget. See ApiKey for what the key does and does not achieve; the client
+        // header is what the backend's usage stats count us under.
         _client.DefaultRequestHeaders.TryAddWithoutValidation(ApiKey.HeaderName, ApiKey.Value);
+        _client.DefaultRequestHeaders.TryAddWithoutValidation(ClientHeader.Name, ClientHeader.Desktop);
+        _client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", About.UserAgent);
         _baseUrl = (baseUrl ?? "").TrimEnd('/');
     }
 
