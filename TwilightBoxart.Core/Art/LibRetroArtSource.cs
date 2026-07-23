@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Logging;
 using TwilightBoxart.Core.Models;
 
@@ -89,6 +90,43 @@ public sealed class LibRetroArtSource(
         // reporting a miss. See MirrorBaseUrl.
         var mirrorUrl = BuildMirrorUrl(identity.ConsoleType, identity.CanonicalName);
         return mirrorUrl is null ? null : await TryGetAsync(mirrorUrl, ct);
+    }
+
+    /// <summary>
+    /// libretro-thumbnails stores revision and variant duplicates as git symlinks ("Donkey Kong
+    /// Country (USA) (Rev 2).png" links to "Donkey Kong Country (USA).png"), and
+    /// raw.githubusercontent serves the symlink blob verbatim: a tiny text body holding the target
+    /// file name. Resolving it against the same directory turns those covers into one extra request
+    /// on the fast primary instead of a warning plus a mirror round trip.
+    /// </summary>
+    protected override string? TryResolveSymlink(string url, byte[] body) => ResolveSymlinkTarget(url, body);
+
+    /// <summary>Exposed so the accept/reject rules can be asserted without a network call.</summary>
+    public static string? ResolveSymlinkTarget(string url, byte[] body)
+    {
+        // A symlink target is a bare file name; anything bigger is a real (broken) payload.
+        if (body.Length is 0 or > 300)
+        {
+            return null;
+        }
+
+        var target = Encoding.UTF8.GetString(body);
+        if (!target.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        // Same-directory names only: a separator would mean traversal, and libretro never nests.
+        // Control characters catch multi-line bodies, U+FFFD catches binary that failed to decode.
+        foreach (var c in target)
+        {
+            if (c is '/' or '\\' or < ' ' or '\uFFFD')
+            {
+                return null;
+            }
+        }
+
+        return url[..(url.LastIndexOf('/') + 1)] + Uri.EscapeDataString(target);
     }
 
     /// <summary>

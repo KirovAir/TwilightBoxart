@@ -31,6 +31,7 @@ public abstract class HttpArtSource(
     /// </summary>
     protected async Task<ArtBlob?> TryGetAsync(string url, CancellationToken ct)
     {
+        var followed = false;
         for (var attempt = 0; ; attempt++)
         {
             // Every sleep happens outside the gate. Holding a slot through a cooldown or a
@@ -49,6 +50,14 @@ public abstract class HttpArtSource(
                 _gate.Release();
             }
 
+            if (result.Follow is { } target && !followed)
+            {
+                // One hop only: a symlink pointing at another symlink is a miss, not a chase.
+                followed = true;
+                url = target;
+                continue;
+            }
+
             if (result.Backoff is not { } backoff)
             {
                 return result.Blob;
@@ -59,6 +68,12 @@ public abstract class HttpArtSource(
             await Task.Delay(backoff, ct);
         }
     }
+
+    /// <summary>
+    /// Maps a 200 body that is not an image onto a follow-up URL, for upstreams that serve pointers
+    /// in place of files. Null means "genuinely not art". Followed at most once per fetch.
+    /// </summary>
+    protected virtual string? TryResolveSymlink(string url, byte[] body) => null;
 
     /// <summary>
     /// One GET. A non-null <see cref="AttemptResult.Backoff"/> means "the upstream asked us to wait and
@@ -144,6 +159,19 @@ public abstract class HttpArtSource(
             // trying the next source. Sniff the magic bytes rather than trusting Content-Type.
             if (!ImageSniffer.LooksLikeImage(data))
             {
+                if (data.Length == 0)
+                {
+                    // GameTDB does this for a handful of broken entries: image/jpeg headers, no body.
+                    logger.LogWarning("{Source}: {Url} returned a 200 with an empty body", SourceName, url);
+                    return AttemptResult.Miss;
+                }
+
+                if (TryResolveSymlink(url, data) is { } target)
+                {
+                    logger.LogDebug("{Source}: {Url} is a symlink to {Target}", SourceName, url, target);
+                    return new AttemptResult(null, null, target);
+                }
+
                 logger.LogWarning(
                     "{Source}: {Url} returned {Length} bytes that are not a recognised image",
                     SourceName, url, data.Length);
@@ -156,7 +184,7 @@ public abstract class HttpArtSource(
         }
     }
 
-    private readonly record struct AttemptResult(ArtBlob? Blob, TimeSpan? Backoff)
+    private readonly record struct AttemptResult(ArtBlob? Blob, TimeSpan? Backoff, string? Follow = null)
     {
         public static readonly AttemptResult Miss = new(null, null);
     }

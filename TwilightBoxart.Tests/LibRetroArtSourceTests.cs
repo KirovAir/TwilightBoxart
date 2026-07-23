@@ -1,3 +1,4 @@
+using System.Text;
 using TwilightBoxart.Core.Art;
 using TwilightBoxart.Core.Models;
 
@@ -99,5 +100,30 @@ public class LibRetroArtSourceTests
         Assert.IsNull(LibRetroArtSource.BuildUrl(ConsoleType.Unknown, "Tetris (World)"));
         Assert.IsNull(LibRetroArtSource.BuildUrl(ConsoleType.GameBoy, null));
         Assert.IsNull(LibRetroArtSource.BuildUrl(ConsoleType.GameBoy, "   "));
+    }
+
+    [TestMethod]
+    public void LibRetroArtSource_ResolvesAGitSymlinkBodyAgainstTheSameDirectory()
+    {
+        // libretro dedupes revision variants as git symlinks, and raw.githubusercontent serves the
+        // symlink blob verbatim: a 200 whose body is the target file name.
+        var url = LibRetroArtSource.BuildUrl(ConsoleType.Snes, "Donkey Kong Country (USA) (Rev 2)")!;
+        var body = Encoding.UTF8.GetBytes("Donkey Kong Country (USA).png");
+
+        Assert.AreEqual(
+            "https://raw.githubusercontent.com/libretro-thumbnails/Nintendo_-_Super_Nintendo_Entertainment_System/master/Named_Boxarts/Donkey%20Kong%20Country%20%28USA%29.png",
+            LibRetroArtSource.ResolveSymlinkTarget(url, body));
+    }
+
+    [TestMethod]
+    public void LibRetroArtSource_RefusesSymlinkBodiesThatAreNotABareFileName()
+    {
+        var url = LibRetroArtSource.BuildUrl(ConsoleType.Snes, "Game")!;
+
+        // An HTML soft-404, traversal, binary that failed the sniffer, a multi-line body.
+        Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, Encoding.UTF8.GetBytes("<html>nope</html>")));
+        Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, Encoding.UTF8.GetBytes("../../../etc/evil.png")));
+        Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, [0x89, 0x50, 0x4E, 0x47]));
+        Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, Encoding.UTF8.GetBytes("a.png\nb.png")));
     }
 }
