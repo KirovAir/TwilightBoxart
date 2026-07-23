@@ -169,6 +169,7 @@ public static class ArtEndpoints
     /// </summary>
     internal static IResult EmptyNotFound(HttpContext context)
     {
+        context.Response.Headers.CacheControl = "no-store";
         context.Response.StatusCode = StatusCodes.Status404NotFound;
         return Results.Empty;
     }

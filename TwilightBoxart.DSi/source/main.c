@@ -1517,6 +1517,11 @@ int main(void)
         if (!again)
             break;
 
+        while (keysHeld() & KEY_A) {
+            cothread_yield_irq(IRQ_VBLANK);
+            scanKeys();
+        }
+
         if (!options_menu())
             break;
         save_config(&g_config);

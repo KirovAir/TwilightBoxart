@@ -197,7 +197,9 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
     /// </remarks>
     private static RomIdentity? TrySerialKey(HeaderDetection detection, string? tag)
     {
-        if (detection.Serial is not { Length: > 0 } serial || !IsUsableSerialKey(serial))
+        if (detection.ConsoleType is not (ConsoleType.NintendoDs or ConsoleType.NintendoDsi or ConsoleType.GameBoyAdvance)
+            || detection.Serial is not { Length: > 0 } serial
+            || !IsUsableSerialKey(serial))
         {
             return null;
         }
