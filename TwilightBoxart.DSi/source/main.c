@@ -348,9 +348,9 @@ static int http_get_to_file(const char *path, const char *out_path)
        be sent as garbage, so it is refused outright - snprintf reports the untruncated length. */
     static char request[4096];
     int request_length = snprintf(request, sizeof(request),
-        "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: TwilightBoxart-DSi/" APP_VERSION "\r\n"
+        "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: TwilightBoxart-DSi/" APP_VERSION "%s\r\n"
         API_KEY_HEADER "\r\nConnection: close\r\n\r\n",
-        path, g_config.backend_host);
+        path, g_config.backend_host, isDSiMode() ? "" : " (DS mode)");
     if (request_length <= 0 || request_length >= (int)sizeof(request)) {
         tls_close();
         closesocket(sock);
@@ -976,6 +976,27 @@ static void reset_config(void)
     apply_mute();
 }
 
+/* Routers show WEP keys as hex at least as often as text, but dswifi only takes the raw bytes:
+   in DS mode the key length alone picks the WEP flavour (5/13/16 bytes), and any other length
+   silently turns into an open-network attempt. So a key that reads as exactly 10, 26 or 32 hex
+   digits is decoded here. Real text WEP keys are 5, 13 or 16 characters and cannot collide.
+   DS mode only: a WPA2 passphrase of 10 hex digits is perfectly legal and must stay text. */
+static size_t wep_hex_decode(const char *key, unsigned char *out)
+{
+    size_t len = strlen(key);
+    if (len != 10 && len != 26 && len != 32)
+        return 0;
+    for (size_t i = 0; i < len; i++) {
+        if (!isxdigit((unsigned char)key[i]))
+            return 0;
+    }
+    for (size_t i = 0; i < len / 2; i++) {
+        char byte[3] = { key[i * 2], key[i * 2 + 1], '\0' };
+        out[i] = (unsigned char)strtoul(byte, NULL, 16);
+    }
+    return len / 2;
+}
+
 /* Joins with the scanned AP record when there is one (its bssid makes the match exact), or by
    name alone otherwise; ConnectSecureAP runs its own scan and disconnect either way. The wait
    has to cover that scan plus ~5s of WPA2 key derivation, which happens on every attempt. */
@@ -989,8 +1010,17 @@ static bool join_network(const Wifi_AccessPoint *scanned)
         memcpy(ap.ssid, g_config.ssid, ssid_len);
         ap.ssid_len = ssid_len;
     }
+    const void *key = g_config.key;
     size_t key_len = strlen(g_config.key);
-    if (Wifi_ConnectSecureAP(&ap, key_len > 0 ? g_config.key : NULL, key_len) != 0)
+    unsigned char wep[16];
+    if (!isDSiMode() && key_len > 0) {
+        size_t decoded = wep_hex_decode(g_config.key, wep);
+        if (decoded > 0) {
+            key = wep;
+            key_len = decoded;
+        }
+    }
+    if (Wifi_ConnectSecureAP(&ap, key_len > 0 ? key : NULL, key_len) != 0)
         return false;
     return wait_for_association(30);
 }
@@ -1065,7 +1095,8 @@ static const char *signal_bars(int rssi)
 }
 
 /* A few seconds in scan mode, keeping the strongest unique networks. Hidden names and WPA1
-   networks are dropped; dswifi cannot join WPA1 so listing them would only disappoint. */
+   networks are dropped; dswifi cannot join WPA1 so listing them would only disappoint. DS mode
+   drops WPA2 too: the 2005 radio tops out at WEP. */
 static int scan_networks(Wifi_AccessPoint *list)
 {
     Wifi_ScanMode();
@@ -1084,6 +1115,8 @@ static int scan_networks(Wifi_AccessPoint *list)
         if (Wifi_GetAPData(i, &ap) != WIFI_RETURN_OK)
             continue;
         if (ap.ssid_len == 0 || ap.security_type == AP_SECURITY_WPA)
+            continue;
+        if (!isDSiMode() && ap.security_type == AP_SECURITY_WPA2)
             continue;
 
         char name[33];
@@ -1140,7 +1173,11 @@ static int pick_network(Wifi_AccessPoint *chosen)
         int count = scan_networks(list);
 
         if (count == 0) {
-            printf("\nNo networks found. WiFi off,\nor 5 GHz only? The DSi needs\na 2.4 GHz network.\n\n");
+            if (isDSiMode()) {
+                printf("\nNo networks found. WiFi off,\nor 5 GHz only? The DSi needs\na 2.4 GHz network.\n\n");
+            } else {
+                printf("\nNo networks this radio can\njoin. DS mode does open or\nWEP only, on 2.4 GHz.\n\n");
+            }
             printf("\x1b[32;1mY:\x1b[37;1m scan again  \x1b[32;1mX:\x1b[37;1m type a name\n\x1b[31;1mSTART:\x1b[37;1m give up\n");
             while (1) {
                 cothread_yield_irq(IRQ_VBLANK);
@@ -1284,13 +1321,32 @@ static bool connect_wifi(void)
         }
 
         bool retry = false;
+        bool wep_hint = false;
         while (1) {
             if (needs_key) {
-                char prompt[96];
+                const char *note = "";
+                if (wep_hint) {
+                    note = "WEP keys are 5, 13 or 16\ncharacters, or 10/26/32\nhex digits.\n\n";
+                } else if (retry) {
+                    note = "That didn't work.\n\n";
+                }
+                char prompt[160];
                 snprintf(prompt, sizeof(prompt), "%sPassword for %s\n(blank if open):",
-                         retry ? "That didn't work.\n\n" : "", g_config.ssid);
+                         note, g_config.ssid);
                 if (!edit_line(prompt, g_config.key, sizeof(g_config.key)))
                     break; /* B goes back to the network list */
+
+                /* In DS mode a needed key is a WEP key, and dswifi quietly treats a length it
+                   does not know as no key at all. Catch the wrong shapes here instead of
+                   letting that doomed open-network join read as a bad password. */
+                size_t len = strlen(g_config.key);
+                if (!isDSiMode() && len > 0 &&
+                    len != 5 && len != 13 && len != 16 &&
+                    len != 10 && len != 26 && len != 32) {
+                    wep_hint = true;
+                    continue;
+                }
+                wep_hint = false;
             }
 
             /* two attempts per password entry: transient firmware disconnects kill single
@@ -1664,21 +1720,14 @@ int main(void)
     printf("TwilightBoxart " APP_VERSION "\n");
     printf("Box art for TWiLightMenu++\n\n");
 
-    /* DS mode means the 2005 radio: no WPA2, no modern network. Refuse early and say how to
-       fix it rather than letting WiFi fail in confusing ways later. */
+    /* DS mode means the 2005 radio: open and WEP networks only, no WPA2. Still enough for a
+       hotspot or a guest SSID, so say what to expect up front instead of refusing to run. */
     if (!isDSiMode()) {
-        printf("This app needs DSi mode.\n\n"
-               "In TWiLightMenu, press Y on\n"
-               "TwilightBoxart and set\n"
-               "Run in: DSi mode.\n");
-        wait_for_start();
-        return 1;
-    }
-
-    /* The DSi radio sits behind SCFG-gated hardware. Launched with the gates locked it can
-       never power up and WiFi init would wait on it forever, so check the ARM9's own SCFG
-       window first: it reads as zero when the launcher kept them shut. */
-    if (REG_SCFG_EXT == 0) {
+        printf("DS mode: only open or WEP\nWiFi works on this radio.\nAn open hotspot is easiest.\n\n");
+    } else if (REG_SCFG_EXT == 0) {
+        /* The DSi radio sits behind SCFG-gated hardware. Launched with the gates locked it can
+           never power up and WiFi init would wait on it forever, so check the ARM9's own SCFG
+           window first: it reads as zero when the launcher kept them shut. */
         printf("DSi mode, but without full\nhardware access, so WiFi\ncannot start.\n\n"
                "Try launching this app from\nthe Unlaunch menu itself, or\n"
                "look for an SCFG option in\nTWiLightMenu's per-game\nsettings (press Y).\n");

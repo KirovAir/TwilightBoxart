@@ -1,6 +1,7 @@
-# TwilightBoxart for DSi
+# TwilightBoxart for DS and DSi
 
-Homebrew that fills `_nds/TWiLightMenu/boxart/` from the console itself. It is the thinnest client
+Homebrew that fills `_nds/TWiLightMenu/boxart/` from the console itself. Runs on a DSi in DSi
+mode (WPA2 WiFi) and on an original DS or DS Lite flashcart in DS mode (open or WEP WiFi). It is the thinnest client
 of them all: for each ROM it sends the file name and the file's first 512 bytes, and writes the PNG
 it gets back over HTTPS by default or plain HTTP (`backend_tls` in the ini; the compiled-in
 default is `DEFAULT_BACKEND_TLS` in `source/main.c`). No JSON, no image decoding, and no ROM
@@ -43,14 +44,18 @@ FDS) is matched by its No-Intro file name, so keep those files named the way the
 
 ## WiFi reality check
 
-- The app requires **DSi mode** and says so at launch otherwise (in TWiLightMenu, press Y on the
-  app and set Run in: DSi mode). There, dswifi connects to normal WPA2 networks.
+- In **DSi mode** (on a DSi: in TWiLightMenu, press Y on the app and set Run in: DSi mode)
+  dswifi connects to normal WPA2 networks.
   The console's stored connections are tried first (Advanced Setup slots 4 to 6 are the
   WPA2-capable ones), and when none work the app simply asks on screen and saves the answer. If
   even that fails, the router is usually the problem: WPA3-only or a 5 GHz-only network; a
   2.4 GHz WPA2 (AES) guest network always works.
-- In **DS mode** (flashcarts, original DS/DS Lite) the hardware only does open or WEP networks. A
-  passwordless guest SSID or phone hotspot works.
+- In **DS mode** (flashcarts, original DS/DS Lite) the 2005 radio only does open or WEP
+  networks, and the app says so at launch. A passwordless guest SSID or phone hotspot is the
+  easy path. A WEP key can be typed as text (5/13/16 characters) or as the hex form routers
+  usually print (10/26/32 digits). WPA2 networks are left out of the scan list there, since
+  that radio can never join them. The console's stored WFC connections (slots 1 to 3) are
+  still tried first.
 - Nintendo's WFC servers being dead does not matter here: the app talks HTTPS to the hosted
   backend (or plain HTTP to your own on the LAN) and never touches a Nintendo server.
 
@@ -68,8 +73,10 @@ found" until you give it one:
 A note for the record: an earlier revision here blamed melonDS for a WiFi init hang. The real
 cause was this Makefile linking BlocksDS's default ARM7 core, which contains no WiFi driver at
 all, so the ARM9 waited forever for a handler that did not exist. With `arm7_dswifi.elf` linked,
-WiFi init, the association timeout and the on-screen setup all run in melonDS too. The shipped
-app requires DSi mode, so that is where an emulator run stops. Real WPA2 still needs a console.
+WiFi init, the association timeout and the on-screen setup all run in melonDS too. Since the app
+runs in DS mode, the whole loop runs in the emulator: enable internet connectivity in melonDS's
+WiFi settings and the scan finds melonAP, an open network the app can join like any other. Real
+WPA2 still needs a console.
 
 ## Building
 

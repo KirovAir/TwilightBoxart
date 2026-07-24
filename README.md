@@ -19,7 +19,7 @@ other loader too. 😊
 | --- | --- | --- |
 | 🌐 | **[Browser app](https://boxart.kirovair.com)** | The main way: nothing to install, pick your card, press scan |
 | 💻 | **Desktop app** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | Windows, macOS and Linux, one file. Works offline too |
-| 🎮 | **DSi homebrew** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | The console fills in its own box art over WiFi |
+| 🎮 | **DS/DSi homebrew** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | The console fills in its own box art over WiFi. DSi in DSi mode, or a DS/DS Lite flashcart (open/WEP WiFi there) |
 | 🐳 | **Self-hosted** | `docker compose up -d` and you run the whole thing yourself |
 
 <p align="center">
