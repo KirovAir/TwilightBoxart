@@ -25,6 +25,9 @@ public sealed class AppSettings
     /// <summary>Custom boxart destination. Null means the usual spot under the SD root.</summary>
     public string? BoxartFolder { get; set; }
 
+    /// <summary>Which launcher the covers are for. Stored as its name; absent in old files means TWiLightMenu.</summary>
+    public RenderTarget Target { get; set; } = RenderTarget.TwilightMenu;
+
     public int Width { get; set; } = 128;
     public int Height { get; set; } = 115;
     public bool KeepAspectRatio { get; set; } = true;
@@ -46,6 +49,7 @@ public sealed class AppSettings
     /// <summary>The one mapping from stored settings to render parameters.</summary>
     public RenderOptions ToRenderOptions() => new RenderOptions
     {
+        Target = Target,
         Width = Width,
         Height = Height,
         KeepAspectRatio = KeepAspectRatio,

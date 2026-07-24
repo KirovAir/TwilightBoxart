@@ -124,8 +124,9 @@ public class ApiTests
         var body = await response.Content.ReadFromJsonAsync<IdentifyResponseDto>();
         Assert.IsNotNull(body);
         // Clients follow this URL verbatim. They must never need to assemble it from parts -
-        // that would put a frozen copy of the route scheme in every shipped binary.
-        Assert.AreEqual("/v2/art/nds/ASME.png", body.Items.Single().ArtPath);
+        // that would put a frozen copy of the route scheme in every shipped binary. Extensionless:
+        // what comes back is the t= render parameter's business, not the path's.
+        Assert.AreEqual("/v2/art/nds/ASME", body.Items.Single().ArtPath);
     }
 
     #endregion
@@ -241,6 +242,65 @@ public class ApiTests
     }
 
     [TestMethod]
+    public async Task ArtByFingerprint_PicoTargetFoldsTheOptionsAndAdvertisesBmp()
+    {
+        // The DS Pico wire contract: t=pico must beat everything else the query asks for. The
+        // renderer here is the recording fake, so this asserts the plumbing - content type, the
+        // folded options reaching the renderer, and the target surviving into the canonical URL.
+        // The real BMP bytes are BoxartRendererTests' business.
+        var response = await _client.GetAsync(
+            "/v2/art.png?name=Super%20Mario%2064%20DS%20(USA).nds&w=208&h=143&b=Nintendo3Ds&t=pico");
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual("image/bmp", response.Content.Headers.ContentType?.MediaType);
+
+        var captured = _factory.Renderer.LastOptions;
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(RenderTarget.Pico, captured.Target);
+        Assert.AreEqual(RenderOptions.PicoWidth, captured.Width);
+        Assert.AreEqual(RenderOptions.PicoHeight, captured.Height);
+        Assert.AreEqual(BoxartBorderStyle.None, captured.BorderStyle);
+
+        // The one canonical Pico URL: extensionless, and t=pico is its whole query.
+        var location = response.Content.Headers.ContentLocation?.ToString();
+        Assert.AreEqual("/v2/art/nds/ASME?t=pico", location);
+    }
+
+    [TestMethod]
+    public async Task Art_UnknownTargetStaysAPng()
+    {
+        // A typo'd target must degrade to the launcher every pre-target URL meant, not to an error.
+        var response = await _client.GetAsync("/v2/art/gba/BPEE.png?t=gibberish");
+        response.EnsureSuccessStatusCode();
+
+        Assert.AreEqual("image/png", response.Content.Headers.ContentType?.MediaType);
+    }
+
+    [TestMethod]
+    public async Task Art_CanonicalRouteHonoursThePicoTarget()
+    {
+        var response = await _client.GetAsync("/v2/art/gba/BPEE?t=pico");
+        response.EnsureSuccessStatusCode();
+
+        Assert.AreEqual("image/bmp", response.Content.Headers.ContentType?.MediaType);
+        Assert.AreEqual(RenderTarget.Pico, _factory.Renderer.LastOptions?.Target);
+    }
+
+    [TestMethod]
+    public async Task Art_TreatsATrailingExtensionAsCosmetic()
+    {
+        // Pre-target releases minted /v2/art/nds/ASME.png and shipped clients follow what they
+        // stored, so the spelling must keep working; what comes back is t='s business alone.
+        var spellings = new[] { "/v2/art/gba/BPEE", "/v2/art/gba/BPEE.png", "/v2/art/gba/BPEE.bmp" };
+        foreach (var spelling in spellings)
+        {
+            var response = await _client.GetAsync(spelling);
+            response.EnsureSuccessStatusCode();
+            Assert.AreEqual("image/png", response.Content.Headers.ContentType?.MediaType, spelling);
+        }
+    }
+
+    [TestMethod]
     public async Task ArtByFingerprint_AdvertisesTheCanonicalUrlSoClientsCanCacheIt()
     {
         // The caller sent a file name and nothing else - no console, no serial. The server works
@@ -253,7 +313,7 @@ public class ApiTests
 
         var location = response.Content.Headers.ContentLocation?.ToString();
         Assert.IsNotNull(location);
-        StringAssert.StartsWith(location, "/v2/art/nds/ASME.png");
+        StringAssert.StartsWith(location, "/v2/art/nds/ASME?");
     }
 
     [TestMethod]

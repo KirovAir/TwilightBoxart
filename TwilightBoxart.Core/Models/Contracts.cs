@@ -32,6 +32,17 @@ public enum BoxartBorderStyle
 }
 
 /// <summary>
+/// Which launcher the render is for. The target owns the container format and geometry:
+/// TWiLightMenu++ wants a PNG under its cache-slot cap, Pico Launcher wants a fixed-size
+/// 8bpp BMP. Everything upstream of rendering (identify, sources, caching) is target-blind.
+/// </summary>
+public enum RenderTarget
+{
+    TwilightMenu = 0,
+    Pico,
+}
+
+/// <summary>
 /// What a client knows about a ROM before the server identifies it. Every field is optional except
 /// <see cref="FileName"/>; clients supply whatever they could obtain cheaply.
 /// </summary>
@@ -95,8 +106,15 @@ public sealed record RomIdentity
     /// hold a stale copy of the route scheme, which matters because clients in the wild do not
     /// update - v0.7 installs were still calling the retired endpoint six years on.
     /// </summary>
+    /// <remarks>
+    /// Extensionless: what comes back (PNG or Pico BMP) is the <c>t=</c> render parameter's
+    /// business, so the path promises no container. The server still accepts and ignores the
+    /// <c>.png</c> spelling this property minted before render targets existed, because this is a
+    /// COMPUTED property: clients in the wild carry their own compiled copy of the old form.
+    /// (A NEW client against a PRE-target server 404s, accepted: that pairing barely exists.)
+    /// </remarks>
     public string? ArtPath =>
-        IsMatched ? $"/v2/art/{ConsoleType.Slug()}/{Uri.EscapeDataString(Key)}.png" : null;
+        IsMatched ? $"/v2/art/{ConsoleType.Slug()}/{Uri.EscapeDataString(Key)}" : null;
 }
 
 /// <summary>Batch identification request: the wire envelope both the server and its clients speak.</summary>
@@ -149,6 +167,15 @@ public sealed record RenderOptions
     public BoxartBorderStyle BorderStyle { get; init; } = BoxartBorderStyle.None;
     public int BorderThickness { get; init; } = 1;
     public uint BorderColor { get; init; } = 0xFF000000;
+    public RenderTarget Target { get; init; } = RenderTarget.TwilightMenu;
+
+    /// <summary>
+    /// Pico Launcher covers are a fixed 128x96 8bpp BMP of which only the left 106x96 is shown;
+    /// the right 22 columns are padding the launcher ignores (pico-launcher docs/Covers.md).
+    /// </summary>
+    public const int PicoWidth = 128;
+    public const int PicoHeight = 96;
+    public const int PicoVisibleWidth = 106;
 
     /// <summary>
     /// TWiLightMenu++ allocates its box art cache as 40 slots of 0xB000 bytes and SILENTLY drops any
@@ -230,6 +257,26 @@ public sealed record RenderOptions
     /// <summary>Clamps every field into a sane, non-abusive range. Always apply to untrusted input.</summary>
     public RenderOptions Normalized()
     {
+        // Same defence as the border style below: an undefined target must not leak into cache keys.
+        var target = Enum.IsDefined(Target) ? Target : RenderTarget.TwilightMenu;
+
+        // Pico's format is fixed by the launcher, so every knob folds flat: byte-identical renders
+        // then share one cache entry no matter what the client happened to send along.
+        if (target == RenderTarget.Pico)
+        {
+            return this with
+            {
+                Target = target,
+                Width = PicoWidth,
+                Height = PicoHeight,
+                KeepAspectRatio = true,
+                BorderStyle = BoxartBorderStyle.None,
+                BorderThickness = 0,
+                BorderColor = 0,
+                MaxPngBytes = TwilightMaxPngBytes,
+            };
+        }
+
         // An undefined enum member falls through every switch in the border compositor and draws
         // nothing, which reads as a rendering bug rather than a bad parameter.
         var style = Enum.IsDefined(BorderStyle) ? BorderStyle : BoxartBorderStyle.None;
@@ -253,6 +300,7 @@ public sealed record RenderOptions
 
         return this with
         {
+            Target = target,
             Width = width,
             Height = height,
             BorderStyle = style,
@@ -273,17 +321,31 @@ public sealed record RenderOptions
     /// genuinely different bytes (different quantization), so they must not share a cache entry.
     /// </remarks>
     public string CacheDiscriminator() =>
-        $"{Width}x{Height}_{(KeepAspectRatio ? "ar" : "fill")}_{BorderStyle}_{BorderThickness}_{BorderColor:X8}_{MaxPngBytes}";
+        Target == RenderTarget.Pico
+            // The folded knobs (see Normalized) would only repeat themselves here.
+            ? "pico"
+            : $"{Width}x{Height}_{(KeepAspectRatio ? "ar" : "fill")}_{BorderStyle}_{BorderThickness}_{BorderColor:X8}_{MaxPngBytes}";
+
+    /// <summary>What the rendered bytes are: a PNG for TWiLightMenu++, an 8bpp BMP for Pico.</summary>
+    public string ContentType => Target == RenderTarget.Pico ? "image/bmp" : "image/png";
+
+    /// <summary>The matching on-disk extension, dot included.</summary>
+    public string FileExtension => Target == RenderTarget.Pico ? ".bmp" : ".png";
 
     /// <summary>
-    /// The options as art-URL query parameters: <c>?w=&amp;h=&amp;ar=&amp;b=&amp;bt=&amp;bc=</c>.
-    /// The single encoder for this wire format on purpose: the server's Content-Location and the
-    /// desktop client must emit identical strings or the same render stops converging on the same
-    /// cache URL. <see cref="MaxPngBytes"/> deliberately does not travel; it is TWiLightMenu++'s
-    /// hard constraint, not a client preference.
+    /// The options as art-URL query parameters: <c>?w=&amp;h=&amp;ar=&amp;b=&amp;bt=&amp;bc=</c>
+    /// for TWiLightMenu (target absent, so every URL minted before targets existed keeps its
+    /// meaning), and just <c>?t=pico</c> for Pico, whose folded knobs would only be noise
+    /// splitting one fixed render across cache URLs. The single encoder for this wire format on
+    /// purpose: the server's Content-Location and the desktop client must emit identical strings
+    /// or the same render stops converging on the same cache URL. <see cref="MaxPngBytes"/>
+    /// deliberately does not travel; it is TWiLightMenu++'s hard constraint, not a client
+    /// preference.
     /// </summary>
     public string ToQueryString() =>
-        $"?w={Width}&h={Height}&ar={(KeepAspectRatio ? 1 : 0)}&b={BorderStyle}&bt={BorderThickness}&bc={BorderColor:X8}";
+        Target == RenderTarget.Pico
+            ? "?t=pico"
+            : $"?w={Width}&h={Height}&ar={(KeepAspectRatio ? 1 : 0)}&b={BorderStyle}&bt={BorderThickness}&bc={BorderColor:X8}";
 }
 
 /// <summary>A fetched, unrendered piece of upstream art.</summary>
@@ -331,9 +393,12 @@ public sealed record IndexEntry(
     uint? Crc32,
     string? Sha1);
 
-/// <summary>Renders upstream art to a TWiLightMenu-safe PNG.</summary>
+/// <summary>
+/// Renders upstream art for the options' <see cref="RenderTarget"/>: a TWiLightMenu-safe PNG, or
+/// a Pico Launcher 8bpp BMP.
+/// </summary>
 public interface IBoxartRenderer
 {
-    /// <summary>Result is guaranteed &lt;= <see cref="RenderOptions.TwilightMaxPngBytes"/>.</summary>
+    /// <summary>A TWiLightMenu render is guaranteed &lt;= <see cref="RenderOptions.TwilightMaxPngBytes"/>.</summary>
     byte[] Render(ArtBlob source, RenderOptions options);
 }

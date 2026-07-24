@@ -1,5 +1,6 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats;
+using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -51,6 +52,11 @@ public sealed class BoxartRenderer : IBoxartRenderer
         // which is more reliable than an upstream header.
         using var artwork = Image.Load<Rgba32>(Decoder, source.Data);
 
+        if (settings.Target == RenderTarget.Pico)
+        {
+            return RenderPico(artwork);
+        }
+
         var sprite = BorderSprite.For(settings.BorderStyle);
         var inset = ResolveInset(sprite, settings);
 
@@ -90,6 +96,33 @@ public sealed class BoxartRenderer : IBoxartRenderer
         }
 
         return Encode(canvas, settings.MaxPngBytes);
+    }
+
+    /// <summary>
+    /// A Pico Launcher cover: the art fitted into the visible 106x96, centred there on a black
+    /// 128x96 canvas (the launcher never shows the right 22 columns), as an 8bpp indexed BMP.
+    /// No border, no byte ladder: the file is 13,366 bytes by construction, so unlike the PNG
+    /// path the quantizer runs exactly once and dithering costs nothing.
+    /// </summary>
+    private static byte[] RenderPico(Image<Rgba32> artwork)
+    {
+        var size = FitToAspectRatio(
+            artwork.Width, artwork.Height, RenderOptions.PicoVisibleWidth, RenderOptions.PicoHeight);
+        artwork.Mutate(context => context.Resize(size));
+
+        using var canvas = new Image<Rgba32>(RenderOptions.PicoWidth, RenderOptions.PicoHeight);
+        FillRows(canvas, Color.Black.ToPixel<Rgba32>());
+
+        var offset = new Point(
+            (RenderOptions.PicoVisibleWidth - size.Width) / 2,
+            (RenderOptions.PicoHeight - size.Height) / 2);
+        canvas.Mutate(context => context.DrawImage(artwork, offset, 1f));
+
+        return EncodeWith(canvas, new BmpEncoder
+        {
+            BitsPerPixel = BmpBitsPerPixel.Pixel8,
+            Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256 }),
+        });
     }
 
     /// <summary>
@@ -336,7 +369,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
             $"{maxBytes} bytes even at 2 colours.");
     }
 
-    private static byte[] EncodeWith(Image<Rgba32> canvas, PngEncoder encoder)
+    private static byte[] EncodeWith(Image<Rgba32> canvas, ImageEncoder encoder)
     {
         using var buffer = new MemoryStream();
         canvas.Save(buffer, encoder);

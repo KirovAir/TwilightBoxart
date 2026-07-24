@@ -15,7 +15,7 @@ $(error Could not read <Version> from ../Directory.Build.props)
 endif
 
 GAME_TITLE	:= TwilightBoxart
-GAME_SUBTITLE	:= Box art for TWiLightMenu++ $(APP_VERSION)
+GAME_SUBTITLE	:= Box art for TWiLightMenu++ & Pico $(APP_VERSION)
 GAME_AUTHOR	:= KirovAir
 
 SOURCEDIRS	:= source mbedtls/library

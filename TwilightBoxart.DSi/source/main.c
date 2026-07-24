@@ -1,7 +1,8 @@
-// TwilightBoxart DSi client. A thin pipe over the backend:
-// read a ROM's header, ask the backend for art by serial or name, write the PNG it
-// returns into the TWiLightMenu++ boxart folder. No TLS, no JSON, no image decoding.
-// The server guarantees every PNG fits TWiLightMenu's 45,056-byte box art slot.
+// TwilightBoxart DS/DSi client. A thin pipe over the backend:
+// read a ROM's header, ask the backend for art by serial or name, write the cover it
+// returns into the chosen launcher's boxart folder (TWiLightMenu++ PNG, or Pico Launcher
+// BMP). No TLS, no JSON, no image decoding. The server guarantees every TWiLightMenu PNG
+// fits its 45,056-byte box art slot; Pico covers are a fixed-size BMP by construction.
 
 #include <ctype.h>
 #include <dirent.h>
@@ -44,6 +45,9 @@
 #define API_KEY_HEADER "X-Twilight-Key: tb2_9f4c1d7a3e8b5062"
 
 #define BOXART_DIR  "/_nds/TWiLightMenu/boxart"
+/* Pico Launcher's filename-keyed folder: works for every system (the game-code folders only do
+   NDS/GBA) and the launcher gives it precedence. */
+#define PICO_DIR    "/_pico/covers/user"
 #define MAX_DEPTH   8
 
 /* The sample rate music.bin was converted at (Pixel Cart Drift, by Jesse Sander). */
@@ -56,6 +60,7 @@
 typedef struct {
     char ssid[33];
     char key[65];
+    int launcher;   /* 0 TWiLightMenu++, 1 Pico Launcher */
     int size;       /* 0 classic 128x115, 1 large 168x130, 2 xl 208x143 */
     int border;     /* 0 none, 1 dsi, 2 3ds, 3 black, 4 white */
     bool thick;
@@ -68,6 +73,16 @@ typedef struct {
 } AppConfig;
 
 static AppConfig g_config;
+
+static bool is_pico(void)
+{
+    return g_config.launcher == 1;
+}
+
+static const char *boxart_dir(void)
+{
+    return is_pico() ? PICO_DIR : BOXART_DIR;
+}
 
 /* The bottom screen's artwork layer. The keyboard is created lazily on first use, because an
    initialized-but-hidden keyboard layer leaks a tile row onto the artwork; its palette entries
@@ -89,6 +104,9 @@ static bool kb_ready;
 
 static const int SIZE_W[] = { 128, 168, 208 };
 static const int SIZE_H[] = { 115, 130, 143 };
+/* Nine characters at most: an option row is " > %-18s %s" and the console is 32 columns, so a
+   ten-character value lands exactly on column 32, wraps, and shoves every row below it down. */
+static const char *LAUNCHER_NAMES[] = { "TWLMenu++", "DS Pico" };
 static const char *SIZE_NAMES[] = { "Classic", "Large", "XL" };
 static const char *BORDER_NAMES[] = { "None", "DSi Theme", "3DS Theme", "Black", "White" };
 static const char *BORDER_WIRE[] = { "None", "NintendoDsi", "Nintendo3Ds", "Line", "Line" };
@@ -652,7 +670,8 @@ static void scan_summary(bool stopped, size_t selected, size_t first, const char
 static void fetch_art(const char *path, const char *name)
 {
     char out_path[512];
-    snprintf(out_path, sizeof(out_path), BOXART_DIR "/%s.png", name);
+    snprintf(out_path, sizeof(out_path), "%s/%s%s", boxart_dir(), name,
+             is_pico() ? ".bmp" : ".png");
 
     struct stat existing;
     if (!g_config.overwrite && stat(out_path, &existing) == 0) {
@@ -662,10 +681,15 @@ static void fetch_art(const char *path, const char *name)
         return;
     }
 
+    /* Pico's cover format is fixed, so the target is the whole render request there. */
     char render[96];
-    snprintf(render, sizeof(render), "&w=%d&h=%d&b=%s&bt=%d&bc=%s",
-             SIZE_W[g_config.size], SIZE_H[g_config.size], BORDER_WIRE[g_config.border],
-             g_config.thick ? 2 : 1, g_config.border == 4 ? "FFFFFFFF" : "FF000000");
+    if (is_pico()) {
+        snprintf(render, sizeof(render), "&t=pico");
+    } else {
+        snprintf(render, sizeof(render), "&w=%d&h=%d&b=%s&bt=%d&bc=%s",
+                 SIZE_W[g_config.size], SIZE_H[g_config.size], BORDER_WIRE[g_config.border],
+                 g_config.thick ? 2 : 1, g_config.border == 4 ? "FFFFFFFF" : "FF000000");
+    }
 
     /* The file name plus the file's first bytes: everything the server needs to work out the
        console, the serial and the title entirely on its side. This client parses nothing - a
@@ -700,6 +724,7 @@ static void fetch_art(const char *path, const char *name)
 
     scan_dashboard(name, NULL);
     int status = http_get_to_file(query, out_path);
+
     bool crc32_known = false;
     u32 crc32 = 0;
     if (status == 404 && !g_config.quick_scan && !is_ds_ext(file_ext(name))) {
@@ -764,8 +789,9 @@ static void scan_directory(int depth)
         strcpy(scan_path + base_len + 1, entry->d_name);
 
         if (entry->d_type == DT_DIR) {
-            /* Never descend into _nds: the boxart output lives there. */
-            if (!(depth == 0 && strcasecmp(entry->d_name, "_nds") == 0))
+            /* Never descend into _nds or _pico: the boxart output lives there. */
+            if (!(depth == 0 && (strcasecmp(entry->d_name, "_nds") == 0 ||
+                                 strcasecmp(entry->d_name, "_pico") == 0)))
                 scan_directory(depth + 1);
         } else if (is_rom_ext(file_ext(entry->d_name))) {
             counters.found++;
@@ -907,6 +933,8 @@ static bool load_config(AppConfig *config)
                 strncpy(config->ssid, value, sizeof(config->ssid) - 1);
             } else if (strcasecmp(key, "key") == 0) {
                 strncpy(config->key, value, sizeof(config->key) - 1);
+            } else if (strcasecmp(key, "launcher") == 0) {
+                config->launcher = atoi(value) == 1 ? 1 : 0;
             } else if (strcasecmp(key, "size") == 0) {
                 config->size = atoi(value);
                 if (config->size < 0 || config->size > 2)
@@ -954,8 +982,8 @@ static void save_config(const AppConfig *config)
     FILE *f = fopen(CONFIG_PATH, "w");
     if (!f)
         return;
-    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nquick_scan = %d\nmute = %d\n",
-            config->ssid, config->key, config->size, config->border, config->thick ? 1 : 0,
+    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nlauncher = %d\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nquick_scan = %d\nmute = %d\n",
+            config->ssid, config->key, config->launcher, config->size, config->border, config->thick ? 1 : 0,
             config->overwrite ? 1 : 0, config->quick_scan ? 1 : 0, config->mute ? 1 : 0);
     /* Written out even when untouched, so the keys are on the card to edit. Self-hosters:
        point backend_host at your own server; backend_tls 0 means plain HTTP. */
@@ -1211,7 +1239,7 @@ static int pick_network(Wifi_AccessPoint *chosen)
                 printf("%s %c %-22.22s %s\n", i == row ? "\x1b[33;1m" : "\x1b[37;1m",
                        i == row ? '>' : ' ', name, tag);
             }
-            printf("\x1b[30;1m\nUP/DOWN + A, or just tap it.\n\n");
+            printf("\x1b[30;1m\nUP/DOWN + A to pick one.\n\n");
             printf("\x1b[32;1mY:\x1b[30;1m rescan  \x1b[32;1mX:\x1b[30;1m type a name\n\x1b[31;1mSTART:\x1b[30;1m give up\x1b[37;1m\n");
 
             bool rescan = false;
@@ -1230,15 +1258,6 @@ static int pick_network(Wifi_AccessPoint *chosen)
                 if (down & KEY_A) {
                     *chosen = list[row];
                     return 0;
-                }
-                if (down & KEY_TOUCH) {
-                    touchPosition touch;
-                    touchRead(&touch);
-                    int hit = touch.py / 8 - 2;
-                    if (hit >= 0 && hit < count) {
-                        *chosen = list[hit];
-                        return 0;
-                    }
                 }
                 if (down & KEY_Y) {
                     rescan = true;
@@ -1338,11 +1357,13 @@ static bool connect_wifi(void)
 
                 /* In DS mode a needed key is a WEP key, and dswifi quietly treats a length it
                    does not know as no key at all. Catch the wrong shapes here instead of
-                   letting that doomed open-network join read as a bad password. */
+                   letting that doomed open-network join read as a bad password: text keys have
+                   exactly three lengths, and the hex lengths only count when they decode. */
                 size_t len = strlen(g_config.key);
+                unsigned char scratch[16];
                 if (!isDSiMode() && len > 0 &&
                     len != 5 && len != 13 && len != 16 &&
-                    len != 10 && len != 26 && len != 32) {
+                    wep_hex_decode(g_config.key, scratch) == 0) {
                     wep_hint = true;
                     continue;
                 }
@@ -1405,17 +1426,19 @@ static bool options_menu(void)
         printf("\x1b[37;1mWelcome to TwilightBoxart!\n\n");
         printf("How do you want your covers?\n\n");
 
-        const char *values[5] = {
+        const char *values[6] = {
+            LAUNCHER_NAMES[g_config.launcher],
             SIZE_NAMES[g_config.size],
             BORDER_NAMES[g_config.border],
             g_config.thick ? "On" : "Off",
             g_config.overwrite ? "Yes" : "No",
             g_config.quick_scan ? "Quick" : "Complete",
         };
-        const char *labels[5] = { "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
+        const char *labels[6] = { "Launcher", "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
 
-        for (int i = 0; i < 5; i++) {
-            bool dim = i == 2 && g_config.border == 0;
+        for (int i = 0; i < 6; i++) {
+            /* Pico's cover format is fixed, so the size and border rows go dark with it. */
+            bool dim = (i == 3 && g_config.border == 0) || (is_pico() && i >= 1 && i <= 3);
             if (i == row)
                 printf(" \x1b[33;1m> %-18s %s\n", labels[i], values[i]);
             else if (dim)
@@ -1437,22 +1460,24 @@ static bool options_menu(void)
             scanKeys();
             u32 down = keysDownRepeat();
             if (down & KEY_UP) {
-                row = (row + 4) % 5;
+                row = (row + 5) % 6;
                 break;
             }
             if (down & KEY_DOWN) {
-                row = (row + 1) % 5;
+                row = (row + 1) % 6;
                 break;
             }
             if (down & (KEY_LEFT | KEY_RIGHT)) {
                 int step = (down & KEY_RIGHT) ? 1 : -1;
                 if (row == 0)
-                    g_config.size = (g_config.size + step + 3) % 3;
+                    g_config.launcher = !g_config.launcher;
                 else if (row == 1)
-                    g_config.border = (g_config.border + step + 5) % 5;
+                    g_config.size = (g_config.size + step + 3) % 3;
                 else if (row == 2)
-                    g_config.thick = !g_config.thick;
+                    g_config.border = (g_config.border + step + 5) % 5;
                 else if (row == 3)
+                    g_config.thick = !g_config.thick;
+                else if (row == 4)
                     g_config.overwrite = !g_config.overwrite;
                 else
                     g_config.quick_scan = !g_config.quick_scan;
@@ -1514,33 +1539,6 @@ static bool options_menu(void)
             }
             if (down & KEY_START)
                 return false;
-            if (down & KEY_TOUCH) {
-                touchPosition touch;
-                touchRead(&touch);
-                /* The five option rows sit on console lines 5 to 9, the scan line on 12. */
-                int line = touch.py / 8;
-                if (line >= 5 && line <= 9) {
-                    int tapped = line - 5;
-                    if (tapped == row) {
-                        if (row == 0)
-                            g_config.size = (g_config.size + 1) % 3;
-                        else if (row == 1)
-                            g_config.border = (g_config.border + 1) % 5;
-                        else if (row == 2)
-                            g_config.thick = !g_config.thick;
-                        else if (row == 3)
-                            g_config.overwrite = !g_config.overwrite;
-                        else
-                            g_config.quick_scan = !g_config.quick_scan;
-                    }
-                    row = tapped;
-                    break;
-                }
-                if (line >= 11 && line <= 13) {
-                    consoleClear();
-                    return true;
-                }
-            }
         }
     }
 }
@@ -1718,7 +1716,7 @@ int main(void)
                                     MUSIC_VOLUME, 64, true, 0);
 
     printf("TwilightBoxart " APP_VERSION "\n");
-    printf("Box art for TWiLightMenu++\n\n");
+    printf("Box art for TWiLightMenu++\nand Pico Launcher\n\n");
 
     /* DS mode means the 2005 radio: open and WEP networks only, no WPA2. Still enough for a
        hotspot or a guest SSID, so say what to expect up front instead of refusing to run. */
@@ -1771,17 +1769,23 @@ int main(void)
     }
     printf("\n");
 
-    /* EEXIST is fine: the folders are usually already there. */
-    (void)mkdir("/_nds", 0777);
-    (void)mkdir("/_nds/TWiLightMenu", 0777);
-    (void)mkdir(BOXART_DIR, 0777);
-
     /* Before walking the card, ask what counts as a ROM. Silent and optional - see is_rom_ext. */
     fetch_rom_extensions();
 
     /* Stopping a scan is usually "wrong size" or "wrong border", not "I am done", so the end of a
        run goes back to the settings rather than straight out of the program. */
     for (;;) {
+        /* Per run, not once: the between-runs options menu can switch the launcher, and the new
+           launcher's cover chain may not exist yet. EEXIST is fine either way. */
+        (void)mkdir("/_nds", 0777);
+        if (is_pico()) {
+            (void)mkdir("/_pico", 0777);
+            (void)mkdir("/_pico/covers", 0777);
+        } else {
+            (void)mkdir("/_nds/TWiLightMenu", 0777);
+        }
+        (void)mkdir(boxart_dir(), 0777);
+
         memset(&counters, 0, sizeof(counters));
         reset_scan_results();
         aborted = false;

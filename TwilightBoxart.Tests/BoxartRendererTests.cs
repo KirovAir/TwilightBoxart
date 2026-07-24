@@ -170,6 +170,61 @@ public class BoxartRendererTests
     }
 
     [TestMethod]
+    public void BoxartRenderer_RendersAPicoBmpRegardlessOfTheOtherKnobs()
+    {
+        // Deliberately hostile options: Pico's format is fixed, so the size and border requests
+        // must all fold flat rather than leak into the output.
+        var bmp = new BoxartRenderer().Render(Cover(600, 540), new RenderOptions
+        {
+            Target = RenderTarget.Pico,
+            Width = 999,
+            Height = 999,
+            BorderStyle = BoxartBorderStyle.Nintendo3Ds,
+            BorderThickness = 5,
+        });
+
+        // Pico Launcher's own parser (BmpHeader::Validate + BmpFileCover.cpp) is the contract
+        // here, asserted branch by branch: 'BM', a 40-byte BITMAPINFOHEADER exactly, 128x96,
+        // 8bpp, uncompressed, clrUsed 0 or 256 - and the palette at 0x36 with pixel data at
+        // 0x436, because the launcher reads both from those fixed offsets. An encoder upgrade
+        // that drifts to a V4/V5 header would pass any looser check and show no covers at all.
+        Assert.AreEqual((byte)'B', bmp[0]);
+        Assert.AreEqual((byte)'M', bmp[1]);
+        Assert.AreEqual(0x436, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(10, 4)), "pixel data offset");
+        Assert.AreEqual(40, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(14, 4)), "DIB header size");
+        Assert.AreEqual(RenderOptions.PicoWidth, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(18, 4)));
+        Assert.AreEqual(RenderOptions.PicoHeight, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(22, 4)));
+        Assert.AreEqual(8, BinaryPrimitives.ReadInt16LittleEndian(bmp.AsSpan(28, 2)));
+        Assert.AreEqual(0, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(30, 4)), "compression must be BI_RGB");
+        var clrUsed = BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(46, 4));
+        Assert.IsTrue(clrUsed is 0 or 256, $"clrUsed {clrUsed} is outside the launcher's accepted values");
+
+        // A wide cover is height-bound into the visible 106 columns; the 22 the launcher never
+        // shows stay black. Decoded checks, so palette indirection is exercised too.
+        var pixels = Decode(bmp);
+        Assert.AreEqual(new Rgba32(0, 0, 0, 255), pixels[RenderOptions.PicoWidth - 1, 48],
+            "the padding columns must stay black");
+        Assert.AreNotEqual(new Rgba32(0, 0, 0, 255), pixels[53, 48],
+            "the visible area should carry the artwork");
+    }
+
+    [TestMethod]
+    public void CacheDiscriminator_FoldsEverythingForPico()
+    {
+        // Two Pico requests with wildly different knobs are byte-identical renders and must share
+        // one cache entry, one query string and one content type.
+        var a = new RenderOptions { Target = RenderTarget.Pico, Width = 999, BorderColor = 0x11223344 };
+        var b = new RenderOptions { Target = RenderTarget.Pico, Height = 7, BorderStyle = BoxartBorderStyle.Line };
+
+        Assert.AreEqual(a.Normalized().CacheDiscriminator(), b.Normalized().CacheDiscriminator());
+        Assert.AreEqual(a.Normalized().ToQueryString(), b.Normalized().ToQueryString());
+        Assert.AreEqual("image/bmp", a.ContentType);
+        Assert.AreEqual(".bmp", a.FileExtension);
+        Assert.AreNotEqual(new RenderOptions().Normalized().CacheDiscriminator(), a.Normalized().CacheDiscriminator(),
+            "a Pico render must never share a cache entry with a TWiLightMenu render");
+    }
+
+    [TestMethod]
     public void CacheDiscriminator_FoldsBorderColourAndThicknessWhenTheStyleDoesNotReadThem()
     {
         // Without a Line border bc/bt never reach the compositor, so leaving them in the key would

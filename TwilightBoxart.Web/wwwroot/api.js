@@ -121,13 +121,15 @@ export async function identifyBatch(fingerprints, signal) {
  * The identity's art URL with render parameters appended. The path itself comes from the server
  * (identify's artPath) and is followed verbatim: this client owns the render PREFERENCES, the
  * server owns the URL. The query mirrors RenderOptions.ToQueryString() exactly: w/h pixels, ar
- * aspect ratio as 1/0, b border style, bt thickness, bc colour as AARRGGBB hex. Matching the
- * server's own encoder makes these URLs textually identical to the Content-Location it advertises,
- * so every client converges on one cacheable URL per render.
+ * aspect ratio as 1/0, b border style, bt thickness, bc colour as AARRGGBB hex; for Pico just
+ * t=pico, since its format is fixed and the folded knobs would only split the one render across
+ * cache URLs. Matching the server's own encoder makes these URLs textually identical to the
+ * Content-Location it advertises, so every client converges on one cacheable URL per render.
  */
 function artUrl(identity, o) {
     const path = identity?.artPath;
     if (!path) return null;
+    if (o.target === 'pico') return `${path}?t=pico`;
     const q = new URLSearchParams({
         w: String(o.width),
         h: String(o.height),

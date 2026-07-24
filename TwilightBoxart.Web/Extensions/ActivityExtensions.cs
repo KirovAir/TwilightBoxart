@@ -50,7 +50,8 @@ public static class Activity
                 var status = failed ? StatusCodes.Status500InternalServerError : context.Response.StatusCode;
                 activity.RecordRequest(client, status);
 
-                if (endpoint is "GetArtPng" or "GetArtByFingerprint" or "LegacyApi" && (status is 200 or 304 or 404))
+                if (endpoint is "GetArt" or "GetArtByFingerprint" or "GetArtByFingerprintPng" or "LegacyApi"
+                    && (status is 200 or 304 or 404))
                 {
                     activity.RecordArt(client, hit: status != 404);
                 }

@@ -99,9 +99,10 @@ public static class LegacyEndpoints
         var art = await pipeline.TryGetAsync(identity, options, ct);
 
         // Raw bytes or a bodiless 404: v0.7 writes whatever arrives straight to the SD card.
+        // Always a PNG: v0.7 predates render targets and only ever spoke TWiLightMenu.
         return art is null
             ? ArtEndpoints.EmptyNotFound(context)
-            : Results.Bytes(art.Png, "image/png");
+            : Results.Bytes(art.Bytes, "image/png");
     }
 
     /// <summary>

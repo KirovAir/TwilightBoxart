@@ -6,24 +6,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#F1EFFA">
 
-    <title>TwilightBoxart · Box art for TWiLightMenu++</title>
+    <title>TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher</title>
     <meta name="description"
-        content="Scans your SD card, works out what your games actually are, and writes the right covers into TWiLightMenu++. Runs in the browser, nothing to install.">
+        content="Scans your SD card, works out what your games actually are, and writes the right covers into TWiLightMenu++ or Pico Launcher (DS Pico). Runs in the browser, nothing to install.">
 
     <!-- Absolute and hardcoded on purpose. A self-hosted instance is not a rival copy of the site
          competing for the same results, it is this app run privately, so it points at the original. -->
-    <link rel="canonical" href="https://boxart.kirovair.com/">
+    <link rel="canonical" href="https://twilightboxart.com/">
 
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="TwilightBoxart">
-    <meta property="og:url" content="https://boxart.kirovair.com/">
-    <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++">
+    <meta property="og:url" content="https://twilightboxart.com/">
+    <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher">
     <meta property="og:description"
         content="Point it at your SD card and it works out what your games are, then writes the right covers straight onto it. 27 systems, nothing to install.">
-    <meta property="og:image" content="https://boxart.kirovair.com/og.png">
+    <meta property="og:image" content="https://twilightboxart.com/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="TwilightBoxart: box art for TWiLightMenu++, straight onto your SD card.">
+    <meta property="og:image:alt"
+        content="TwilightBoxart: box art for TWiLightMenu++ and Pico Launcher, straight onto your SD card.">
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="manifest" href="manifest.json">
@@ -39,10 +40,10 @@
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "TwilightBoxart",
-        "url": "https://boxart.kirovair.com/",
+        "url": "https://twilightboxart.com/",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Web, Windows, macOS, Linux",
-        "description": "Downloads box art for TWiLightMenu++ by identifying games from their contents rather than their filenames, and writes the covers straight onto the SD card.",
+        "description": "Downloads box art for TWiLightMenu++ and Pico Launcher by identifying games from their contents rather than their filenames, and writes the covers straight onto the SD card.",
         "license": "https://www.gnu.org/licenses/gpl-3.0.html",
         "isAccessibleForFree": true,
         "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
@@ -56,7 +57,7 @@
             <img src="icon.png" alt="" width="58" height="58">
             <div>
                 <h1>Twilight<span class="pop">Boxart</span></h1>
-                <p class="tag">TwilightMenu++ Boxart Downloader</p>
+                <p class="tag">TWiLightMenu++ &amp; Pico Launcher Boxart Downloader</p>
             </div>
         </div>
         <nav class="topbar-actions">
@@ -87,7 +88,7 @@
         <section class="panel">
             <h2><span class="step">1</span> Your SD card</h2>
             <p class="muted">
-                Pick the card itself, not a folder inside it. Covers go into TWiLightMenu's box art
+                Pick the card itself, not a folder inside it. Covers go into your launcher's box art
                 folder and nothing else on the card is ever touched: not your games, not your
                 settings.
             </p>
@@ -113,6 +114,17 @@
         <section class="panel">
             <h2><span class="step">2</span> Box art settings</h2>
             <fieldset>
+                <legend>Launcher:</legend>
+                <div class="row">
+                    <label class="check"><input type="radio" name="launcher" id="launcher-twilight" value="twilight"
+                            checked> TWiLightMenu++</label>
+                    <label class="check"><input type="radio" name="launcher" id="launcher-pico" value="pico"> Pico
+                        Launcher (DS Pico)</label>
+                </div>
+                <p class="muted" id="pico-note" style="margin: 8px 0 0" hidden>Pico covers are one fixed format
+                    (128 × 96, 256 colours), so size and border settings don't apply.</p>
+            </fieldset>
+            <fieldset id="settings-size">
                 <legend>Boxart Size:</legend>
                 <div class="row">
                     <label class="check"><input type="radio" name="size" id="size-classic" value="classic" checked>
@@ -128,7 +140,7 @@
                     aspect ratio (recommended)</label>
                 <p class="muted" style="margin: 8px 0 0">The DS screen tops out at 256 × 192.</p>
             </fieldset>
-            <fieldset>
+            <fieldset id="settings-extra">
                 <legend>Extra:</legend>
                 <div class="row">
                     <label class="check"><input type="checkbox" id="border"> Add border?</label>

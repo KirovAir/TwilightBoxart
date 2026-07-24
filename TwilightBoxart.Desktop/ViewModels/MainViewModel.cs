@@ -51,6 +51,9 @@ public sealed partial class MainViewModel : ObservableObject
     {
         BackendUrl = settings.BackendUrl;
         RootFolder = settings.RootFolder;
+        // Before the boxart folder lines below: the derived folder depends on the launcher.
+        IsLauncherPico = settings.Target == RenderTarget.Pico;
+        IsLauncherTwilight = !IsLauncherPico;
         BoxartManual = !string.IsNullOrWhiteSpace(settings.BoxartFolder);
         BoxartFolder = BoxartManual ? settings.BoxartFolder! : DerivedBoxartFolder;
         KeepAspectRatio = settings.KeepAspectRatio;
@@ -132,6 +135,19 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnIsSizeLargeChanged(bool value) { if (value) { Width = 168; Height = 130; } }
     partial void OnIsSizeXlChanged(bool value) { if (value) { Width = 208; Height = 143; } }
 
+    // The launcher the covers are for. Pico's format is fixed, so the view hides the size and
+    // border panels entirely when it is selected: the clearest statement that nothing applies.
+    [ObservableProperty] private bool _isLauncherTwilight = true;
+    [ObservableProperty] private bool _isLauncherPico;
+
+    partial void OnIsLauncherPicoChanged(bool value)
+    {
+        if (!BoxartManual)
+        {
+            BoxartFolder = DerivedBoxartFolder;
+        }
+    }
+
     [ObservableProperty] private bool _addBorder;
     [ObservableProperty] private bool _isBorderDsi;
     [ObservableProperty] private bool _isBorder3ds;
@@ -152,7 +168,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    private string DerivedBoxartFolder => RootFolder is null ? "" : ScanService.BoxartDirectory(RootFolder);
+    private string DerivedBoxartFolder =>
+        RootFolder is null ? "" : ScanService.BoxartDirectory(RootFolder, SelectedTarget);
 
     private string EffectiveBoxartFolder =>
         BoxartManual && !string.IsNullOrWhiteSpace(BoxartFolder) ? BoxartFolder : DerivedBoxartFolder;
@@ -259,7 +276,7 @@ public sealed partial class MainViewModel : ObservableObject
         _cts?.Cancel();
     }
 
-    /// <summary>Finds a mounted drive that has an _nds folder at its root, like the classic Detect SD.</summary>
+    /// <summary>Finds a mounted drive with an _nds or _pico folder at its root, like the classic Detect SD.</summary>
     [RelayCommand]
     private void DetectSd()
     {
@@ -267,9 +284,11 @@ public sealed partial class MainViewModel : ObservableObject
         {
             try
             {
-                if (drive.IsReady && Directory.Exists(Path.Combine(drive.RootDirectory.FullName, "_nds")))
+                var root = drive.RootDirectory.FullName;
+                if (drive.IsReady &&
+                    (Directory.Exists(Path.Combine(root, "_nds")) || Directory.Exists(Path.Combine(root, "_pico"))))
                 {
-                    SetRootFolder(drive.RootDirectory.FullName);
+                    SetRootFolder(root);
                     return;
                 }
             }
@@ -279,7 +298,7 @@ public sealed partial class MainViewModel : ObservableObject
             }
         }
 
-        StatusText = "No mounted drive with an _nds folder found.";
+        StatusText = "No mounted drive with an _nds or _pico folder found.";
     }
 
     /// <summary>Sets the picked card folder from the view's native folder dialog.</summary>
@@ -345,11 +364,15 @@ public sealed partial class MainViewModel : ObservableObject
         : IsBorderBlack || IsBorderWhite ? BoxartBorderStyle.Line
         : BoxartBorderStyle.NintendoDsi;
 
+    private RenderTarget SelectedTarget =>
+        IsLauncherPico ? RenderTarget.Pico : RenderTarget.TwilightMenu;
+
     private AppSettings ToSettings() => new()
     {
         BackendUrl = BackendUrl,
         RootFolder = RootFolder,
         BoxartFolder = BoxartManual && !string.IsNullOrWhiteSpace(BoxartFolder) ? BoxartFolder : null,
+        Target = SelectedTarget,
         Width = Width,
         Height = Height,
         KeepAspectRatio = KeepAspectRatio,

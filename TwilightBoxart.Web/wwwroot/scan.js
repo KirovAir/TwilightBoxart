@@ -16,11 +16,12 @@ const ROM_EXTENSIONS = new Set([
 const ARCHIVE_EXTENSIONS = new Set(['.zip', '.7z']);
 
 /**
- * Directories that never hold ROMs. `_nds` is skipped because it holds TWiLightMenu's own data,
- * including the boxart folder this tool writes to, which we must not read back in as input.
+ * Directories that never hold ROMs. `_nds` and `_pico` are skipped because they hold the
+ * launchers' own data, including the cover folders this tool writes to, which we must not read
+ * back in as input.
  */
 const SKIP_DIRS = new Set([
-    '_nds', 'system volume information', '$recycle.bin', '.trashes', '.spotlight-v100',
+    '_nds', '_pico', 'system volume information', '$recycle.bin', '.trashes', '.spotlight-v100',
     '.fseventsd', '.temporaryitems', 'found.000',
 ]);
 
@@ -99,6 +100,22 @@ export function fileListHasSentinel(files) {
     for (const f of files) {
         const rel = (f.webkitRelativePath || '').toLowerCase();
         if (rel.includes('/_nds/twilightmenu/')) return true;
+    }
+    return false;
+}
+
+/** The Pico Launcher equivalents: `_pico/` is the sentinel. */
+export async function hasPicoSentinel(root) {
+    try {
+        await root.getDirectoryHandle('_pico');
+        return true;
+    } catch { return false; }
+}
+
+export function fileListHasPicoSentinel(files) {
+    for (const f of files) {
+        const rel = (f.webkitRelativePath || '').toLowerCase();
+        if (rel.includes('/_pico/')) return true;
     }
     return false;
 }
@@ -209,10 +226,10 @@ export function safeFileName(name) {
 }
 
 /**
- * Write one PNG. createWritable() buffers into a swap file and swaps it in on close(), so a
- * yanked card can never leave a half-written PNG behind.
+ * Write one cover (PNG or Pico BMP). createWritable() buffers into a swap file and swaps it in
+ * on close(), so a yanked card can never leave a half-written file behind.
  */
-export async function writePng(dir, name, bytes) {
+export async function writeArt(dir, name, bytes) {
     const handle = await dir.getFileHandle(name, { create: true });
     const stream = await handle.createWritable();
     try {

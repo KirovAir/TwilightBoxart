@@ -3,6 +3,13 @@
              xmlns:sty="using:FluentAvalonia.Styling"
              x:Class="TwilightBoxart.Desktop.App"
              RequestedThemeVariant="Light">
+    <!-- Fluent is sized for touch; this is a desktop utility packing a lot of controls above the
+         log, so pull the whole set down a notch: smaller control font and shorter rows. -->
+    <Application.Resources>
+        <x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+        <x:Double x:Key="TextControlThemeMinHeight">26</x:Double>
+    </Application.Resources>
+
     <Application.Styles>
         <!-- FluentAvalonia gives the real Windows 11 / WinUI control look. Pinned to light with a fixed
              accent so it is consistent across OSes rather than borrowing whatever the machine is set to. -->
@@ -10,13 +17,18 @@
                                  PreferUserAccentColor="False"
                                  CustomAccentColor="#7566DD" />
 
+        <Style Selector="Button">
+            <Setter Property="MinHeight" Value="26" />
+            <Setter Property="Padding" Value="10,3" />
+        </Style>
+
         <!-- The classic app's group boxes: a bordered panel under a plain label. -->
         <Style Selector="Border.group">
             <Setter Property="Background" Value="#FFFFFF" />
             <Setter Property="BorderBrush" Value="#DEDAF0" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
-            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="10,7" />
         </Style>
 
         <!-- Section labels and the counter captions, in the web client's muted ink. -->
@@ -28,9 +40,26 @@
         <Style Selector="TextBlock.counter">
             <Setter Property="Foreground" Value="#746F9B" />
         </Style>
+        <!-- Muted helper text, one step under body: info notes and captions. -->
+        <Style Selector="TextBlock.hint">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#746F9B" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <!-- Same size as a hint, but the warning ink. -->
+        <Style Selector="TextBlock.warn">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="#B25E09" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
         <Style Selector="TextBox">
             <Setter Property="BorderBrush" Value="#DEDAF0" />
             <Setter Property="CornerRadius" Value="8" />
+        </Style>
+        <!-- Single-line inputs: pin one height so enabled and disabled boxes match (Fluent renders a
+             disabled TextBox taller otherwise). Not on the base TextBox style: the log must stay tall. -->
+        <Style Selector="TextBox.input">
+            <Setter Property="Height" Value="28" />
         </Style>
     </Application.Styles>
 </Application>

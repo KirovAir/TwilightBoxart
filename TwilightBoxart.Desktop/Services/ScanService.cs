@@ -24,8 +24,14 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
     /// <summary>The batch ceiling POST /v2/identify enforces; harmless (and free) for the local backend.</summary>
     private const int IdentifyChunk = IdentifyRequest.MaxItems;
 
-    /// <summary>Where the art goes under a card root. The one spelling of the TWiLightMenu path.</summary>
-    public static string BoxartDirectory(string root) => Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
+    /// <summary>
+    /// Where the art goes under a card root. The one spelling of each launcher's path. Pico gets the
+    /// filename-keyed <c>user</c> folder: it covers every system (the game-code folders only do
+    /// NDS/GBA) and the launcher gives it precedence.
+    /// </summary>
+    public static string BoxartDirectory(string root, RenderTarget target) => target == RenderTarget.Pico
+        ? Path.Combine(root, "_pico", "covers", "user")
+        : Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
 
     public async Task RunAsync(
         IArtBackend backend, ScanRequest request, IProgress<ScanUpdate> progress, CancellationToken ct)
@@ -126,7 +132,8 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         await Parallel.ForEachAsync(matched, artOptions, async (item, c) =>
         {
             var innerIsRom = item.Probe!.InnerName is { Length: > 0 } inner && SupportedFiles.IsRom(inner);
-            var outName = SafeName.OutputFileName(item.FileName, item.Probe.InnerName, innerIsRom);
+            var outName = SafeName.OutputFileName(
+                item.FileName, item.Probe.InnerName, innerIsRom, request.Render.FileExtension);
             var outPath = Path.Combine(boxartDir, outName);
 
             // Two ROMs in different folders can share a name; the art is identical, so fetch once.
@@ -147,10 +154,10 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 return;
             }
 
-            byte[]? png;
+            byte[]? art;
             try
             {
-                png = await backend.GetArtAsync(item.Identity!, request.Render, c);
+                art = await backend.GetArtAsync(item.Identity!, request.Render, c);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -160,7 +167,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 return;
             }
 
-            if (png is null)
+            if (art is null)
             {
                 counters.IncMissed();
                 Tick(counters, progress);
@@ -171,7 +178,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             // 200 of 5,000 must still get the other 4,800 attempted (and reported one by one).
             try
             {
-                await AtomicFile.WriteAsync(outPath, png, c);
+                await AtomicFile.WriteAsync(outPath, art, c);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {

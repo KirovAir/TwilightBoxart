@@ -1,7 +1,9 @@
 # TwilightBoxart for DS and DSi
 
-Homebrew that fills `_nds/TWiLightMenu/boxart/` from the console itself. Runs on a DSi in DSi
-mode (WPA2 WiFi) and on an original DS or DS Lite flashcart in DS mode (open or WEP WiFi). It is the thinnest client
+Homebrew that fills your launcher's boxart folder from the console itself:
+`_nds/TWiLightMenu/boxart/` with PNGs for TWiLightMenu++, or `_pico/covers/user/` with the
+fixed-format 8-bit BMPs Pico Launcher (DS Pico) reads. Runs on a DSi in DSi mode (WPA2 WiFi)
+and on an original DS or DS Lite flashcart in DS mode (open or WEP WiFi). It is the thinnest client
 of them all: for each ROM it sends the file name and the file's first 512 bytes, and writes the PNG
 it gets back over HTTPS by default or plain HTTP (`backend_tls` in the ini; the compiled-in
 default is `DEFAULT_BACKEND_TLS` in `source/main.c`). No JSON, no image decoding, and no ROM
@@ -16,9 +18,11 @@ Copy `twilightboxart.nds` anywhere on your card, launch it from TWiLightMenu++, 
 it connects, scans the whole card (skipping `_nds`), fetches what is missing and reports found,
 written, already there and no art. Hold B to stop a scan. Art already on the card is left alone.
 
-At launch a small options screen picks the cover size, border style, thicker border and
-overwrite, with the D-pad or by tapping the touch screen; A (or a tap on scan) starts. Choices
-persist in the same settings file as the WiFi network.
+At launch a small options screen picks the launcher (TWLMenu++ or DS Pico), the cover size,
+border style, thicker border and overwrite, all with the D-pad; A starts. Choices persist in the
+same settings file as the WiFi network. With DS Pico selected the size and border rows go dark:
+Pico's cover format is fixed, so there is nothing there to choose, and the client just asks the
+backend for the ready-made BMP. The touch screen is only used for typing on the keyboard.
 
 That settings file (`/_nds/TwilightBoxart.ini`, written on first run) also carries the backend:
 `backend_host`, `backend_port` and `backend_tls` default to the hosted service at

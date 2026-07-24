@@ -187,6 +187,7 @@ public sealed class RemoteArtBackend : IArtBackend
         }
 
         response.EnsureSuccessStatusCode();
+
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 

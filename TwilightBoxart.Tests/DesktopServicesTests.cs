@@ -62,6 +62,38 @@ public class DesktopServicesTests
         Assert.AreEqual("archive.zip.png", SafeName.OutputFileName("archive.zip", "", true));
     }
 
+    [TestMethod]
+    public void OutputFileName_UsesTheTargetsExtension()
+    {
+        Assert.AreEqual("Some Game (USA).nds.bmp",
+            SafeName.OutputFileName("Some Game (USA).nds", null, false, ".bmp"));
+    }
+
+    // ── Launcher target plumbing ─────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void BoxartDirectory_PointsAtTheChosenLaunchersFolder()
+    {
+        var root = Path.Combine("card", "root");
+
+        Assert.AreEqual(Path.Combine(root, "_nds", "TWiLightMenu", "boxart"),
+            ScanService.BoxartDirectory(root, RenderTarget.TwilightMenu));
+        Assert.AreEqual(Path.Combine(root, "_pico", "covers", "user"),
+            ScanService.BoxartDirectory(root, RenderTarget.Pico));
+    }
+
+    [TestMethod]
+    public void AppSettings_TargetSurvivesTheTripIntoRenderOptions()
+    {
+        // The stored Width/Height are TWiLightMenu numbers; a Pico render must fold them to the
+        // launcher's fixed geometry rather than carry them along.
+        var options = new AppSettings { Target = RenderTarget.Pico, Width = 208, Height = 143 }.ToRenderOptions();
+
+        Assert.AreEqual(RenderTarget.Pico, options.Target);
+        Assert.AreEqual(RenderOptions.PicoWidth, options.Width);
+        Assert.AreEqual(RenderOptions.PicoHeight, options.Height);
+    }
+
     // ── ScanService.CollectFiles ─────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -153,7 +185,7 @@ public class DesktopServicesTests
     public async Task RunAsync_AFailedWriteDoesNotAbortTheRestOfTheScan()
     {
         var root = MakeTempRoot();
-        var boxart = ScanService.BoxartDirectory(root);
+        var boxart = ScanService.BoxartDirectory(root, RenderTarget.TwilightMenu);
         WriteRom(root, "first.nds");
         WriteRom(root, "second.nds");
 

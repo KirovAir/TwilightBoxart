@@ -1,7 +1,8 @@
 namespace TwilightBoxart.Desktop.Services;
 
 /// <summary>
-/// Produces the box art file name TWiLightMenu++ looks up: the ROM's own name with <c>.png</c> appended.
+/// Produces the box art file name the launcher looks up: the ROM's own name with the render
+/// target's extension appended (TWiLightMenu++ <c>.png</c>, Pico's user folder <c>.bmp</c>).
 /// </summary>
 public static class SafeName
 {
@@ -42,14 +43,15 @@ public static class SafeName
     }
 
     /// <summary>
-    /// The output file name for a ROM: <c>&lt;name&gt;.png</c>, where the name includes the ROM's own
-    /// extension exactly as the browser client writes it. The inner archive entry name is used when it is
-    /// recognisably a ROM; otherwise the file on the card is the archive itself (No-Intro DSiWare blobs
+    /// The output file name for a ROM: <c>&lt;name&gt;&lt;ext&gt;</c>, where the name includes the ROM's
+    /// own extension exactly as the browser client writes it. The inner archive entry name is used when it
+    /// is recognisably a ROM; otherwise the file on the card is the archive itself (No-Intro DSiWare blobs
     /// are entries named things like <c>00000000</c>), so that is what the menu will look art up by.
     /// </summary>
-    public static string OutputFileName(string outerFileName, string? innerName, bool innerIsRom)
+    public static string OutputFileName(
+        string outerFileName, string? innerName, bool innerIsRom, string extension = ".png")
     {
         var basis = innerIsRom && !string.IsNullOrEmpty(innerName) ? innerName : outerFileName;
-        return Sanitize(basis) + ".png";
+        return Sanitize(basis) + extension;
     }
 }

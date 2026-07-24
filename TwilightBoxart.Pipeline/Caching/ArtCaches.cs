@@ -39,10 +39,10 @@ public sealed class ArtCaches
         Path.Combine(sha256[..2], sha256[2..4], sha256 + ".bin");
 
     /// <summary>
-    /// Render layout: <c>{platform}/{key}/{sourceSha}/{discriminator}.png</c>. The key is the TITLE,
-    /// never the fingerprint - that is what structurally kills the cache-key-explosion DoS the old
-    /// BoxartRequest.FilenameHash had, where every distinct 512-byte header minted a new cache file.
+    /// Render layout: <c>{platform}/{key}/{sourceSha}/{discriminator}.png|.bmp</c>. The key is the
+    /// TITLE, never the fingerprint - that is what structurally kills the cache-key-explosion DoS the
+    /// old BoxartRequest.FilenameHash had, where every distinct 512-byte header minted a new cache file.
     /// </summary>
     public static string RenderPath(ConsoleType console, string key, string sourceSha, RenderOptions options) =>
-        Path.Combine(console.Slug(), key, sourceSha[..16], options.CacheDiscriminator() + ".png");
+        Path.Combine(console.Slug(), key, sourceSha[..16], options.CacheDiscriminator() + options.FileExtension);
 }

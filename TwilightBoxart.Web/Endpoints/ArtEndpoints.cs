@@ -20,18 +20,30 @@ public static class ArtEndpoints
 {
     public static void MapArtEndpoints(this IEndpointRouteBuilder routes)
     {
-        routes.MapGet("/v2/art/{platform}/{key}.png", GetCanonicalArt)
+        // Extensionless: what comes back (PNG or Pico BMP) is the t= parameter's business, so the
+        // URL promises no container. TryResolve still accepts and ignores a trailing .png/.bmp,
+        // because the pre-target releases minted /v2/art/nds/ASME.png and shipped clients follow
+        // whatever they once stored.
+        routes.MapGet("/v2/art/{platform}/{key}", GetCanonicalArt)
             .RequireRateLimiting(RateLimitingExtensions.ArtPolicy)
             .RequireCors(CorsExtensions.PublicGetPolicy)
             .RequireApiKey()
-            .WithName("GetArtPng")
+            .WithName("GetArt")
             .WithSummary("Box art for a resolved art key. The canonical, cacheable URL.");
 
-        routes.MapGet("/v2/art.png", GetArtByFingerprint)
+        routes.MapGet("/v2/art", GetArtByFingerprint)
             .RequireRateLimiting(RateLimitingExtensions.ResolvePolicy)
             .RequireCors(CorsExtensions.PublicGetPolicy)
             .RequireApiKey()
             .WithName("GetArtByFingerprint")
+            .WithSummary("Box art from a file name and header sample, in one request.");
+
+        // The spelling every shipped constrained client (2.x DS ROMs and curl one-liners) uses.
+        routes.MapGet("/v2/art.png", GetArtByFingerprint)
+            .RequireRateLimiting(RateLimitingExtensions.ResolvePolicy)
+            .RequireCors(CorsExtensions.PublicGetPolicy)
+            .RequireApiKey()
+            .WithName("GetArtByFingerprintPng")
             .WithSummary("Box art from a file name and header sample, in one request.");
     }
 
@@ -43,7 +55,7 @@ public static class ArtEndpoints
         [FromServices] ArtPipeline pipeline,
         CancellationToken ct)
     {
-        if (!TryResolve(platform, key, out var console))
+        if (!TryResolve(platform, key, out var console, out key))
         {
             return EmptyNotFound(context);
         }
@@ -67,7 +79,7 @@ public static class ArtEndpoints
         }
 
         context.Response.Headers.CacheControl = "public, max-age=86400";
-        return Results.Bytes(art.Png, "image/png", entityTag: etag);
+        return Results.Bytes(art.Bytes, options.ContentType, entityTag: etag);
     }
 
     /// <summary>
@@ -112,7 +124,7 @@ public static class ArtEndpoints
         // identifies the same game converges on one cacheable URL. Carrying the fingerprint through
         // would recreate the cache-key explosion of the old backend.
         context.Response.Headers.ContentLocation = $"{identity.ArtPath}{options.ToQueryString()}";
-        return Results.Bytes(art.Png, "image/png");
+        return Results.Bytes(art.Bytes, options.ContentType);
     }
 
     /// <summary>
@@ -193,11 +205,20 @@ public static class ArtEndpoints
     /// <summary>
     /// Maps the route values onto a console, rejecting anything that is not a known platform (slug
     /// or enum name) or a well-formed key. The key allowlist is the path-traversal boundary - see
-    /// <see cref="ArtKey"/>.
+    /// <see cref="ArtKey"/>. A trailing <c>.png</c>/<c>.bmp</c> on the key is cosmetic and
+    /// stripped: dots are not valid key characters, so the trim can never eat a real key, and the
+    /// pre-target releases minted URLs with the extension on.
     /// </summary>
-    private static bool TryResolve(string platform, string key, out ConsoleType console)
+    private static bool TryResolve(string platform, string key, out ConsoleType console, out string cleaned)
     {
+        cleaned = key;
+        if (cleaned.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+            cleaned.EndsWith(".bmp", StringComparison.OrdinalIgnoreCase))
+        {
+            cleaned = cleaned[..^4];
+        }
+
         console = ConsoleTypeExtensions.FromRouteValue(platform);
-        return console != ConsoleType.Unknown && ArtKey.IsValid(key);
+        return console != ConsoleType.Unknown && ArtKey.IsValid(cleaned);
     }
 }

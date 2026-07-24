@@ -21,7 +21,7 @@
                     <TextBlock Text="TwilightBoxart" FontSize="20" FontWeight="Bold" Foreground="#2B2753" />
                     <TextBlock Text="{Binding Version}" FontSize="20" FontWeight="Bold" Foreground="#7566DD" />
                 </StackPanel>
-                <TextBlock Text="TwilightMenu++ Boxart Downloader - © KirovAir 2026"
+                <TextBlock Text="TWiLightMenu++ &amp; Pico Launcher Boxart Downloader - © KirovAir 2026"
                            FontSize="12" Foreground="#746F9B" />
             </StackPanel>
             <Button Grid.Column="2" VerticalAlignment="Center" Padding="8,4" Background="Transparent"
@@ -31,8 +31,8 @@
                     <Flyout Placement="BottomEdgeAlignedRight">
                         <StackPanel Width="300" Spacing="6">
                             <TextBlock Classes="section" Text="Backend URL" />
-                            <TextBox Text="{Binding BackendUrl}" PlaceholderText="{x:Static vm:MainViewModel.DefaultBackendUrl}" />
-                            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#746F9B"
+                            <TextBox Classes="input" Text="{Binding BackendUrl}" PlaceholderText="{x:Static vm:MainViewModel.DefaultBackendUrl}" />
+                            <TextBlock Classes="hint"
                                        Text="Where identities, art and the offline index come from. Leave the default unless you host your own backend; if it is unreachable the app falls back to the local index automatically." />
                             <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
                                 <Button Content="Refresh game index" Command="{Binding RefreshIndexCommand}"
@@ -55,84 +55,100 @@
             </Border.Background>
         </Border>
 
-        <Grid Grid.Row="2" Margin="16,10,16,12" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+        <Grid Grid.Row="2" Margin="16,8,16,10" RowDefinitions="Auto,Auto,*,Auto,Auto">
 
             <!-- SD root and boxart location share one grid so the Browse buttons line up. -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
                 <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Classes="section" Text="SD Root / Games location" Margin="0,0,0,4" />
-                <TextBox Grid.Row="1" Grid.Column="0" Text="{Binding RootFolder}" PlaceholderText="Pick the folder that contains _nds" />
+                <TextBox Grid.Row="1" Grid.Column="0" Classes="input" Text="{Binding RootFolder}" PlaceholderText="Pick the folder that contains _nds" />
                 <Button Grid.Row="1" Grid.Column="1" Content="Browse…" Click="OnBrowse" Margin="8,0,0,0" />
                 <Button Grid.Row="1" Grid.Column="2" Content="Detect SD" Command="{Binding DetectSdCommand}" Margin="8,0,0,0"
                         HorizontalContentAlignment="Center" />
-                <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Classes="section" Text="Boxart location" Margin="0,10,0,4" />
-                <TextBox Grid.Row="3" Grid.Column="0" Text="{Binding BoxartFolder}" IsEnabled="{Binding BoxartManual}"
-                         PlaceholderText="_nds/TWiLightMenu/boxart (under the SD root)" />
+                <TextBlock Grid.Row="2" Grid.ColumnSpan="3" Classes="section" Text="Boxart location" Margin="0,8,0,3" />
+                <TextBox Grid.Row="3" Grid.Column="0" Classes="input" Text="{Binding BoxartFolder}" IsEnabled="{Binding BoxartManual}"
+                         PlaceholderText="Your launcher's boxart folder (under the SD root)" />
                 <Button Grid.Row="3" Grid.Column="1" Content="Browse…" Click="OnBrowseBoxart" Margin="8,0,0,0"
                         IsEnabled="{Binding BoxartManual}" />
                 <CheckBox Grid.Row="3" Grid.Column="2" Content="Set manually" IsChecked="{Binding BoxartManual}"
                           Margin="8,0,0,0" VerticalAlignment="Center" />
             </Grid>
 
-            <!-- Boxart Size -->
-            <StackPanel Grid.Row="1" Spacing="4" Margin="0,10,0,0">
-                <TextBlock Classes="section" Text="Boxart Size" />
-                <Border Classes="group">
-                    <Grid ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" Spacing="8" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="16">
-                                <RadioButton GroupName="size" Content="Classic" IsChecked="{Binding IsSizeClassic}" />
-                                <RadioButton GroupName="size" Content="Large" IsChecked="{Binding IsSizeLarge}" />
-                                <RadioButton GroupName="size" Content="XL" IsChecked="{Binding IsSizeXl}" />
-                                <RadioButton GroupName="size" Content="Custom" IsChecked="{Binding IsSizeCustom}" />
-                            </StackPanel>
-                            <CheckBox Content="Keep original aspect ratio (recommended)" IsChecked="{Binding KeepAspectRatio}" />
-                            <!-- Sizes past the DS screen are for other frontends; TWiLightMenu++
-                                 silently ignores such covers, so say so before a card fills with them. -->
-                            <TextBlock Text="Larger than 256×192: TWiLightMenu++ will not show these covers."
-                                       IsVisible="{Binding IsOversizeForTwilight}"
-                                       Foreground="#B25E09" FontSize="12" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" VerticalAlignment="Center" Margin="0,0,10,0" />
-                            <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding Width}" Minimum="1" Maximum="1000"
-                                           Increment="1" FormatString="0" Width="120" IsEnabled="{Binding IsSizeCustom}" />
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Height:" VerticalAlignment="Center" Margin="0,8,10,0" />
-                            <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="1" Maximum="1000"
-                                           Increment="1" FormatString="0" Width="120" Margin="0,8,0,0" IsEnabled="{Binding IsSizeCustom}" />
-                        </Grid>
-                    </Grid>
-                </Border>
-            </StackPanel>
+            <!-- Launcher, then the settings that hang off it. Separate labeled sections rather than one
+                 packed group; Pico hides Size and Border outright, since neither applies to its fixed format. -->
+            <StackPanel Grid.Row="1" Spacing="6" Margin="0,8,0,0">
 
-            <!-- Extra -->
-            <StackPanel Grid.Row="2" Spacing="4" Margin="0,10,0,0">
-                <TextBlock Classes="section" Text="Extra" />
-                <Border Classes="group">
-                    <!-- WrapPanel, not StackPanel: at narrow widths the tail of this row ("Thicker
-                         border") must wrap under rather than clip out of the group's bounds. -->
-                    <WrapPanel ItemSpacing="16" LineSpacing="6">
-                        <CheckBox Content="Add border?" IsChecked="{Binding AddBorder}" />
-                        <RadioButton GroupName="border" Content="DSi Theme" IsChecked="{Binding IsBorderDsi}" IsEnabled="{Binding AddBorder}" />
-                        <RadioButton GroupName="border" Content="3DS Theme" IsChecked="{Binding IsBorder3ds}" IsEnabled="{Binding AddBorder}" />
-                        <RadioButton GroupName="border" Content="Black" IsChecked="{Binding IsBorderBlack}" IsEnabled="{Binding AddBorder}" />
-                        <RadioButton GroupName="border" Content="White" IsChecked="{Binding IsBorderWhite}" IsEnabled="{Binding AddBorder}" />
-                        <CheckBox Content="Thicker border" IsChecked="{Binding ThickBorder}" IsEnabled="{Binding AddBorder}" />
-                    </WrapPanel>
-                </Border>
+                <StackPanel Spacing="3">
+                    <TextBlock Classes="section" Text="Launcher" />
+                    <Border Classes="group">
+                        <StackPanel Spacing="4">
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <RadioButton GroupName="launcher" Content="TWiLightMenu++" IsChecked="{Binding IsLauncherTwilight}" />
+                                <RadioButton GroupName="launcher" Content="Pico Launcher (DS Pico)" IsChecked="{Binding IsLauncherPico}" />
+                            </StackPanel>
+                            <TextBlock Text="Pico covers are one fixed format (128×96, 256 colours), so size and border settings don't apply."
+                                       IsVisible="{Binding IsLauncherPico}" Classes="hint" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="3" IsVisible="{Binding IsLauncherTwilight}">
+                    <TextBlock Classes="section" Text="Boxart size" />
+                    <Border Classes="group">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <RadioButton GroupName="size" Content="Classic" IsChecked="{Binding IsSizeClassic}" />
+                                    <RadioButton GroupName="size" Content="Large" IsChecked="{Binding IsSizeLarge}" />
+                                    <RadioButton GroupName="size" Content="XL" IsChecked="{Binding IsSizeXl}" />
+                                    <RadioButton GroupName="size" Content="Custom" IsChecked="{Binding IsSizeCustom}" />
+                                </StackPanel>
+                                <CheckBox Content="Keep original aspect ratio (recommended)" IsChecked="{Binding KeepAspectRatio}" />
+                                <!-- Sizes past the DS screen are for other frontends; TWiLightMenu++
+                                     silently ignores such covers, so say so before a card fills with them. -->
+                                <TextBlock Text="Larger than 256×192: TWiLightMenu++ will not show these covers."
+                                           IsVisible="{Binding IsOversizeForTwilight}" Classes="warn" />
+                            </StackPanel>
+                            <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" VerticalAlignment="Center" Margin="0,0,10,0" />
+                                <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding Width}" Minimum="1" Maximum="1000"
+                                               Increment="1" FormatString="0" Width="110" VerticalContentAlignment="Center" IsEnabled="{Binding IsSizeCustom}" />
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Height:" VerticalAlignment="Center" Margin="0,8,10,0" />
+                                <NumericUpDown Grid.Row="1" Grid.Column="1" Value="{Binding Height}" Minimum="1" Maximum="1000"
+                                               Increment="1" FormatString="0" Width="110" VerticalContentAlignment="Center" Margin="0,8,0,0" IsEnabled="{Binding IsSizeCustom}" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+
+                <StackPanel Spacing="3" IsVisible="{Binding IsLauncherTwilight}">
+                    <TextBlock Classes="section" Text="Border" />
+                    <Border Classes="group">
+                        <!-- WrapPanel, not StackPanel: at narrow widths the tail of this row ("Thicker
+                             border") must wrap under rather than clip out of the group's bounds. -->
+                        <WrapPanel ItemSpacing="16" LineSpacing="6">
+                            <CheckBox Content="Add border?" IsChecked="{Binding AddBorder}" />
+                            <RadioButton GroupName="border" Content="DSi Theme" IsChecked="{Binding IsBorderDsi}" IsEnabled="{Binding AddBorder}" />
+                            <RadioButton GroupName="border" Content="3DS Theme" IsChecked="{Binding IsBorder3ds}" IsEnabled="{Binding AddBorder}" />
+                            <RadioButton GroupName="border" Content="Black" IsChecked="{Binding IsBorderBlack}" IsEnabled="{Binding AddBorder}" />
+                            <RadioButton GroupName="border" Content="White" IsChecked="{Binding IsBorderWhite}" IsEnabled="{Binding AddBorder}" />
+                            <CheckBox Content="Thicker border" IsChecked="{Binding ThickBorder}" IsEnabled="{Binding AddBorder}" />
+                        </WrapPanel>
+                    </Border>
+                </StackPanel>
             </StackPanel>
 
             <!-- Log -->
-            <TextBox Grid.Row="3" Margin="0,10,0,0" Text="{Binding LogText}" IsReadOnly="True" AcceptsReturn="True"
+            <TextBox Grid.Row="2" Margin="0,8,0,0" Text="{Binding LogText}" IsReadOnly="True" AcceptsReturn="True"
                      TextWrapping="NoWrap" FontFamily="Cascadia Mono, Menlo, Consolas, monospace" FontSize="12" />
 
             <!-- Progress + status -->
-            <StackPanel Grid.Row="4" Spacing="4" Margin="0,8,0,0">
+            <StackPanel Grid.Row="3" Spacing="4" Margin="0,6,0,0">
                 <ProgressBar Minimum="0" Maximum="100" Value="{Binding ProgressValue}" Height="6" CornerRadius="3" />
                 <TextBlock Text="{Binding StatusText}" Foreground="#746F9B" FontSize="12" TextTrimming="CharacterEllipsis" />
             </StackPanel>
 
             <!-- Bottom bar -->
-            <Grid Grid.Row="5" ColumnDefinitions="*,Auto,Auto" Margin="0,8,0,0">
+            <Grid Grid.Row="4" ColumnDefinitions="*,Auto,Auto" Margin="0,6,0,0">
                 <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="14" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="{Binding Found}" FontWeight="Bold" Foreground="#7566DD" /><TextBlock Classes="counter" Text="found" />

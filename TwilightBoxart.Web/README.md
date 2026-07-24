@@ -117,7 +117,7 @@ real 14,076-archive corpus. That is ~54x faster than decompress-and-SHA-1.
 One trap: **7z reports a CRC of `0` for both "absent" and "genuinely zero"**. Treat `0` as unknown and
 fall through to the next rung of the ladder, or you will silently mis-identify ROMs.
 
-### `GET /v2/art/{platform}/{key}.png`
+### `GET /v2/art/{platform}/{key}`
 
 | Param | Meaning | Default | Clamp |
 |---|---|---|---|
@@ -127,15 +127,26 @@ fall through to the next rung of the ladder, or you will silently mis-identify R
 | `b` | Border style: `None`, `Line`, `NintendoDsi`, `Nintendo3Ds` (or its number) | `None` | |
 | `bt` | Border thickness | 1 | 0-5 |
 | `bc` | Border colour, `RRGGBB` or `AARRGGBB`, `#` optional | `FF000000` | |
+| `t` | Render target: `pico` for a Pico Launcher cover; absent means TWiLightMenu | | |
 
 ```
-GET /v2/art/nds/ASME.png?w=128&h=115&b=NintendoDsi&bt=2&bc=1a1a1a
+GET /v2/art/nds/ASME?w=128&h=115&b=NintendoDsi&bt=2&bc=1a1a1a
+GET /v2/art/nds/ASME?t=pico
 ```
+
+The URL is extensionless because what comes back is `t`'s business, not the path's. A trailing
+`.png` or `.bmp` on the key is accepted and ignored: releases before render targets existed
+minted `/v2/art/nds/ASME.png`, and clients follow whatever they once stored.
 
 Every returned PNG is **at most 45,056 bytes** (`0xB000`), quantized if it has to be. TWiLightMenu++
 allocates its box art cache as 40 slots of exactly that size and *silently* ignores anything larger,
 which produces bug reports nobody can explain. The server guarantees the ceiling so no client ever
 has to rewrite the user's `settings.ini`.
+
+With `t=pico` the response is Pico Launcher's cover format instead: an **8bpp indexed BMP, 128x96**
+(art in the visible left 106x96, right 22 columns black), served as `image/bmp`, always 13,366
+bytes. Every other render parameter is ignored there, because the launcher's format is fixed; the
+client's whole job is to write the bytes to `_pico/covers/user/<rom name>.bmp`.
 
 Responses carry an `ETag` (the source art's hash) and `Cache-Control: public, max-age=86400`, and
 honour `If-None-Match` with a `304`. The ETag changes when the art changes and is stable across
@@ -143,7 +154,7 @@ every size and border variant of the same source.
 
 A miss is a **404**, never a 500.
 
-### `GET /v2/art.png`
+### `GET /v2/art` (also served as `/v2/art.png`)
 
 Identify and deliver in one `GET`, for a client that cannot afford the two-phase protocol: a DS
 walking its SD card, or a quick `curl`. Query in, PNG bytes out, an empty 404 on a miss. The caller
@@ -159,7 +170,7 @@ GET /v2/art.png?name=Super%20Mario%2064%20DS%20(USA).nds&header=<base64>&w=128&h
 |---|---|
 | `name` | The ROM's own file name, extension included |
 | `header` | Base64 of the ROM's leading bytes (512 is plenty; over 1 KB is rejected, not truncated). Beats the name when they disagree: magic bytes do not lie about the console, and the serial inside skips the index entirely |
-| `w` `h` `ar` `b` `bt` `bc` | Render parameters, exactly as the canonical route above |
+| `w` `h` `ar` `b` `bt` `bc` `t` | Render parameters, exactly as the canonical route above |
 
 At least one of `name` / `header` is required. A caller that already knows exactly what it wants,
 a human with a console and a title id, uses the canonical route directly instead.

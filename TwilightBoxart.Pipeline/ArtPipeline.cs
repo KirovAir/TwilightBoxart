@@ -5,8 +5,8 @@ using TwilightBoxart.Pipeline.Caching;
 
 namespace TwilightBoxart.Pipeline;
 
-/// <summary>A rendered PNG plus the hash of the original it came from.</summary>
-public sealed record RenderedArt(byte[] Png, string Sha256);
+/// <summary>A rendered cover (PNG or Pico BMP, per the options) plus the hash of its original.</summary>
+public sealed record RenderedArt(byte[] Bytes, string Sha256);
 
 /// <summary>
 /// Identity key -> upstream art -> cached original -> cached render -> PNG bytes.
@@ -71,7 +71,7 @@ public sealed class ArtPipeline(
             return new RenderedArt(cached, sha);
         }
 
-        var png = await singleFlight.RunAsync<byte[]?>($"render:{renderPath}", async shared =>
+        var bytes = await singleFlight.RunAsync<byte[]?>($"render:{renderPath}", async shared =>
         {
             var again = await cacheIndex.TryReadAsync(caches.Renders, renderPath, shared);
             if (again is not null)
@@ -119,7 +119,7 @@ public sealed class ArtPipeline(
             return rendered;
         }, ct);
 
-        return png is null ? null : new RenderedArt(png, sha);
+        return bytes is null ? null : new RenderedArt(bytes, sha);
     }
 
     private async Task<ArtRecord?> EnsureOriginalAsync(

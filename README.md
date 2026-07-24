@@ -2,14 +2,15 @@
   <img src="docs/logo.png" width="120" alt="TwilightBoxart">
 </p>
 
-<h1 align="center">TwilightBoxart 2.0</h1>
+<h1 align="center">TwilightBoxart</h1>
 
-<p align="center"><b>Box art for TWiLightMenu++, straight onto your SD card.</b></p>
+<p align="center"><b>Box art for TWiLightMenu++ and Pico Launcher, straight onto your SD card.</b></p>
 
-A boxart downloader that works out what your games actually are and fetches the right covers,
-sized so TWiLightMenu++ will definitely show them. Written for
-[TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu), and happy to fill a folder for any
-other loader too. 😊
+A boxart downloader that works out what your games actually are and fetches the right covers in
+exactly the shape your launcher wants: PNG sized to
+[TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu)'s limits, or the fixed 8-bit BMP
+[Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) reads. Happy to fill a
+folder for any other loader too. 😊
 
 ![The TwilightBoxart web app](docs/webapp.png)
 
@@ -17,7 +18,7 @@ other loader too. 😊
 
 | | App | Good for |
 | --- | --- | --- |
-| 🌐 | **[Browser app](https://boxart.kirovair.com)** | The main way: nothing to install, pick your card, press scan |
+| 🌐 | **[Browser app](https://twilightboxart.com/)** | The main way: nothing to install, pick your card, press scan |
 | 💻 | **Desktop app** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | Windows, macOS and Linux, one file. Works offline too |
 | 🎮 | **DS/DSi homebrew** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | The console fills in its own box art over WiFi. DSi in DSi mode, or a DS/DS Lite flashcart (open/WEP WiFi there) |
 | 🐳 | **Self-hosted** | `docker compose up -d` and you run the whole thing yourself |
@@ -29,6 +30,16 @@ other loader too. 😊
 </p>
 
 <p align="center"><i>The desktop app, and the DSi client on its own.</i></p>
+
+Every app asks one question up front: which launcher are the covers for?
+
+| Launcher | Format | Where it goes |
+| --- | --- | --- |
+| [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
+| [Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
+
+Pico covers go into the launcher's filename-keyed `user` folder on purpose: it works for **every**
+system below (the game-code folders only cover NDS and GBA) and Pico Launcher gives it precedence.
 
 Writing straight onto the card from a browser works in Chrome, Edge, Brave, Opera and Vivaldi on
 desktop. Firefox and Safari cannot write to a folder, so there you get the same scan and a `.zip`
@@ -42,9 +53,9 @@ It is not; clear the quarantine flag once and it opens normally:
 xattr -rd com.apple.quarantine ~/Downloads/TwilightBoxart.app
 ```
 
-**Your card is safe.** Every app only ever writes PNG files into `_nds/TWiLightMenu/boxart/` (or a
-folder you point it at). Nothing is renamed, moved or deleted, and your games and settings are
-never touched.
+**Your card is safe.** Every app only ever writes cover images into your launcher's boxart folder
+(or a folder you point it at). Nothing is renamed, moved or deleted, and your games and settings
+are never touched.
 
 ## Supported systems
 
@@ -105,8 +116,9 @@ Some nice tricks along the way:
 * [GameTDB](https://www.gametdb.com) by title id matching.
 * [libretro-thumbnails](https://github.com/libretro-thumbnails) by
   [No-Intro](https://no-intro.org) name matching.
-* Every cover is delivered under TWiLightMenu++'s box art size limit, so nothing silently refuses
-  to show up on the console.
+* Every TWiLightMenu++ cover is delivered under the menu's box art size limit, so nothing silently
+  refuses to show up on the console. Pico covers come pre-converted to the launcher's own 8-bit
+  BMP format, no separate converter needed.
 
 ## Self-hosting
 
@@ -135,7 +147,9 @@ GPL-3.0. See [LICENSE.md](LICENSE.md). The DSi client ships with
 Covers come from [GameTDB](https://www.gametdb.com) and
 [libretro-thumbnails](https://github.com/libretro-thumbnails); identification data from
 [No-Intro](https://no-intro.org) via the [libretro-database](https://github.com/libretro/libretro-database)
-mirror. Built for [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu).
+mirror. Built for [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) and
+[Pico Launcher](https://github.com/LNH-team/pico-launcher) by
+[LNH-team](https://github.com/LNH-team).
 Music on the DSi client: "Pixel Cart Drift" by Jesse Sander.
 
 ## Legal
@@ -155,7 +169,7 @@ TwilightBoxart.Pipeline    Art fetching, caching and eviction
 TwilightBoxart.Data        EF Core + SQLite records
 TwilightBoxart.Core        Identification, header parsers, index building, rendering, art sources
 TwilightBoxart.Desktop     Desktop app (Avalonia)
-TwilightBoxart.DSi         DSi homebrew client (BlocksDS)
+TwilightBoxart.DSi         DS/DSi homebrew client (BlocksDS)
 TwilightBoxart.Tests       MSTest suite
 ```
 

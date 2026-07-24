@@ -1,4 +1,6 @@
+using TwilightBoxart.Core.Models;
 using TwilightBoxart.Pipeline;
+using TwilightBoxart.Pipeline.Caching;
 
 namespace TwilightBoxart.Tests;
 
@@ -18,5 +20,20 @@ public class ArtKeyTests
 
         // 16 characters but not hex: not a digest, so it folds up like any other key.
         Assert.AreEqual("GAME12345678WXYZ", ArtKey.Normalize("game12345678wxyz"));
+    }
+
+    [TestMethod]
+    public void RenderPath_CarriesTheTargetsExtension()
+    {
+        // A Pico BMP and a TWiLightMenu PNG of the same title must land in different cache files;
+        // sharing one would serve whichever format happened to render first.
+        var sha = new string('a', 64);
+        var pico = ArtCaches.RenderPath(
+            ConsoleType.NintendoDs, "ASME", sha, new RenderOptions { Target = RenderTarget.Pico }.Normalized());
+        var twilight = ArtCaches.RenderPath(
+            ConsoleType.NintendoDs, "ASME", sha, new RenderOptions().Normalized());
+
+        StringAssert.EndsWith(pico, "pico.bmp");
+        StringAssert.EndsWith(twilight, ".png");
     }
 }

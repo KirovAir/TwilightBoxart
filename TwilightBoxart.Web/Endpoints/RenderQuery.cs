@@ -8,7 +8,8 @@ namespace TwilightBoxart.Web.Endpoints;
 /// <remarks>
 /// Short names because these travel in a URL that a DS client stores in a config file and that a
 /// browser caches per variant: <c>w</c>, <c>h</c>, <c>ar</c> (keep aspect ratio), <c>b</c> (border
-/// style), <c>bt</c> (border thickness), <c>bc</c> (border colour).
+/// style), <c>bt</c> (border thickness), <c>bc</c> (border colour), <c>t</c> (render target;
+/// absent means TWiLightMenu, <c>pico</c> selects the Pico Launcher BMP).
 ///
 /// Everything unparseable falls back to the default rather than 400ing. A box art request with a
 /// typo'd border colour should still return box art. What is NOT tolerant is the range: the result
@@ -35,6 +36,7 @@ public static class RenderQuery
             BorderStyle = Border(query, "b") ?? defaults.BorderStyle,
             BorderThickness = Int(query, "bt") ?? defaults.BorderThickness,
             BorderColor = RenderOptions.ParseColor(query["bc"]) ?? defaults.BorderColor,
+            Target = Target(query, "t") ?? defaults.Target,
             // Not settable from the query: for DS-displayable sizes it is TWiLightMenu++'s hard
             // constraint, not a preference, and a client raising it produces art the DS silently
             // refuses to display. Oversize renders get their wider budget from Normalized() below.
@@ -62,6 +64,23 @@ public static class RenderQuery
             "0" => false,
             _ => bool.TryParse(raw, out var parsed) ? parsed : null,
         };
+    }
+
+    /// <summary>
+    /// <c>pico</c> (any case) selects the Pico target; anything else, including absence, means
+    /// TWiLightMenu, in keeping with every URL minted before targets existed.
+    /// </summary>
+    private static RenderTarget? Target(IQueryCollection query, string name)
+    {
+        var raw = query[name].ToString();
+        if (string.IsNullOrEmpty(raw))
+        {
+            return null;
+        }
+
+        return string.Equals(raw, "pico", StringComparison.OrdinalIgnoreCase)
+            ? RenderTarget.Pico
+            : RenderTarget.TwilightMenu;
     }
 
     /// <summary>Accepts the enum name or its numeric value; the numeric form is what v0.7 clients sent.</summary>

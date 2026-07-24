@@ -17,13 +17,22 @@ const PROBE_CONCURRENCY = 8;
 const TWILIGHT_MAX_PNG_BYTES = 0xB000;
 
 const BOXART_PATH = '_nds/TWiLightMenu/boxart';
+/** Pico's filename-keyed folder: it works for every system and outranks the game-code folders. */
+const PICO_PATH = '_pico/covers/user';
 
-/** Where art goes, relative to the card root. Optional override, like the classic Set Manually. */
-function boxartPath() {
-    if (!$('dest-custom').checked) return BOXART_PATH;
+const isPico = () => $('launcher-pico').checked;
+const defaultPath = (target) => target === 'pico' ? PICO_PATH : BOXART_PATH;
+
+/**
+ * Where art goes, relative to the card root. Optional override, like the classic Set Manually.
+ * The target comes from the run's settings snapshot, never the live radio: flipping the launcher
+ * mid-scan must not send one run's BMPs into the other launcher's folder.
+ */
+function boxartPath(target) {
+    if (!$('dest-custom').checked) return defaultPath(target);
     const cleaned = $('dest').value.replaceAll('\\', '/').split('/').map(s => s.trim())
         .filter(s => s && s !== '.' && s !== '..').join('/');
-    return cleaned || BOXART_PATH;
+    return cleaned || defaultPath(target);
 }
 
 const state = {
@@ -68,6 +77,7 @@ function readSettings() {
     const choice = document.querySelector('input[name="borderstyle"]:checked')?.value ?? 'NintendoDsi';
     const line = choice === 'Black' || choice === 'White';
     return {
+        target: isPico() ? 'pico' : 'twilight',
         width: clamp(+$('w').value || 128, 1, 256),
         height: clamp(+$('h').value || 115, 1, 192),
         keepAspectRatio: $('ar').checked,
@@ -80,8 +90,9 @@ function readSettings() {
 }
 
 /** Mirrors RenderOptions.CacheDiscriminator() so the two caches agree on what "same" means. */
-const renderKey = (s) =>
-    `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
+const renderKey = (s) => s.target === 'pico'
+    ? 'pico'
+    : `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
 
 function saveSettings() {
     const s = { ...readSettings(), destCustom: $('dest-custom').checked, dest: $('dest').value };
@@ -93,6 +104,7 @@ function restoreSettings() {
     // the size radio, style plus colour pick the border radio.
     try {
         const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        if (s.target) $(s.target === 'pico' ? 'launcher-pico' : 'launcher-twilight').checked = true;
         if (s.width) $('w').value = s.width;
         if (s.height) $('h').value = s.height;
         if (s.keepAspectRatio !== undefined) $('ar').checked = s.keepAspectRatio;
@@ -117,6 +129,13 @@ function restoreSettings() {
 
 /** Grays out what the current choices make irrelevant, like the classic app did. */
 function syncSettingsUx() {
+    // Pico's cover format is fixed, so the size and border panels vanish rather than gray out:
+    // the clearest possible statement that there is nothing there to choose.
+    const pico = isPico();
+    $('settings-size').hidden = pico;
+    $('settings-extra').hidden = pico;
+    $('pico-note').hidden = !pico;
+
     const custom = $('size-custom').checked;
     $('w').disabled = $('h').disabled = !custom;
     const border = $('border').checked;
@@ -124,7 +143,8 @@ function syncSettingsUx() {
     $('thick').disabled = !border;
     const customDest = $('dest-custom').checked;
     $('dest').disabled = !customDest;
-    if (!customDest) $('dest').value = BOXART_PATH;
+    // The one live-radio read: this is the settings screen previewing the choice being made.
+    if (!customDest) $('dest').value = defaultPath(isPico() ? 'pico' : 'twilight');
 }
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
@@ -211,10 +231,14 @@ async function useRoot(root) {
     state.root = root;
     $('reconnect').hidden = true;
     // Confirm the card is still the card. Removable media reappears under different drive
-    // letters, and writing 18,000 PNGs onto the wrong volume is not a recoverable mistake.
-    const sentinel = await scan.hasTwilightSentinel(root);
-    if (sentinel) setStatus(`Ready: "${root.name}" looks like a TWiLightMenu++ card.`, 'good');
-    else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ card. Pick the card itself, not a folder inside it.`, 'warn');
+    // letters, and writing 18,000 covers onto the wrong volume is not a recoverable mistake.
+    // Both launchers count: the launcher radio can change after the card is picked.
+    const launchers = [
+        (await scan.hasTwilightSentinel(root)) && 'TWiLightMenu++',
+        (await scan.hasPicoSentinel(root)) && 'Pico Launcher',
+    ].filter(Boolean);
+    if (launchers.length) setStatus(`Ready: "${root.name}" looks like a ${launchers.join(' + ')} card.`, 'good');
+    else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ or Pico Launcher card. Pick the card itself, not a folder inside it.`, 'warn');
     $('start').disabled = false;
     $('card-name').textContent = root.name;
     refreshCacheNote();
@@ -241,10 +265,10 @@ function useFileList(files) {
     state.fileList = files;
     state.root = null;
     $('reconnect').hidden = true;
-    const sentinel = scan.fileListHasSentinel(files);
+    const sentinel = scan.fileListHasSentinel(files) || scan.fileListHasPicoSentinel(files);
     setStatus(sentinel
-        ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ card.`
-        : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ card.`,
+        ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ or Pico Launcher card.`
+        : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ or Pico Launcher card.`,
         sentinel ? 'good' : 'warn');
     $('start').disabled = false;
     $('card-name').textContent = files[0]?.webkitRelativePath.split('/')[0] ?? '';
@@ -459,25 +483,27 @@ async function deepen(items, signal) {
 /* art */
 
 /**
- * The PNG's name is the ROM's name, never the archive's. When the inner entry is not recognisably
- * a ROM (No-Intro's DSiWare blobs are named things like `00000000`), the file on the card is the
- * archive, so that is what TWiLightMenu will look the art up by.
+ * The cover's name is the ROM's name, never the archive's. When the inner entry is not
+ * recognisably a ROM (No-Intro's DSiWare blobs are named things like `00000000`), the file on the
+ * card is the archive, so that is what the launcher will look the art up by. Both launchers key
+ * on it: TWiLightMenu as `<name>.png`, Pico's user folder as `<name>.bmp`.
  */
-function outputName(item) {
+function outputName(item, extension) {
     const inner = item.probe?.innerName;
     const base = inner && scan.isRom(inner) ? inner : item.fileName;
-    return scan.safeFileName(base) + '.png';
+    return scan.safeFileName(base) + extension;
 }
 
 async function deliverArt(items, settings, signal) {
     const key = renderKey(settings);
+    const extension = settings.target === 'pico' ? '.bmp' : '.png';
     const matched = items.filter(i => i.status === 'identified');
     if (!matched.length) return;
 
     // A custom destination salts the "already written" records so the default folder's history
     // cannot skip writes into a folder that never received them.
-    const path = boxartPath();
-    const writeKey = path === BOXART_PATH ? key : `${key}@${path}`;
+    const path = boxartPath(settings.target);
+    const writeKey = path === defaultPath(settings.target) ? key : `${key}@${path}`;
 
     let boxart = null;
     if (state.mode === 'write') {
@@ -492,7 +518,7 @@ async function deliverArt(items, settings, signal) {
     const freshlyWritten = [];
 
     await pool(matched, ART_CONCURRENCY, async (item) => {
-        item.outName = outputName(item);
+        item.outName = outputName(item, extension);
         const skip = () => { item.status = 'skipped'; counters.skipped++; paint(); };
 
         // Two ROMs in different folders can share a name; download the art once.
@@ -506,8 +532,8 @@ async function deliverArt(items, settings, signal) {
             if (await scan.fileExists(boxart, item.outName)) { skip(); return; }
         }
 
-        const png = await api.fetchArt(item.identity, settings, signal);
-        if (!png) {
+        const art = await api.fetchArt(item.identity, settings, signal);
+        if (!art) {
             item.status = 'missed';
             item.reason = `recognised as ${item.identity.canonicalName ?? item.identity.key} (${api.platformLabel(item.identity)}), but no cover exists for it yet`;
             countMiss(item); paint(); return;
@@ -515,12 +541,13 @@ async function deliverArt(items, settings, signal) {
 
         // The backend is supposed to guarantee this ceiling. If it ever does not, TWiLightMenu
         // drops the image silently and the user gets no explanation at all, so say it here.
-        if (png.length > TWILIGHT_MAX_PNG_BYTES) {
-            log(`${item.outName} is ${formatBytes(png.length)}; TWiLightMenu ignores box art over ${formatBytes(TWILIGHT_MAX_PNG_BYTES)}.`, 'warn');
+        // Pico's fixed-size BMP has no such trap.
+        if (settings.target !== 'pico' && art.length > TWILIGHT_MAX_PNG_BYTES) {
+            log(`${item.outName} is ${formatBytes(art.length)}; TWiLightMenu ignores box art over ${formatBytes(TWILIGHT_MAX_PNG_BYTES)}.`, 'warn');
         }
 
-        if (boxart) await scan.writePng(boxart, item.outName, png);
-        else state.zipEntries.push([`${path}/${item.outName}`, png]);
+        if (boxart) await scan.writeArt(boxart, item.outName, art);
+        else state.zipEntries.push([`${path}/${item.outName}`, art]);
 
         item.status = 'written';
         counters.written++;
@@ -622,7 +649,8 @@ function wireUp() {
     for (const [name, [w, h]] of Object.entries(SIZE_PRESETS)) {
         $('size-' + name).addEventListener('change', () => { $('w').value = w; $('h').value = h; });
     }
-    for (const id of ['size-classic', 'size-large', 'size-xl', 'size-custom', 'w', 'h', 'ar',
+    for (const id of ['launcher-twilight', 'launcher-pico',
+        'size-classic', 'size-large', 'size-xl', 'size-custom', 'w', 'h', 'ar',
         'border', 'border-dsi', 'border-3ds', 'border-black', 'border-white', 'thick', 'overwrite',
         'dest', 'dest-custom']) {
         $(id).addEventListener('change', () => { syncSettingsUx(); saveSettings(); });
