@@ -1206,7 +1206,7 @@ static int pick_network(Wifi_AccessPoint *chosen)
             } else {
                 printf("\nNo networks this radio can\njoin. DS mode does open or\nWEP only, on 2.4 GHz.\n\n");
             }
-            printf("\x1b[32;1mY:\x1b[37;1m scan again  \x1b[32;1mX:\x1b[37;1m type a name\n\x1b[31;1mSTART:\x1b[37;1m give up\n");
+            printf("\x1b[32;1mY:\x1b[37;1m Scan again  \x1b[32;1mX:\x1b[37;1m Type a name\n\x1b[31;1mSTART:\x1b[37;1m Give up\n");
             while (1) {
                 cothread_yield_irq(IRQ_VBLANK);
                 scanKeys();
@@ -1240,7 +1240,7 @@ static int pick_network(Wifi_AccessPoint *chosen)
                        i == row ? '>' : ' ', name, tag);
             }
             printf("\x1b[30;1m\nUP/DOWN + A to pick one.\n\n");
-            printf("\x1b[32;1mY:\x1b[30;1m rescan  \x1b[32;1mX:\x1b[30;1m type a name\n\x1b[31;1mSTART:\x1b[30;1m give up\x1b[37;1m\n");
+            printf("\x1b[32;1mY:\x1b[30;1m Rescan  \x1b[32;1mX:\x1b[30;1m Type a name\n\x1b[31;1mSTART:\x1b[30;1m Give up\x1b[37;1m\n");
 
             bool rescan = false;
             while (1) {
@@ -1395,7 +1395,7 @@ static bool connect_wifi(void)
                 }
                 settle_radio();
                 printf("\nThe network let us in but\nnever gave an IP address,\nand the usual hotspot\naddresses came up empty.\nTry another network.\n\n"
-                       "\x1b[32;1mA:\x1b[37;1m back to the list\n");
+                       "\x1b[32;1mA:\x1b[37;1m Back to the list\n");
                 while (1) {
                     cothread_yield_irq(IRQ_VBLANK);
                     scanKeys();
@@ -1450,10 +1450,10 @@ static bool options_menu(void)
         printf(g_config.quick_scan
                ? "\x1b[30;1mQuick may miss some covers.\x1b[37;1m\n"
                : "\n");
-        printf("\x1b[37;1m\n \x1b[32;1mA:\x1b[37;1m scan and download\n"
-               " \x1b[32;1mX:\x1b[37;1m music %s\n"
-               " \x1b[32;1mY:\x1b[37;1m reset settings\n"
-               " \x1b[32;1mSTART:\x1b[37;1m quit\n", g_config.mute ? "off" : "on");
+        printf("\x1b[37;1m\n \x1b[32;1mA:\x1b[37;1m Scan and download\n"
+               " \x1b[32;1mX:\x1b[37;1m Music %s\n"
+               " \x1b[32;1mY:\x1b[37;1m Reset settings\n"
+               " \x1b[32;1mSTART:\x1b[37;1m Quit\n", g_config.mute ? "off" : "on");
 
         while (1) {
             cothread_yield_irq(IRQ_VBLANK);
@@ -1501,8 +1501,8 @@ static bool options_menu(void)
                        "password, the box art choices,\n"
                        "and any backend the card was\n"
                        "pointed at.\n\n"
-                       " \x1b[32;1mA:\x1b[37;1m reset\n"
-                       " \x1b[32;1mB:\x1b[37;1m keep them\n");
+                       " \x1b[32;1mA:\x1b[37;1m Reset\n"
+                       " \x1b[32;1mB:\x1b[37;1m Keep them\n");
                 bool reset = false;
                 while (1) {
                     cothread_yield_irq(IRQ_VBLANK);

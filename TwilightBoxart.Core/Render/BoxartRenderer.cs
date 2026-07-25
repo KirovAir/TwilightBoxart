@@ -99,30 +99,59 @@ public sealed class BoxartRenderer : IBoxartRenderer
     }
 
     /// <summary>
-    /// A Pico Launcher cover: the art fitted into the visible 106x96, centred there on a black
-    /// 128x96 canvas (the launcher never shows the right 22 columns), as an 8bpp indexed BMP.
-    /// No border, no byte ladder: the file is 13,366 bytes by construction, so unlike the PNG
-    /// path the quantizer runs exactly once and dithering costs nothing.
+    /// How much of a dimension a Pico cover may lose to a centre crop before it letterboxes instead.
+    /// </summary>
+    /// <remarks>
+    /// Unlike the PNG path, where the cover is whatever size it needs to be, Pico's window is a fixed
+    /// 106x96, so every bit of aspect mismatch turns into black bars inside the cover. GameTDB serves
+    /// all its DS art at 768x680, which misses the window by 2% and so put a black line along the top
+    /// and bottom of every DS cover on the card. Art that is genuinely a different shape - a portrait
+    /// NES or Mega Drive box is half again as tall as the window - still letterboxes rather than
+    /// losing a third of itself.
+    /// </remarks>
+    private const double PicoMaxCrop = 0.12;
+
+    /// <summary>
+    /// A Pico Launcher cover: the art in the visible 106x96 on a black 128x96 canvas (the launcher
+    /// never shows the right 22 columns), as an 8bpp indexed BMP. No border, no byte ladder: the
+    /// file is 13,366 bytes by construction, so the quantizer runs exactly once.
     /// </summary>
     private static byte[] RenderPico(Image<Rgba32> artwork)
     {
-        var size = FitToAspectRatio(
-            artwork.Width, artwork.Height, RenderOptions.PicoVisibleWidth, RenderOptions.PicoHeight);
-        artwork.Mutate(context => context.Resize(size));
+        var window = new Size(RenderOptions.PicoVisibleWidth, RenderOptions.PicoHeight);
+
+        artwork.Mutate(context => context.Resize(new ResizeOptions
+        {
+            Size = window,
+            Mode = CropFraction(artwork.Size, window) <= PicoMaxCrop ? ResizeMode.Crop : ResizeMode.Pad,
+            PadColor = Color.Black,
+        }));
 
         using var canvas = new Image<Rgba32>(RenderOptions.PicoWidth, RenderOptions.PicoHeight);
         FillRows(canvas, Color.Black.ToPixel<Rgba32>());
-
-        var offset = new Point(
-            (RenderOptions.PicoVisibleWidth - size.Width) / 2,
-            (RenderOptions.PicoHeight - size.Height) / 2);
-        canvas.Mutate(context => context.DrawImage(artwork, offset, 1f));
+        canvas.Mutate(context => context.DrawImage(artwork, Point.Empty, 1f));
 
         return EncodeWith(canvas, new BmpEncoder
         {
             BitsPerPixel = BmpBitsPerPixel.Pixel8,
-            Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256 }),
+            // No dithering: 256 colours is generous for 106x96, and the launcher crushes the palette
+            // to 15-bit on load anyway, so error diffusion only adds speckle to a flat sky.
+            Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256, Dither = null }),
         });
+    }
+
+    /// <summary>Fraction of a dimension a centre crop would cut to fill <paramref name="target"/> exactly.</summary>
+    private static double CropFraction(Size source, Size target)
+    {
+        if (source.Width <= 0 || source.Height <= 0)
+        {
+            return 1;
+        }
+
+        var horizontal = (double)target.Width / source.Width;
+        var vertical = (double)target.Height / source.Height;
+
+        return 1 - (Math.Min(horizontal, vertical) / Math.Max(horizontal, vertical));
     }
 
     /// <summary>

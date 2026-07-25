@@ -199,13 +199,32 @@ public class BoxartRendererTests
         var clrUsed = BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(46, 4));
         Assert.IsTrue(clrUsed is 0 or 256, $"clrUsed {clrUsed} is outside the launcher's accepted values");
 
-        // A wide cover is height-bound into the visible 106 columns; the 22 the launcher never
-        // shows stay black. Decoded checks, so palette indirection is exercised too.
+        // The 22 columns the launcher never shows stay black. Decoded checks, so palette
+        // indirection is exercised too.
         var pixels = Decode(bmp);
         Assert.AreEqual(new Rgba32(0, 0, 0, 255), pixels[RenderOptions.PicoWidth - 1, 48],
             "the padding columns must stay black");
         Assert.AreNotEqual(new Rgba32(0, 0, 0, 255), pixels[53, 48],
             "the visible area should carry the artwork");
+    }
+
+    [TestMethod]
+    public void BoxartRenderer_FillsThePicoWindowUnlessTheArtIsADifferentShape()
+    {
+        // GameTDB serves every DS cover at 768x680, 2% off the fixed 106x96 window, and fitting it
+        // put a black line along the top and bottom of every cover on the card. A portrait box
+        // misses by far too much to crop away, so it keeps its bars.
+        var options = new RenderOptions { Target = RenderTarget.Pico };
+        var black = new Rgba32(0, 0, 0, 255);
+
+        using var ds = Decode(new BoxartRenderer().Render(Cover(768, 680), options));
+        Assert.AreNotEqual(black, ds[53, 0], "a near-fitting cover should reach the top of the window");
+        Assert.AreNotEqual(black, ds[53, RenderOptions.PicoHeight - 1], "and the bottom");
+        Assert.AreNotEqual(black, ds[RenderOptions.PicoVisibleWidth - 1, 48], "and the last visible column");
+
+        using var portrait = Decode(new BoxartRenderer().Render(Cover(355, 512), options));
+        Assert.AreEqual(black, portrait[0, 48], "a portrait cover letterboxes rather than losing its edges");
+        Assert.AreNotEqual(black, portrait[53, 48], "but still carries the artwork");
     }
 
     [TestMethod]
