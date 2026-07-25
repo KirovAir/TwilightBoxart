@@ -60,7 +60,13 @@ public sealed class LooseRomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcB
         var bytesRead = (long)headerRead;
         uint? crc32 = null;
 
-        if (size <= crcByteBudget)
+        // The budget only applies where a header serial makes the hash redundant anyway. DS and DSi
+        // dumps are identified by title id 97.8% and 99.3% of the time and are the only files that
+        // routinely run to hundreds of megabytes, so they keep the ceiling - small ones are still
+        // hashed, which is the safety net for the rest. Everything else has no serial worth the
+        // name, so a size limit there just means the biggest SNES or N64 romhacks silently arrive
+        // with nothing to match on.
+        if (!SupportedFiles.HasTitleId(path) || size <= crcByteBudget)
         {
             crc32 = await ComputeCrc32Async(stream, header, ct);
             bytesRead = size;

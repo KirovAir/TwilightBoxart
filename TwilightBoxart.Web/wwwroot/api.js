@@ -129,7 +129,8 @@ export async function identifyBatch(fingerprints, signal) {
 function artUrl(identity, o) {
     const path = identity?.artPath;
     if (!path) return null;
-    if (o.target === 'pico') return `${path}?t=pico`;
+    // ar only travels when it is off, so the default keeps the exact URL Pico clients already mint.
+    if (o.target === 'pico') return `${path}?t=pico${o.keepAspectRatio ? '' : '&ar=0'}`;
     const q = new URLSearchParams({
         w: String(o.width),
         h: String(o.height),

@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using TwilightBoxart.Data.Entities;
 using TwilightBoxart.Pipeline;
 using TwilightBoxart.Pipeline.Caching;
 using TwilightBoxart.Web.Extensions;
@@ -46,6 +47,11 @@ public static class AdminEndpoints
             .RequireAuthorization()
             .WithName("AdminRebuildIndex")
             .WithSummary("Downloads fresh No-Intro data and rebuilds the index in the background.");
+
+        routes.MapPost("/v2/admin/cache/clear", ClearCache)
+            .RequireAuthorization()
+            .WithName("AdminClearCache")
+            .WithSummary("Empties the render cache, and the originals too when asked.");
     }
 
     private static async Task<IResult> Login(
@@ -119,6 +125,37 @@ public static class AdminEndpoints
         builds.TryStartRebuild()
             ? Results.Accepted(value: builds.Status)
             : Results.Conflict(builds.Status);
+
+    /// <summary>
+    /// Empties the render cache, and the originals as well when <c>?originals=1</c>.
+    /// </summary>
+    /// <remarks>
+    /// Split because the two cost wildly different things. Renders rebuild from the originals
+    /// already on disk, so clearing them is free beyond some CPU and is the answer whenever a
+    /// renderer change means the cached bytes are no longer what the renderer would produce.
+    /// Originals have to be fetched again from GameTDB and libretro, who are doing us a favour, so
+    /// that one has to be asked for explicitly.
+    /// </remarks>
+    private static async Task<IResult> ClearCache(
+        HttpContext context,
+        [FromServices] CacheIndex caches,
+        [FromServices] ILogger<AdminLog> logger,
+        CancellationToken ct)
+    {
+        var withOriginals = context.Request.Query["originals"] == "1";
+        var kinds = withOriginals
+            ? new[] { CacheKind.Render, CacheKind.Original }
+            : [CacheKind.Render];
+
+        var cleared = await caches.PurgeAsync(kinds, ct);
+        foreach (var layer in cleared)
+        {
+            logger.LogInformation("admin cleared {Cache}: {Files} file(s), {Bytes} bytes",
+                layer.Cache, layer.FilesRemoved, layer.BytesFreed);
+        }
+
+        return Results.Ok(cleared);
+    }
 }
 
 public sealed record LoginRequest(string? Password);

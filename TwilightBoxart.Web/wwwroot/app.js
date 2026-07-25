@@ -102,9 +102,13 @@ function readSettings() {
     };
 }
 
-/** Mirrors RenderOptions.CacheDiscriminator() so the two caches agree on what "same" means. */
+/**
+ * Mirrors RenderOptions.CacheDiscriminator() so the two caches agree on what "same" means. Pico
+ * folds its geometry away but not its shape, and carries a render version: a bump has to reach here
+ * too, or a card keeps the covers it was written last time.
+ */
 const renderKey = (s) => s.target === 'pico'
-    ? 'pico'
+    ? (s.keepAspectRatio ? 'pico2' : 'pico2_fill')
     : `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
 
 function saveSettings() {
@@ -142,16 +146,16 @@ function restoreSettings() {
 
 /** Grays out what the current choices make irrelevant, like the classic app did. */
 function syncSettingsUx() {
-    // Pico's cover format is fixed, so the size and border panels vanish rather than gray out:
-    // the clearest possible statement that there is nothing there to choose.
+    // Pico's geometry is fixed, so the size and border controls gray out. The aspect ratio is the
+    // one setting in there that still means something, so it stays live.
     const pico = isPico();
-    $('settings-size').hidden = pico;
-    $('settings-extra').hidden = pico;
     $('pico-note').hidden = !pico;
+    for (const id of ['size-classic', 'size-large', 'size-xl', 'size-custom']) $(id).disabled = pico;
 
     const custom = $('size-custom').checked;
-    $('w').disabled = $('h').disabled = !custom;
-    const border = $('border').checked;
+    $('w').disabled = $('h').disabled = pico || !custom;
+    $('border').disabled = pico;
+    const border = $('border').checked && !pico;
     for (const el of document.querySelectorAll('input[name="borderstyle"]')) el.disabled = !border;
     $('thick').disabled = !border;
     const customDest = $('dest-custom').checked;

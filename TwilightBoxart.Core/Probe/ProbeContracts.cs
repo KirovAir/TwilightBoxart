@@ -162,4 +162,19 @@ public static class SupportedFiles
     public static bool IsArchive(string path) => Archive.Contains(Path.GetExtension(path));
 
     public static bool IsScannable(string path) => Scannable.Contains(Path.GetExtension(path));
+
+    /// <summary>
+    /// Whether this file's header carries a title id good enough to identify it without a checksum.
+    /// </summary>
+    /// <remarks>
+    /// DS and DSi only. Their title id resolves 97.8% and 99.3% of dumps, and they are also the only
+    /// files that routinely run past a hundred megabytes, which is the pairing that makes skipping
+    /// the hash worth it. GBA carries one too but at 87.7%, and a GBA ROM is small enough that the
+    /// hash is free, so it is not worth the miss. Everything else has nothing better than a
+    /// checksum. Used by the probes to decide when a full read may be skipped; see
+    /// <see cref="Probe.LooseRomProbe"/>.
+    /// </remarks>
+    public static bool HasTitleId(string path) =>
+        RomExtensions.TryGetValue(Path.GetExtension(path), out var console)
+        && console is ConsoleType.NintendoDs or ConsoleType.NintendoDsi;
 }

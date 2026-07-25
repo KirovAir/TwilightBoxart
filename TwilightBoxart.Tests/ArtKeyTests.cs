@@ -33,7 +33,7 @@ public class ArtKeyTests
         var twilight = ArtCaches.RenderPath(
             ConsoleType.NintendoDs, "ASME", sha, new RenderOptions().Normalized());
 
-        StringAssert.EndsWith(pico, "pico.bmp");
+        StringAssert.EndsWith(pico, "pico2.bmp");
         StringAssert.EndsWith(twilight, ".png");
     }
 }

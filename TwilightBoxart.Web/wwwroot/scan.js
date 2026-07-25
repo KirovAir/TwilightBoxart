@@ -198,22 +198,28 @@ export async function probeFile(file, fileName, wantHeader = false) {
         };
     }
 
-    // Loose ROM. No container header to read, so the 512-byte ROM header is the cheap path, plus
-    // a full-read CRC32 when the file is small enough for that to be genuinely cheap. Mirrors
-    // LooseRomProbe in Core: the budget covers every GB, GBC, GBA, NES, SNES, Mega Drive and Game
-    // Gear ROM outright (the consoles with no serial to match on), while anything bigger is a
-    // DS or N64 dump that carries a header serial and never needs the hash.
+    // Loose ROM. No container header to read, so the 512-byte ROM header is the cheap path, plus a
+    // full-read CRC32. Mirrors LooseRomProbe in Core: the size budget applies only where a header
+    // title id makes the hash redundant, which is DS and DSi and nothing else. Everything else is
+    // hashed whatever its size, or the biggest SNES and N64 romhacks arrive with nothing to match on.
     const want = Math.min(CONST.HDR_WANT, file.size);
     const header = new Uint8Array(await file.slice(0, want).arrayBuffer());
-    const crc32 = file.size <= CRC_BYTE_BUDGET ? await crc32File(file) : null;
+    const crc32 = !hasTitleId(fileName) || file.size <= CRC_BYTE_BUDGET ? await crc32File(file) : null;
     return {
         ok: true, container: 'loose', innerName: fileName,
         size: file.size, crc32, header,
     };
 }
 
-/** Largest loose file read end-to-end for a CRC32; the same 64 MiB Core uses. */
+/** Largest DS/DSi file read end-to-end for a CRC32; the same 64 MiB Core uses. */
 const CRC_BYTE_BUDGET = 64 * 1024 * 1024;
+
+/**
+ * Whether the header carries a title id good enough to identify the file without a checksum, which
+ * is DS and DSi and nothing else. Mirrors SupportedFiles.HasTitleId in Core.
+ */
+const TITLE_ID_EXTENSIONS = new Set(['.nds', '.ds', '.dsi', '.srl', '.ids', '.app']);
+const hasTitleId = (name) => TITLE_ID_EXTENSIONS.has((name.match(/\.[^.]*$/) ?? [''])[0].toLowerCase());
 
 /* writing */
 

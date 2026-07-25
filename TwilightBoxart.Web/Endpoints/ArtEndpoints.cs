@@ -67,10 +67,13 @@ public static class ArtEndpoints
             return EmptyNotFound(context);
         }
 
-        // The ETag is the original's hash, so it changes exactly when the art does, while staying
-        // stable across every render variant of the same source. The render parameters are already
-        // part of the URL.
-        var etag = new EntityTagHeaderValue($"\"{art.Sha256[..32]}\"");
+        // The original's hash AND the render discriminator: the ETag has to identify these bytes,
+        // not the artwork they came from. With the source hash alone a renderer change kept its old
+        // ETag, so every cache that revalidated got a 304 and held on to the cover it already had -
+        // including the CDN, and including after an operator emptied the server's own cache. The
+        // discriminator carries a render version for exactly that reason, so the tag moves whenever
+        // the bytes do.
+        var etag = new EntityTagHeaderValue($"\"{art.Sha256[..32]}-{options.CacheDiscriminator()}\"");
         var typed = context.Request.GetTypedHeaders();
         if (typed.IfNoneMatch.Any(t => t.Compare(etag, useStrongComparison: false)))
         {

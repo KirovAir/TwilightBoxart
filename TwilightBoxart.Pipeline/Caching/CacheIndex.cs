@@ -31,6 +31,40 @@ public sealed class CacheIndex(
     /// </summary>
     private const int EvictionBatchSize = 256;
 
+    /// <summary>
+    /// One writer at a time across reconcile, evict and purge. Each opens its own DbContext and
+    /// deletes cache rows, so two of them selecting the same row means one SaveChanges throws and
+    /// the sweep stops half done. Reads and writes of cache blobs do not take it: they touch one
+    /// row each and are what the server is actually for.
+    /// </summary>
+    private readonly SemaphoreSlim _maintenance = new(1, 1);
+
+    private async Task<T> UnderMaintenanceLock<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct)
+    {
+        await _maintenance.WaitAsync(ct);
+        try
+        {
+            return await work(ct);
+        }
+        finally
+        {
+            _maintenance.Release();
+        }
+    }
+
+    private async Task UnderMaintenanceLock(Func<CancellationToken, Task> work, CancellationToken ct)
+    {
+        await _maintenance.WaitAsync(ct);
+        try
+        {
+            await work(ct);
+        }
+        finally
+        {
+            _maintenance.Release();
+        }
+    }
+
     /// <summary>False until the startup reconcile has run, so /v2/health can say "counting" rather than lie.</summary>
     public bool Scanned { get; private set; }
 
@@ -89,7 +123,10 @@ public sealed class CacheIndex(
     /// is what makes the budget survive a restart - and what recovers from an operator deleting cache
     /// files by hand, or from a volume that came back empty.
     /// </summary>
-    public async Task ReconcileAsync(CancellationToken ct = default)
+    public async Task ReconcileAsync(CancellationToken ct = default) =>
+        await UnderMaintenanceLock(ReconcileCoreAsync, ct);
+
+    private async Task ReconcileCoreAsync(CancellationToken ct)
     {
         foreach (var cache in caches.All)
         {
@@ -148,7 +185,10 @@ public sealed class CacheIndex(
     /// again. Recency, not hit count, picks the victim - a cover requested a thousand times last year
     /// is worth less than one requested once this morning.
     /// </remarks>
-    public async Task<IReadOnlyList<EvictionResult>> EvictAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<EvictionResult>> EvictAsync(CancellationToken ct = default) =>
+        await UnderMaintenanceLock(EvictCoreAsync, ct);
+
+    private async Task<IReadOnlyList<EvictionResult>> EvictCoreAsync(CancellationToken ct)
     {
         var results = new List<EvictionResult>();
 
@@ -257,6 +297,71 @@ public sealed class CacheIndex(
         }
 
         return (count, freed);
+    }
+
+    /// <summary>
+    /// Empties cache layers outright - every file, every row - and reports what went.
+    /// </summary>
+    /// <remarks>
+    /// Eviction retires what is cold or over budget; this retires what is WRONG, which nothing else
+    /// can. A change to the renderer produces different bytes under an unchanged cache key, so the
+    /// old covers would otherwise be served until they aged out. Renders are the layer that needs
+    /// it and the cheap one to lose: they rebuild from the originals already on disk, with no
+    /// upstream traffic. Purging originals re-downloads from GameTDB and libretro, so it is a
+    /// separate decision rather than part of "clear the cache".
+    /// </remarks>
+    public async Task<IReadOnlyList<EvictionResult>> PurgeAsync(
+        IReadOnlyCollection<CacheKind> kinds, CancellationToken ct = default) =>
+        await UnderMaintenanceLock(token => PurgeCoreAsync(kinds, token), ct);
+
+    private async Task<IReadOnlyList<EvictionResult>> PurgeCoreAsync(
+        IReadOnlyCollection<CacheKind> kinds, CancellationToken ct)
+    {
+        var results = new List<EvictionResult>();
+
+        await using var db = await dbFactory.CreateDbContextAsync(ct);
+
+        foreach (var cache in caches.All.Where(c => kinds.Contains(c.Kind)))
+        {
+            var removed = 0;
+            long freed = 0;
+
+            // Batched like the eviction sweeps: a full cache is tens of thousands of rows, and
+            // materialising all of them to delete them would spike memory on a Pi.
+            while (!ct.IsCancellationRequested)
+            {
+                var batch = await db.ColdestAsync(cache.Kind, EvictionBatchSize, ct);
+                if (batch.Count == 0)
+                {
+                    break;
+                }
+
+                foreach (var entry in batch)
+                {
+                    cache.Delete(cache.RelativePathFor(entry.CacheKey));
+                    db.CacheEntries.Remove(entry);
+                    freed += entry.SizeBytes;
+                    removed++;
+                }
+
+                await db.SaveChangesAsync(ct);
+            }
+
+            // Then whatever is on disk without a row to its name. WriteAsync lands the file
+            // before it registers it, so a crash in between leaves a file that reads served
+            // happily (TryReadAsync goes straight to disk) and that the loop above cannot see.
+            // "Cleared" has to mean cleared, or the button is worse than useless.
+            foreach (var (relativePath, sizeBytes) in cache.Enumerate())
+            {
+                cache.Delete(relativePath);
+                freed += sizeBytes;
+                removed++;
+            }
+
+            results.Add(new EvictionResult(cache.Name, removed, freed));
+        }
+
+        return results;
     }
 
     /// <summary>Per-layer occupancy for <c>/v2/health</c>, straight off the <c>Kind</c> index.</summary>

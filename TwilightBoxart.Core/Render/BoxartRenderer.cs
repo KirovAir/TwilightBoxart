@@ -54,7 +54,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
 
         if (settings.Target == RenderTarget.Pico)
         {
-            return RenderPico(artwork);
+            return RenderPico(artwork, settings);
         }
 
         var sprite = BorderSprite.For(settings.BorderStyle);
@@ -99,49 +99,78 @@ public sealed class BoxartRenderer : IBoxartRenderer
     }
 
     /// <summary>
-    /// How much of a dimension a Pico cover may lose to a centre crop before it letterboxes instead.
+    /// Aspect mismatch a Pico cover is stretched through rather than letterboxed around.
     /// </summary>
     /// <remarks>
     /// Unlike the PNG path, where the cover is whatever size it needs to be, Pico's window is a fixed
-    /// 106x96, so every bit of aspect mismatch turns into black bars inside the cover. GameTDB serves
-    /// all its DS art at 768x680, which misses the window by 2% and so put a black line along the top
-    /// and bottom of every DS cover on the card. Art that is genuinely a different shape - a portrait
-    /// NES or Mega Drive box is half again as tall as the window - still letterboxes rather than
-    /// losing a third of itself.
+    /// 106x96, so any mismatch has to go somewhere. GameTDB serves all its DS art at 768x680, which
+    /// misses the window by 2.3%: stretched away that is invisible, while letterboxed it is a black
+    /// line down the top and bottom of every DS cover on the card. Anything past this keeps its
+    /// shape and gets a backdrop instead - a 9% stretch starts to show, and the alternative of
+    /// cropping to fit costs the top and bottom of the box art.
     /// </remarks>
-    private const double PicoMaxCrop = 0.12;
+    private const double PicoStretchTolerance = 0.06;
+
+    /// <summary>How far the backdrop is blurred, in a 106x96 window.</summary>
+    private const float PicoBackdropBlur = 8f;
 
     /// <summary>
     /// A Pico Launcher cover: the art in the visible 106x96 on a black 128x96 canvas (the launcher
     /// never shows the right 22 columns), as an 8bpp indexed BMP. No border, no byte ladder: the
     /// file is 13,366 bytes by construction, so the quantizer runs exactly once.
     /// </summary>
-    private static byte[] RenderPico(Image<Rgba32> artwork)
+    /// <remarks>
+    /// Nothing is ever cropped here. The window is small enough that losing the top and bottom of a
+    /// box costs its title, and box art is the one thing a cover cannot do without.
+    /// </remarks>
+    private static byte[] RenderPico(Image<Rgba32> artwork, RenderOptions settings)
     {
         var window = new Size(RenderOptions.PicoVisibleWidth, RenderOptions.PicoHeight);
 
-        artwork.Mutate(context => context.Resize(new ResizeOptions
-        {
-            Size = window,
-            Mode = CropFraction(artwork.Size, window) <= PicoMaxCrop ? ResizeMode.Crop : ResizeMode.Pad,
-            PadColor = Color.Black,
-        }));
-
         using var canvas = new Image<Rgba32>(RenderOptions.PicoWidth, RenderOptions.PicoHeight);
         FillRows(canvas, Color.Black.ToPixel<Rgba32>());
-        canvas.Mutate(context => context.DrawImage(artwork, Point.Empty, 1f));
 
-        return EncodeWith(canvas, new BmpEncoder
+        // Filling the window outright is the caller's choice, and it is also what a near miss gets:
+        // a 2% stretch nobody can see beats a black line nobody asked for.
+        if (!settings.KeepAspectRatio || AspectMismatch(artwork.Size, window) <= PicoStretchTolerance)
+        {
+            using var stretched = artwork.Clone(context => context.Resize(window));
+            canvas.Mutate(context => context.DrawImage(stretched, Point.Empty, 1f));
+            return EncodePico(canvas);
+        }
+
+        // A cover of a genuinely different shape keeps its shape, and the gap either side of it is
+        // filled with a blurred copy of the cover rather than left black: the bars read as part of
+        // the artwork instead of as a broken image.
+        using (var backdrop = artwork.Clone(context => context
+            .Resize(window)
+            .GaussianBlur(PicoBackdropBlur)))
+        {
+            canvas.Mutate(context => context.DrawImage(backdrop, Point.Empty, 1f));
+        }
+
+        var size = FitToAspectRatio(artwork.Width, artwork.Height, window.Width, window.Height);
+        using var fitted = artwork.Clone(context => context.Resize(size));
+        canvas.Mutate(context => context.DrawImage(
+            fitted, new Point((window.Width - size.Width) / 2, (window.Height - size.Height) / 2), 1f));
+
+        return EncodePico(canvas);
+    }
+
+    private static byte[] EncodePico(Image<Rgba32> canvas) =>
+        EncodeWith(canvas, new BmpEncoder
         {
             BitsPerPixel = BmpBitsPerPixel.Pixel8,
             // No dithering: 256 colours is generous for 106x96, and the launcher crushes the palette
             // to 15-bit on load anyway, so error diffusion only adds speckle to a flat sky.
             Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256, Dither = null }),
         });
-    }
 
-    /// <summary>Fraction of a dimension a centre crop would cut to fill <paramref name="target"/> exactly.</summary>
-    private static double CropFraction(Size source, Size target)
+    /// <summary>
+    /// How far <paramref name="source"/> is from <paramref name="target"/>'s shape, as the fraction
+    /// of one dimension that separates them. 0 is the same shape.
+    /// </summary>
+    private static double AspectMismatch(Size source, Size target)
     {
         if (source.Width <= 0 || source.Height <= 0)
         {

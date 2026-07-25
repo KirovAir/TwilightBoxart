@@ -260,8 +260,10 @@ public sealed record RenderOptions
         // Same defence as the border style below: an undefined target must not leak into cache keys.
         var target = Enum.IsDefined(Target) ? Target : RenderTarget.TwilightMenu;
 
-        // Pico's format is fixed by the launcher, so every knob folds flat: byte-identical renders
-        // then share one cache entry no matter what the client happened to send along.
+        // Pico's geometry is fixed by the launcher, so those knobs fold flat: byte-identical renders
+        // then share one cache entry no matter what the client happened to send along. The aspect
+        // ratio is NOT one of them - it decides whether art of a different shape keeps its
+        // proportions or fills the window - so it survives, as the only choice Pico has left.
         if (target == RenderTarget.Pico)
         {
             return this with
@@ -269,7 +271,6 @@ public sealed record RenderOptions
                 Target = target,
                 Width = PicoWidth,
                 Height = PicoHeight,
-                KeepAspectRatio = true,
                 BorderStyle = BoxartBorderStyle.None,
                 BorderThickness = 0,
                 BorderColor = 0,
@@ -315,6 +316,18 @@ public sealed record RenderOptions
         };
     }
 
+    /// <summary>
+    /// Bumped whenever the Pico renderer's output changes for the same request. It is the cache key
+    /// AND part of the ETag, so a bump retires the cached files and stops every downstream cache
+    /// from answering a revalidation with the cover it already had. The URL deliberately does not
+    /// carry it: shipped clients mint their own <c>?t=pico</c> and must keep working.
+    /// </summary>
+    /// <remarks>
+    /// v2: covers are no longer cropped to fill. Art that is not the window's shape keeps its
+    /// proportions over a blurred backdrop, and only a near miss is stretched through.
+    /// </remarks>
+    private const string PicoRenderVersion = "2";
+
     /// <summary>Stable, filesystem-safe discriminator for the render cache key.</summary>
     /// <remarks>
     /// <see cref="MaxPngBytes"/> participates: two requests identical but for the ceiling produce
@@ -322,8 +335,9 @@ public sealed record RenderOptions
     /// </remarks>
     public string CacheDiscriminator() =>
         Target == RenderTarget.Pico
-            // The folded knobs (see Normalized) would only repeat themselves here.
-            ? "pico"
+            // The folded knobs (see Normalized) would only repeat themselves here; the aspect ratio
+            // is the one that survives, and it produces genuinely different bytes.
+            ? $"pico{PicoRenderVersion}{(KeepAspectRatio ? "" : "_fill")}"
             : $"{Width}x{Height}_{(KeepAspectRatio ? "ar" : "fill")}_{BorderStyle}_{BorderThickness}_{BorderColor:X8}_{MaxPngBytes}";
 
     /// <summary>What the rendered bytes are: a PNG for TWiLightMenu++, an 8bpp BMP for Pico.</summary>
@@ -344,7 +358,9 @@ public sealed record RenderOptions
     /// </summary>
     public string ToQueryString() =>
         Target == RenderTarget.Pico
-            ? "?t=pico"
+            // ar only travels when it is off: the default keeps the exact URL every Pico client
+            // already mints, so the caches they have built up stay warm.
+            ? (KeepAspectRatio ? "?t=pico" : "?t=pico&ar=0")
             : $"?w={Width}&h={Height}&ar={(KeepAspectRatio ? 1 : 0)}&b={BorderStyle}&bt={BorderThickness}&bc={BorderColor:X8}";
 }
 

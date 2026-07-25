@@ -113,4 +113,35 @@ $('rebuild').addEventListener('click', async () => {
     await refresh();
 });
 
+/**
+ * Clearing the originals means re-downloading every cover from upstreams that are doing us a
+ * favour, so that one asks first. Clearing renders alone is cheap and needs no ceremony.
+ */
+async function clearCache(button, originals) {
+    if (originals && !confirm(
+        'This deletes every downloaded cover as well, so they all have to be fetched from GameTDB '
+        + 'and libretro again. Clearing just the rendered covers is usually what you want.\n\n'
+        + 'Clear everything?')) return;
+
+    const buttons = [$('clear-renders'), $('clear-all')];
+    buttons.forEach(b => b.disabled = true);
+    $('clear-state').textContent = 'Clearing…';
+    try {
+        const res = await fetch(`/v2/admin/cache/clear${originals ? '?originals=1' : ''}`, { method: 'POST' });
+        if (res.status === 401) { show(false); return; }
+        const cleared = await res.json();
+        $('clear-state').textContent = cleared.length
+            ? cleared.map(c => `${c.cache}: ${c.filesRemoved.toLocaleString()} file(s), ${mb(c.bytesFreed)} freed`).join(' · ')
+            : 'Nothing to clear.';
+    } catch {
+        $('clear-state').textContent = 'Could not clear the cache; check the server log.';
+    } finally {
+        buttons.forEach(b => b.disabled = false);
+        await refresh();
+    }
+}
+
+$('clear-renders').addEventListener('click', () => clearCache($('clear-renders'), false));
+$('clear-all').addEventListener('click', () => clearCache($('clear-all'), true));
+
 refresh();

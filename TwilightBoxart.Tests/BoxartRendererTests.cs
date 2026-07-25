@@ -209,11 +209,11 @@ public class BoxartRendererTests
     }
 
     [TestMethod]
-    public void BoxartRenderer_FillsThePicoWindowUnlessTheArtIsADifferentShape()
+    public void BoxartRenderer_FillsThePicoWindowWithoutEverCroppingTheArt()
     {
-        // GameTDB serves every DS cover at 768x680, 2% off the fixed 106x96 window, and fitting it
-        // put a black line along the top and bottom of every cover on the card. A portrait box
-        // misses by far too much to crop away, so it keeps its bars.
+        // GameTDB serves every DS cover at 768x680, 2.3% off the fixed 106x96 window. Stretched
+        // through, that is invisible; letterboxed it was a black line down the top and bottom of
+        // every cover on the card.
         var options = new RenderOptions { Target = RenderTarget.Pico };
         var black = new Rgba32(0, 0, 0, 255);
 
@@ -222,16 +222,37 @@ public class BoxartRendererTests
         Assert.AreNotEqual(black, ds[53, RenderOptions.PicoHeight - 1], "and the bottom");
         Assert.AreNotEqual(black, ds[RenderOptions.PicoVisibleWidth - 1, 48], "and the last visible column");
 
+        // A portrait box keeps its shape, and the gap either side is a blurred copy of the cover.
+        // Nothing is cropped and nothing is left black: black bars read as a broken image, and the
+        // window is too small to lose the top and bottom of a box to a crop.
         using var portrait = Decode(new BoxartRenderer().Render(Cover(355, 512), options));
-        Assert.AreEqual(black, portrait[0, 48], "a portrait cover letterboxes rather than losing its edges");
-        Assert.AreNotEqual(black, portrait[53, 48], "but still carries the artwork");
+        Assert.AreNotEqual(black, portrait[0, 48], "the gap gets a backdrop, not a black bar");
+        Assert.AreNotEqual(black, portrait[53, 48], "and the artwork sits on top of it");
+        Assert.AreEqual(black, portrait[RenderOptions.PicoWidth - 1, 48],
+            "the backdrop must stop at the window; the hidden columns stay black");
     }
 
     [TestMethod]
-    public void CacheDiscriminator_FoldsEverythingForPico()
+    public void BoxartRenderer_PicoFillIgnoresTheArtsShape()
     {
-        // Two Pico requests with wildly different knobs are byte-identical renders and must share
-        // one cache entry, one query string and one content type.
+        // The escape hatch for anyone who would rather have no bars at all: ar=0 stretches to the
+        // window outright, which is what PicoCover does and what the fixed geometry allows.
+        var options = new RenderOptions { Target = RenderTarget.Pico, KeepAspectRatio = false };
+        var black = new Rgba32(0, 0, 0, 255);
+
+        using var portrait = Decode(new BoxartRenderer().Render(Cover(355, 512), options));
+
+        for (var x = 0; x < RenderOptions.PicoVisibleWidth; x += 5)
+        {
+            Assert.AreNotEqual(black, portrait[x, 48], $"column {x} should carry artwork, not a bar");
+        }
+    }
+
+    [TestMethod]
+    public void CacheDiscriminator_FoldsPicosGeometryButNotItsAspectRatio()
+    {
+        // Two Pico requests differing only in the geometry knobs are byte-identical renders and must
+        // share one cache entry, one query string and one content type.
         var a = new RenderOptions { Target = RenderTarget.Pico, Width = 999, BorderColor = 0x11223344 };
         var b = new RenderOptions { Target = RenderTarget.Pico, Height = 7, BorderStyle = BoxartBorderStyle.Line };
 
@@ -241,6 +262,13 @@ public class BoxartRendererTests
         Assert.AreEqual(".bmp", a.FileExtension);
         Assert.AreNotEqual(new RenderOptions().Normalized().CacheDiscriminator(), a.Normalized().CacheDiscriminator(),
             "a Pico render must never share a cache entry with a TWiLightMenu render");
+
+        // The aspect ratio survives Normalized, so it has to reach the key and the URL: it decides
+        // whether art of a different shape keeps its proportions, which is different bytes.
+        var fill = new RenderOptions { Target = RenderTarget.Pico, KeepAspectRatio = false }.Normalized();
+        Assert.AreNotEqual(a.Normalized().CacheDiscriminator(), fill.CacheDiscriminator());
+        Assert.AreEqual("?t=pico", a.Normalized().ToQueryString(), "the default keeps the URL Pico clients already mint");
+        Assert.AreEqual("?t=pico&ar=0", fill.ToQueryString());
     }
 
     [TestMethod]

@@ -69,6 +69,7 @@ typedef struct {
     char ssid[33];
     char key[65];
     int launcher;   /* 0 TWiLightMenu++, 1 Pico Launcher */
+    bool keep_ar;   /* keep the cover's proportions; off stretches it to the full size */
     int size;       /* 0 classic 128x115, 1 large 168x130, 2 xl 208x143 */
     int border;     /* 0 none, 1 dsi, 2 3ds, 3 black, 4 white */
     bool thick;
@@ -692,10 +693,12 @@ static void fetch_art(const char *path, const char *name)
     /* Pico's cover format is fixed, so the target is the whole render request there. */
     char render[96];
     if (is_pico()) {
-        snprintf(render, sizeof(render), "&t=pico");
+        /* ar only travels when it is off, so the default keeps the URL the server already caches. */
+        snprintf(render, sizeof(render), "&t=pico%s", g_config.keep_ar ? "" : "&ar=0");
     } else {
-        snprintf(render, sizeof(render), "&w=%d&h=%d&b=%s&bt=%d&bc=%s",
-                 SIZE_W[g_config.size], SIZE_H[g_config.size], BORDER_WIRE[g_config.border],
+        snprintf(render, sizeof(render), "&w=%d&h=%d&ar=%d&b=%s&bt=%d&bc=%s",
+                 SIZE_W[g_config.size], SIZE_H[g_config.size], g_config.keep_ar ? 1 : 0,
+                 BORDER_WIRE[g_config.border],
                  g_config.thick ? 2 : 1, g_config.border == 4 ? "FFFFFFFF" : "FF000000");
     }
 
@@ -930,6 +933,7 @@ static bool load_config(AppConfig *config)
     memset(config, 0, sizeof(*config));
     config->backend_tls = -1; /* "not in the ini", resolved below */
     config->launcher = -1;    /* same: absent means "work it out from the card" */
+    bool seen_keep_ar = false;
 
     FILE *f = fopen(CONFIG_PATH, "r");
     if (f) {
@@ -956,6 +960,9 @@ static bool load_config(AppConfig *config)
                 strncpy(config->key, value, sizeof(config->key) - 1);
             } else if (strcasecmp(key, "launcher") == 0) {
                 config->launcher = atoi(value) == 1 ? 1 : 0;
+            } else if (strcasecmp(key, "keep_ar") == 0) {
+                config->keep_ar = atoi(value) != 0;
+                seen_keep_ar = true;
             } else if (strcasecmp(key, "size") == 0) {
                 config->size = atoi(value);
                 if (config->size < 0 || config->size > 2)
@@ -984,6 +991,11 @@ static bool load_config(AppConfig *config)
         fclose(f);
     }
 
+    /* Keeping the proportions is the default, and an ini written before this setting existed says
+       nothing about it - which is the same thing those cards were already getting. */
+    if (!seen_keep_ar)
+        config->keep_ar = true;
+
     /* No launcher in the ini: a first run, or an ini written before there was a choice. Guess it
        from the card rather than making someone find the setting, and only when the answer is not
        in doubt. Once the menu has been through save_config the key is there and this stops. */
@@ -1009,8 +1021,9 @@ static void save_config(const AppConfig *config)
     FILE *f = fopen(CONFIG_PATH, "w");
     if (!f)
         return;
-    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nlauncher = %d\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nquick_scan = %d\nmute = %d\n",
-            config->ssid, config->key, config->launcher, config->size, config->border, config->thick ? 1 : 0,
+    fprintf(f, "; TwilightBoxart\nssid = %s\nkey = %s\nlauncher = %d\nkeep_ar = %d\nsize = %d\nborder = %d\nthick = %d\noverwrite = %d\nquick_scan = %d\nmute = %d\n",
+            config->ssid, config->key, config->launcher, config->keep_ar ? 1 : 0,
+            config->size, config->border, config->thick ? 1 : 0,
             config->overwrite ? 1 : 0, config->quick_scan ? 1 : 0, config->mute ? 1 : 0);
     /* Written out even when untouched, so the keys are on the card to edit. Self-hosters:
        point backend_host at your own server; backend_tls 0 means plain HTTP. */
@@ -1453,19 +1466,21 @@ static bool options_menu(void)
         printf("\x1b[37;1mWelcome to TwilightBoxart!\n\n");
         printf("How do you want your covers?\n\n");
 
-        const char *values[6] = {
+        const char *values[7] = {
             LAUNCHER_NAMES[g_config.launcher],
+            g_config.keep_ar ? "Keep" : "Stretch",
             SIZE_NAMES[g_config.size],
             BORDER_NAMES[g_config.border],
             g_config.thick ? "On" : "Off",
             g_config.overwrite ? "Yes" : "No",
             g_config.quick_scan ? "Quick" : "Complete",
         };
-        const char *labels[6] = { "Launcher", "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
+        const char *labels[7] = { "Launcher", "Shape", "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
 
-        for (int i = 0; i < 6; i++) {
-            /* Pico's cover format is fixed, so the size and border rows go dark with it. */
-            bool dim = (i == 3 && g_config.border == 0) || (is_pico() && i >= 1 && i <= 3);
+        for (int i = 0; i < 7; i++) {
+            /* Pico's geometry is fixed, so the size and border rows go dark with it. Shape is the
+               one setting it keeps: its window is fixed, the art it holds is not. */
+            bool dim = (i == 4 && g_config.border == 0) || (is_pico() && i >= 2 && i <= 4);
             if (i == row)
                 printf(" \x1b[33;1m> %-18s %s\n", labels[i], values[i]);
             else if (dim)
@@ -1487,11 +1502,11 @@ static bool options_menu(void)
             scanKeys();
             u32 down = keysDownRepeat();
             if (down & KEY_UP) {
-                row = (row + 5) % 6;
+                row = (row + 6) % 7;
                 break;
             }
             if (down & KEY_DOWN) {
-                row = (row + 1) % 6;
+                row = (row + 1) % 7;
                 break;
             }
             if (down & (KEY_LEFT | KEY_RIGHT)) {
@@ -1499,12 +1514,14 @@ static bool options_menu(void)
                 if (row == 0)
                     g_config.launcher = !g_config.launcher;
                 else if (row == 1)
-                    g_config.size = (g_config.size + step + 3) % 3;
+                    g_config.keep_ar = !g_config.keep_ar;
                 else if (row == 2)
-                    g_config.border = (g_config.border + step + 5) % 5;
+                    g_config.size = (g_config.size + step + 3) % 3;
                 else if (row == 3)
-                    g_config.thick = !g_config.thick;
+                    g_config.border = (g_config.border + step + 5) % 5;
                 else if (row == 4)
+                    g_config.thick = !g_config.thick;
+                else if (row == 5)
                     g_config.overwrite = !g_config.overwrite;
                 else
                     g_config.quick_scan = !g_config.quick_scan;

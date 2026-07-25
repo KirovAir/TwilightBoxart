@@ -85,18 +85,19 @@
                                 <RadioButton GroupName="launcher" Content="TWiLightMenu++" IsChecked="{Binding IsLauncherTwilight}" />
                                 <RadioButton GroupName="launcher" Content="Pico Launcher (DS Pico)" IsChecked="{Binding IsLauncherPico}" />
                             </StackPanel>
-                            <TextBlock Text="Pico covers are one fixed format (128×96, 256 colours), so size and border settings don't apply."
+                            <TextBlock Text="Pico covers are one fixed format (128×96, 256 colours), so only the aspect ratio applies."
                                        IsVisible="{Binding IsLauncherPico}" Classes="hint" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
 
-                <StackPanel Spacing="3" IsVisible="{Binding IsLauncherTwilight}">
+
+                <StackPanel Spacing="3">
                     <TextBlock Classes="section" Text="Boxart size" />
                     <Border Classes="group">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                <StackPanel Orientation="Horizontal" Spacing="16" IsEnabled="{Binding IsLauncherTwilight}">
                                     <RadioButton GroupName="size" Content="Classic" IsChecked="{Binding IsSizeClassic}" />
                                     <RadioButton GroupName="size" Content="Large" IsChecked="{Binding IsSizeLarge}" />
                                     <RadioButton GroupName="size" Content="XL" IsChecked="{Binding IsSizeXl}" />
@@ -108,7 +109,8 @@
                                 <TextBlock Text="Larger than 256×192: TWiLightMenu++ will not show these covers."
                                            IsVisible="{Binding IsOversizeForTwilight}" Classes="warn" />
                             </StackPanel>
-                            <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
+                            <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center"
+                                  IsEnabled="{Binding IsLauncherTwilight}">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" VerticalAlignment="Center" Margin="0,0,10,0" />
                                 <NumericUpDown Grid.Row="0" Grid.Column="1" Value="{Binding Width}" Minimum="1" Maximum="1000"
                                                Increment="1" FormatString="0" Width="110" VerticalContentAlignment="Center" IsEnabled="{Binding IsSizeCustom}" />
@@ -120,7 +122,7 @@
                     </Border>
                 </StackPanel>
 
-                <StackPanel Spacing="3" IsVisible="{Binding IsLauncherTwilight}">
+                <StackPanel Spacing="3" IsEnabled="{Binding IsLauncherTwilight}">
                     <TextBlock Classes="section" Text="Border" />
                     <Border Classes="group">
                         <!-- WrapPanel, not StackPanel: at narrow widths the tail of this row ("Thicker
