@@ -1,21 +1,29 @@
 # TwilightBoxart browser client, for maintainers
 
 The user-facing story (which browsers work, the read-only fallback, what the page does to a card)
-lives in `support.html`, linked from the app's footer. This file is the developer side only.
+lives in `../Pages/Support.cshtml`, linked from the app's footer. This file is the developer side
+only.
 
 Plain ES modules. No build step, no bundler, no dependencies. Edit a file, reload the page.
 
+The three pages live in `../Pages` and are Razor for one reason: `asp-append-version` stamps every
+link to a file here with a hash of its bytes, so a deploy cannot be served from a stale cache. The
+JS files import each other by relative path, which that tag helper never sees, so `Index.cshtml`
+also emits an import map covering them. **Add a module and it needs a line in that map**, or it will
+be the one file a browser keeps serving from four-hour-old cache.
+
 | File | Job |
 |---|---|
-| `index.html` | The entire UI |
-| `support.html` | Browser support notes, served to users |
+| `../Pages/Index.cshtml` | The entire UI |
+| `../Pages/Support.cshtml` | Browser support notes, served to users |
+| `../Pages/Admin.cshtml` | The operator panel behind `/admin.html` |
 | `app.js` | The pipeline: walk, probe, identify, fetch, write |
 | `scan.js` | Which files are ROMs, walking the card, writing PNGs |
 | `romprobe.js` | ZIP and 7z parsing |
 | `api.js` | The only file that knows the backend's wire format |
 | `store.js` | IndexedDB: the folder handle and the content-keyed caches |
 | `zipwriter.js` | Store-only ZIP writer for the read-only fallback |
-| `sw.js` | Shell caching. Bump `CACHE` after editing any shell file |
+| `sw.js` | Registration only, so the install prompt appears. Caches nothing |
 
 One list must be kept in step with the backend by hand:
 

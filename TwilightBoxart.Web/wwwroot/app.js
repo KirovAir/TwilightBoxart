@@ -32,6 +32,7 @@ function adoptLauncher(hasTwilight, hasPico) {
     if (hasTwilight === hasPico) return;
     $(hasPico ? 'launcher-pico' : 'launcher-twilight').checked = true;
     syncSettingsUx();
+    resetDestForLauncher();
     saveSettings();
 }
 
@@ -159,6 +160,15 @@ function syncSettingsUx() {
     if (!customDest) $('dest').value = defaultPath(isPico() ? 'pico' : 'twilight');
 }
 
+/**
+ * The destination always follows the launcher, manual override or not: a folder chosen for one
+ * launcher's layout is the wrong place for the other's covers, and leaving it behind quietly fills
+ * a Pico card with PNGs TWiLightMenu++ was meant to read.
+ */
+function resetDestForLauncher() {
+    $('dest').value = defaultPath(isPico() ? 'pico' : 'twilight');
+}
+
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
 /* UI plumbing */
@@ -222,6 +232,19 @@ function renderMisses() {
     }
     $('miss-note').textContent = missed.length > 200 ? `Showing the first 200 of ${missed.length}.` : '';
     $('retry').hidden = missed.length === 0 || state.running;
+
+    // Retrying always re-asks the server, which is quick. It ALSO reads any oversized loose file
+    // end to end for a checksum, which is not, so the button says which of the two you are about to
+    // press rather than surprising someone with a ten-minute card read.
+    const deep = missed.filter(isDeepTarget);
+    const bytes = deep.reduce((total, item) => total + item.probe.size, 0);
+    $('retry').textContent = deep.length
+        ? `Deep scan the misses (${formatBytes(bytes)})`
+        : 'Retry the misses';
+    $('retry').title = deep.length
+        ? `Re-asks the server, and reads ${plural(deep.length, 'file')} in full to checksum ${
+            deep.length === 1 ? 'it' : 'them'}. Files this big were skipped on the first pass.`
+        : 'Re-asks the server about every miss, ignoring what was remembered from earlier scans.';
 }
 
 /* picking the card */
@@ -475,13 +498,20 @@ function missReason(item) {
 }
 
 /**
+ * A file the deep pass would actually read: loose on the card (an archive carries its checksum in
+ * its own header) and left without a CRC32 by the first pass, which only happens above probeFile's
+ * 64 MiB budget.
+ */
+const isDeepTarget = (item) => item.probe?.container === 'loose' && item.probe.crc32 == null;
+
+/**
  * The opt-in expensive path: checksum the loose files the first pass skipped for size. The scan
  * already hashes loose ROMs up to 64 MiB (see probeFile), so this only ever touches oversized
  * dumps that also failed every other rung.
  */
 async function deepen(items, signal) {
     // Called only from the retry path, where everything has already been reset to 'pending'.
-    const targets = items.filter(i => i.probe?.container === 'loose' && i.probe.crc32 == null);
+    const targets = items.filter(isDeepTarget);
     if (!targets.length) return;
     const bytes = targets.reduce((a, i) => a + i.probe.size, 0);
     log(`Taking a deep look at ${plural(targets.length, 'big file')} (${formatBytes(bytes)}); this can take a while.`);
@@ -671,6 +701,11 @@ function wireUp() {
         'border', 'border-dsi', 'border-3ds', 'border-black', 'border-white', 'thick', 'overwrite',
         'dest', 'dest-custom']) {
         $(id).addEventListener('change', () => { syncSettingsUx(); saveSettings(); });
+    }
+
+    // After the loop above, so it wins over syncSettingsUx's non-override preview.
+    for (const id of ['launcher-twilight', 'launcher-pico']) {
+        $(id).addEventListener('change', () => { resetDestForLauncher(); saveSettings(); });
     }
 
     $('pick').onclick = pickRoot;

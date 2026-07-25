@@ -144,13 +144,12 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isLauncherTwilight = true;
     [ObservableProperty] private bool _isLauncherPico;
 
-    partial void OnIsLauncherPicoChanged(bool value)
-    {
-        if (!BoxartManual)
-        {
-            BoxartFolder = DerivedBoxartFolder;
-        }
-    }
+    /// <summary>
+    /// Switching launcher always rewrites the destination, manual override or not: a folder chosen
+    /// for one launcher's layout is the wrong place for the other's covers, and leaving it behind
+    /// quietly fills a Pico card with PNGs TWiLightMenu++ was meant to read.
+    /// </summary>
+    partial void OnIsLauncherPicoChanged(bool value) => BoxartFolder = DerivedBoxartFolder;
 
     [ObservableProperty] private bool _addBorder;
     [ObservableProperty] private bool _isBorderDsi;

@@ -1,0 +1,7 @@
+@{
+    // The pages are what hand out the stamped URLs, so they are the one thing that must never be
+    // cached: a stale page hands out stale stamps and a deploy stays invisible behind them.
+    // "private" as well as "no-cache", because a CDN treats no-cache as its own to reinterpret -
+    // see SetShellCaching in Program.cs, which says the same thing for the js and css.
+    Context.Response.Headers.CacheControl = "no-cache, private";
+}

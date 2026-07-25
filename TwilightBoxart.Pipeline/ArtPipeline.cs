@@ -63,14 +63,41 @@ public sealed class ArtPipeline(
             return null;
         }
 
-        var sha = record.Sha256;
+        var (bytes, originalMissing) = await RenderAsync(console, key, record, options, ct);
+        if (originalMissing)
+        {
+            // RenderAsync found the DB pointing at an original that eviction (or a cleared cache) has
+            // already removed from disk, and cleared the stale pointer. Refetch inline right here
+            // instead of reporting a miss: without this a whole scan pass 404s on every title whose
+            // original aged out, and only a SECOND pass (which sees the cleared pointer) gets art.
+            record = await EnsureOriginalAsync(console, key, resolved, ct);
+            if (record?.Sha256 is null)
+            {
+                return null;
+            }
+            (bytes, _) = await RenderAsync(console, key, record, options, ct);
+        }
+
+        return bytes is null ? null : new RenderedArt(bytes, record.Sha256);
+    }
+
+    /// <summary>
+    /// Renders <paramref name="record"/>'s original, from the render cache if possible. The second
+    /// element is true when the original the record pointed at is gone from disk - the caller decides
+    /// whether to refetch, since only the identify-carrying overload has enough to build an identity.
+    /// </summary>
+    private async Task<(byte[]? Bytes, bool OriginalMissing)> RenderAsync(
+        ConsoleType console, string key, ArtRecord record, RenderOptions options, CancellationToken ct)
+    {
+        var sha = record.Sha256!;
         var renderPath = ArtCaches.RenderPath(console, key, sha, options);
         var cached = await cacheIndex.TryReadAsync(caches.Renders, renderPath, ct);
         if (cached is not null)
         {
-            return new RenderedArt(cached, sha);
+            return (cached, false);
         }
 
+        var originalMissing = false;
         var bytes = await singleFlight.RunAsync<byte[]?>($"render:{renderPath}", async shared =>
         {
             var again = await cacheIndex.TryReadAsync(caches.Renders, renderPath, shared);
@@ -84,7 +111,7 @@ public sealed class ArtPipeline(
             if (original is null)
             {
                 // The original was evicted (or removed) out from under a live record. Drop the
-                // pointer so the next request refetches rather than 404ing forever.
+                // pointer so a refetch (this request's, via the caller) does not just find it again.
                 logger.LogInformation("Original {Sha} for {Console}/{Key} is gone; forcing a refetch",
                     sha[..8], console.Slug(), key);
                 await records.UpsertAsync(console, key, r =>
@@ -92,6 +119,7 @@ public sealed class ArtPipeline(
                     r.Sha256 = null;
                     r.MissUntil = null;
                 }, shared);
+                originalMissing = true;
                 return null;
             }
 
@@ -119,7 +147,7 @@ public sealed class ArtPipeline(
             return rendered;
         }, ct);
 
-        return bytes is null ? null : new RenderedArt(bytes, sha);
+        return (bytes, originalMissing);
     }
 
     private async Task<ArtRecord?> EnsureOriginalAsync(

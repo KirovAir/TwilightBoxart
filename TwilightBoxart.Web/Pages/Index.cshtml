@@ -1,3 +1,6 @@
+@page
+@inject IFileVersionProvider Versions
+
 <!doctype html>
 <html lang="en">
 
@@ -33,12 +36,12 @@
     <!-- The display font paints the header, so fetching it in parallel with the stylesheet is the
          difference between the title arriving styled and it swapping in after. -->
     <link rel="preload" href="fonts/baloo2-latin.woff2" as="font" type="font/woff2" crossorigin>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="~/style.css" asp-append-version="true">
 
     <script type="application/ld+json">
     {
-        "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
+        "@@context": "https://schema.org",
+        "@@type": "SoftwareApplication",
         "name": "TwilightBoxart",
         "url": "https://twilightboxart.com/",
         "applicationCategory": "UtilitiesApplication",
@@ -46,7 +49,7 @@
         "description": "Downloads box art for TWiLightMenu++ and Pico Launcher by identifying games from their contents rather than their filenames, and writes the covers straight onto the SD card.",
         "license": "https://www.gnu.org/licenses/gpl-3.0.html",
         "isAccessibleForFree": true,
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" }
+        "offers": { "@@type": "Offer", "price": "0", "priceCurrency": "EUR" }
     }
     </script>
 </head>
@@ -231,7 +234,26 @@
         </p>
     </footer>
 
-    <script type="module" src="app.js"></script>
+@{
+    // app.js pulls its siblings in with relative specifiers, and asp-append-version only ever sees
+    // the tag it is written on, so the tag below stamps app.js and nothing it imports. An import map
+    // points those specifiers at the same stamped URLs, using the same file hashes. A browser
+    // without import map support simply loads the plain names, exactly as it does today.
+    var modules = new[] { "api.js", "scan.js", "store.js", "romprobe.js", "zipwriter.js" };
+    var imports = string.Join(",\n", modules.Select(m =>
+        $"            \"./{m}\": \"{Versions.AddFileVersionToPath(Request.PathBase, "/" + m)}\""));
+}
+    @* The "!" opts this element out of tag helpers. .NET 10 ships its own tag helper for
+       <script type="importmap">, meant to be filled from MapStaticAssets' manifest; left to run it
+       claims this tag, strips the type and empties it, which would execute the JSON as script. *@
+    <!script type="importmap">
+        {
+          "imports": {
+@Html.Raw(imports)
+          }
+        }
+    </!script>
+    <script type="module" src="~/app.js" asp-append-version="true"></script>
 </body>
 
 </html>

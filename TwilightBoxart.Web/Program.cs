@@ -106,6 +106,14 @@ await builder.RunWithLoggingAsync(async b =>
         o.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
     b.Services.AddProblemDetails();
+
+    // The browser client's three pages. Razor buys exactly one thing here: asp-append-version, which
+    // suffixes every link to a shell file with a hash of that file's bytes. Without it a deploy is
+    // invisible behind any cache that outlives it - measured in production, Cloudflare replaced the
+    // no-cache below with its own max-age=14400 and served a four-hour-old app.js. Pages/_ViewStart
+    // keeps the pages themselves uncacheable, since they are what carry the stamps.
+    b.Services.AddRazorPages();
+
     b.Services.AddTwilightCors(settings.Security);
     b.Services.AddTwilightRateLimiting();
 
@@ -179,10 +187,12 @@ await builder.RunWithLoggingAsync(async b =>
     // oversized body is rejected before model binding allocates for it.
     app.UseRequestBodyLimits();
 
-    // The browser client is the only static content served, and it is the hand-written app that IS
-    // the web root. Nothing the server generates is ever placed there.
-    app.UseDefaultFiles();
+    // The browser client is the only static content served. Its js, css, images and fonts are
+    // hand-written files under wwwroot; only its three pages are Razor, and only so that
+    // asp-append-version can stamp what they link to (see Pages/Index.cshtml).
     app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = SetShellCaching });
+
+    app.MapRazorPages();
 
     app.MapIdentifyEndpoints();
     app.MapIndexEndpoints();
@@ -213,8 +223,13 @@ static void SetShellCaching(StaticFileResponseContext ctx)
         name.EndsWith(".css", StringComparison.OrdinalIgnoreCase) ||
         name.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
 
+    // "private" as well as "no-cache", because a CDN in front of this treats no-cache as its own to
+    // reinterpret: Cloudflare cached app.js and handed browsers its Browser Cache TTL (max-age=14400)
+    // instead of the header sent here, so a deploy took four hours to reach anyone. Marking the shell
+    // uncacheable by shared caches keeps the revalidation this line is asking for. What is left on
+    // this path after ShellAssets is sw.js and the manifest; both must never be a deploy behind.
     ctx.Context.Response.Headers.CacheControl = revalidate
-        ? "no-cache"
+        ? "no-cache, private"
         : "public, max-age=604800";
 }
 

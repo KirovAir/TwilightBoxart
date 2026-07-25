@@ -12,24 +12,50 @@ exactly the shape your launcher wants: PNG sized to
 [Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) reads. Happy to fill a
 folder for any other loader too. 😊
 
-![The TwilightBoxart web app](docs/webapp.png)
+And not just DS games: it covers **almost every console your DS can play**, 27 of them, from Game
+Boy and SNES to Mega Drive, Neo Geo Pocket and MSX. [The full list is below.](#supported-systems)
 
-## Pick your flavour
+## 🌐 [Open the web app →](https://twilightboxart.com/)
+
+Nothing to install. Plug in your card, press scan, and the covers land in the right folder.
+
+<p align="center">
+  <img src="docs/webapp.png" width="620" alt="The TwilightBoxart web app">
+</p>
+
+## 🎮 Or let the console do it
+
+<table>
+<tr>
+<td width="270" valign="top">
+  <img src="docs/dsi.png" width="250" alt="The DS/DSi homebrew client, running in melonDS">
+</td>
+<td valign="top">
+
+No computer at all. Copy one file onto your card, launch it from your menu, and the handheld
+gets its own box art over WiFi. The card never has to come out again.
+
+* Runs on a **DSi**, and on an **original DS or DS Lite** with a flashcart.
+* **Every system the other apps do**, not a cut-down list.
+* Knows whether your card is set up for **TWiLightMenu++ or Pico Launcher**, and picks the right one.
+* Your WiFi details stay on the console, and the connection is encrypted.
+
+[**Download it from the releases page →**](https://github.com/KirovAir/TwilightBoxart/releases)
+
+</td>
+</tr>
+</table>
+
+## 💻 Or an app on your computer
 
 | | App | Good for |
 | --- | --- | --- |
-| 🌐 | **[Browser app](https://twilightboxart.com/)** | The main way: nothing to install, pick your card, press scan |
 | 💻 | **Desktop app** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | Windows, macOS and Linux, one file. Works offline too |
-| 🎮 | **DS/DSi homebrew** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | The console fills in its own box art over WiFi. DSi in DSi mode, or a DS/DS Lite flashcart (open/WEP WiFi there) |
 | 🐳 | **Self-hosted** | `docker compose up -d` and you run the whole thing yourself |
 
 <p align="center">
   <img src="docs/desktop.png" width="440" alt="The desktop app on macOS">
-  &nbsp;&nbsp;
-  <img src="docs/dsi.png" width="220" alt="The DS/DSi homebrew client, running in melonDS">
 </p>
-
-<p align="center"><i>The desktop app, and the DS/DSi client on its own.</i></p>
 
 Every app asks one question up front: which launcher are the covers for?
 
@@ -44,7 +70,7 @@ system below (the game-code folders only cover NDS and GBA) and Pico Launcher gi
 Writing straight onto the card from a browser works in Chrome, Edge, Brave, Opera and Vivaldi on
 desktop. Firefox and Safari cannot write to a folder, so there you get the same scan and a `.zip`
 to extract onto the card yourself. The full story is on the
-[browser support page](TwilightBoxart.Web/wwwroot/support.html).
+[browser support page](https://twilightboxart.com/support.html).
 
 **macOS:** the desktop app is not notarized with Apple, so Finder calls the download "damaged".
 It is not; clear the quarantine flag once and it opens normally:
