@@ -115,7 +115,7 @@ public sealed class RemoteArtBackend : IArtBackend
     /// Asks the server which extensions to scan, falling back to this build's list on any failure.
     /// </summary>
     /// <remarks>
-    /// The response is <c>key=csv</c> lines rather than JSON, because the DSi client shares this
+    /// The response is <c>key=csv</c> lines rather than JSON, because the DS/DSi client shares this
     /// endpoint and has no JSON parser. An unrecognised key is skipped, not rejected, so the server
     /// can add keys without breaking a client that predates them - which is the point of serving the
     /// list at all.

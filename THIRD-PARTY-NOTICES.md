@@ -1,6 +1,6 @@
 # Third-party notices
 
-TwilightBoxart is licensed under GPL-3.0 (see [LICENSE.md](LICENSE.md)). The DSi homebrew
+TwilightBoxart is licensed under GPL-3.0 (see [LICENSE.md](LICENSE.md)). The DS/DSi homebrew
 client vendors and redistributes the following third-party code; their notices travel with
 every release artifact that contains them.
 
@@ -9,7 +9,7 @@ every release artifact that contains them.
 `TwilightBoxart.DSi/mbedtls/` is a source copy of [Mbed TLS](https://github.com/Mbed-TLS/mbedtls),
 dual-licensed **Apache-2.0 OR GPL-2.0-or-later**. The full license text is preserved at
 [TwilightBoxart.DSi/mbedtls/LICENSE](TwilightBoxart.DSi/mbedtls/LICENSE). It is compiled into
-`TwilightBoxart-DSi.nds` to provide HTTPS on the console.
+`TwilightBoxart-DS-DSi.nds` to provide HTTPS on the console.
 
 ## dswifi (patched)
 

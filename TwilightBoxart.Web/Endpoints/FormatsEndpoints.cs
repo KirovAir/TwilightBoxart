@@ -9,7 +9,7 @@ namespace TwilightBoxart.Web.Endpoints;
 /// know.
 /// </summary>
 /// <remarks>
-/// This exists because the clients are the hardest thing in the system to update. The DSi homebrew
+/// This exists because the clients are the hardest thing in the system to update. The DS/DSi homebrew
 /// is a binary a user flashed to a card once and will probably never replace; the desktop app is a
 /// download people keep for years. Every extension baked into one of those is a fact that goes stale
 /// the day a new console is added here, and it goes stale SILENTLY, as a game the menu happily
@@ -24,7 +24,7 @@ namespace TwilightBoxart.Web.Endpoints;
 public static class FormatsEndpoints
 {
     /// <summary>
-    /// Deliberately NOT JSON. The DSi client has no JSON parser and its own source says so ("this
+    /// Deliberately NOT JSON. The DS/DSi client has no JSON parser and its own source says so ("this
     /// client parses nothing"): it downloads a URL to a file and reads bytes. One <c>key=csv</c> pair
     /// per line is two lines of C to consume (find the key, read to the newline, split on commas),
     /// and is just as trivial in C#. It also degrades well: a client that does not recognise a future

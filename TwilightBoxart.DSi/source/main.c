@@ -905,10 +905,23 @@ static bool edit_line(const char *prompt, char *buf, size_t buf_size)
 }
 
 
+/* Which launcher this card is set up for, when only one of them is installed. Ambiguous cards -
+   both launchers, or neither - answer TWiLightMenu++, which is what a card without an ini got
+   before this existed. */
+static int detect_launcher(void)
+{
+    struct stat st;
+    bool pico = stat("/_pico", &st) == 0;
+    bool twilight = stat("/_nds/TWiLightMenu", &st) == 0;
+
+    return pico && !twilight ? 1 : 0;
+}
+
 static bool load_config(AppConfig *config)
 {
     memset(config, 0, sizeof(*config));
     config->backend_tls = -1; /* "not in the ini", resolved below */
+    config->launcher = -1;    /* same: absent means "work it out from the card" */
 
     FILE *f = fopen(CONFIG_PATH, "r");
     if (f) {
@@ -962,6 +975,12 @@ static bool load_config(AppConfig *config)
 
         fclose(f);
     }
+
+    /* No launcher in the ini: a first run, or an ini written before there was a choice. Guess it
+       from the card rather than making someone find the setting, and only when the answer is not
+       in doubt. Once the menu has been through save_config the key is there and this stops. */
+    if (config->launcher < 0)
+        config->launcher = detect_launcher();
 
     /* The ini overrides the backend only where it says something; everything absent falls
        back to the hosted service. Runs on the no-file path too, so a first run - and any

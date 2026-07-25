@@ -199,7 +199,7 @@ different subsets:
 | `rom` | The file **is** a game. Probed directly; its extension also hints at the console | Everyone |
 | `archive` | The file **contains** a game. Opened and read from its own header, never decompressed | Clients that can read containers |
 
-The DSi homebrew has no archive support, so it reads `rom=` and ignores the rest; handing it one
+The DS/DSi homebrew has no archive support, so it reads `rom=` and ignores the rest; handing it one
 merged list would send it into `.zip` files it cannot open. The desktop client reads both.
 
 Clients **must** treat this as advisory and fall back to their built-in list if the call fails.
@@ -294,7 +294,7 @@ Development, and the first-boot index build is suppressed only under the `Testin
 ## The API key
 
 Every `/v2` request must carry `X-Twilight-Key`, or it gets a bodiless 401. **This is not a secret**
-The value is a constant in `ApiKey.cs`, compiled into the DSi homebrew and served to any browser
+The value is a constant in `ApiKey.cs`, compiled into the DS/DSi homebrew and served to any browser
 inside `api.js`. It buys one thing: a request without it was not written against this API, which
 turns away drive-by scrapers and hotlinkers pointed at the art routes, and that traffic costs us
 bandwidth from volunteer-run upstreams. Anything that genuinely must be unguessable (the admin

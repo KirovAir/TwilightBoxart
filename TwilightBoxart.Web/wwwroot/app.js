@@ -24,6 +24,18 @@ const isPico = () => $('launcher-pico').checked;
 const defaultPath = (target) => target === 'pico' ? PICO_PATH : BOXART_PATH;
 
 /**
+ * Picking a card also picks the launcher, when the card only has one of them installed. Most
+ * people own one card set up one way, and the destination folder is the thing they are least
+ * equipped to check. A card carrying both launchers cannot say, so the setting stands.
+ */
+function adoptLauncher(hasTwilight, hasPico) {
+    if (hasTwilight === hasPico) return;
+    $(hasPico ? 'launcher-pico' : 'launcher-twilight').checked = true;
+    syncSettingsUx();
+    saveSettings();
+}
+
+/**
  * Where art goes, relative to the card root. Optional override, like the classic Set Manually.
  * The target comes from the run's settings snapshot, never the live radio: flipping the launcher
  * mid-scan must not send one run's BMPs into the other launcher's folder.
@@ -233,10 +245,11 @@ async function useRoot(root) {
     // Confirm the card is still the card. Removable media reappears under different drive
     // letters, and writing 18,000 covers onto the wrong volume is not a recoverable mistake.
     // Both launchers count: the launcher radio can change after the card is picked.
-    const launchers = [
-        (await scan.hasTwilightSentinel(root)) && 'TWiLightMenu++',
-        (await scan.hasPicoSentinel(root)) && 'Pico Launcher',
-    ].filter(Boolean);
+    const hasTwilight = await scan.hasTwilightSentinel(root);
+    const hasPico = await scan.hasPicoSentinel(root);
+    adoptLauncher(hasTwilight, hasPico);
+
+    const launchers = [hasTwilight && 'TWiLightMenu++', hasPico && 'Pico Launcher'].filter(Boolean);
     if (launchers.length) setStatus(`Ready: "${root.name}" looks like a ${launchers.join(' + ')} card.`, 'good');
     else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ or Pico Launcher card. Pick the card itself, not a folder inside it.`, 'warn');
     $('start').disabled = false;
@@ -265,7 +278,11 @@ function useFileList(files) {
     state.fileList = files;
     state.root = null;
     $('reconnect').hidden = true;
-    const sentinel = scan.fileListHasSentinel(files) || scan.fileListHasPicoSentinel(files);
+    const hasTwilight = scan.fileListHasSentinel(files);
+    const hasPico = scan.fileListHasPicoSentinel(files);
+    adoptLauncher(hasTwilight, hasPico);
+
+    const sentinel = hasTwilight || hasPico;
     setStatus(sentinel
         ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ or Pico Launcher card.`
         : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ or Pico Launcher card.`,

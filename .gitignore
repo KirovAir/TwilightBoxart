@@ -17,7 +17,7 @@ TestResults/
 *.db.bak
 storage/
 data/
-## The DSi build's embedded audio is the one data/ directory that IS source.
+## The DS/DSi build's embedded audio is the one data/ directory that IS source.
 !TwilightBoxart.DSi/data/
 !TwilightBoxart.DSi/data/**
 

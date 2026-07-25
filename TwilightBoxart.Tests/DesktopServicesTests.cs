@@ -83,6 +83,24 @@ public class DesktopServicesTests
     }
 
     [TestMethod]
+    public void DetectTarget_ReadsTheLauncherOffTheCardAndAbstainsWhenItCannot()
+    {
+        // This picks the folder thousands of covers land in, so the abstain cases matter as much as
+        // the hits: a card with both launchers installed must not silently move the destination.
+        var root = MakeTempRoot();
+        Assert.IsNull(ScanService.DetectTarget(root), "an empty card says nothing");
+
+        Directory.CreateDirectory(Path.Combine(root, "_nds", "TWiLightMenu"));
+        Assert.AreEqual(RenderTarget.TwilightMenu, ScanService.DetectTarget(root));
+
+        Directory.CreateDirectory(Path.Combine(root, "_pico"));
+        Assert.IsNull(ScanService.DetectTarget(root), "both installed: the card cannot say");
+
+        Directory.Delete(Path.Combine(root, "_nds", "TWiLightMenu"));
+        Assert.AreEqual(RenderTarget.Pico, ScanService.DetectTarget(root));
+    }
+
+    [TestMethod]
     public void AppSettings_TargetSurvivesTheTripIntoRenderOptions()
     {
         // The stored Width/Height are TWiLightMenu numbers; a Pico render must fold them to the

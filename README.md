@@ -26,10 +26,10 @@ folder for any other loader too. 😊
 <p align="center">
   <img src="docs/desktop.png" width="440" alt="The desktop app on macOS">
   &nbsp;&nbsp;
-  <img src="docs/dsi.png" width="220" alt="The DSi homebrew client, running in melonDS">
+  <img src="docs/dsi.png" width="220" alt="The DS/DSi homebrew client, running in melonDS">
 </p>
 
-<p align="center"><i>The desktop app, and the DSi client on its own.</i></p>
+<p align="center"><i>The desktop app, and the DS/DSi client on its own.</i></p>
 
 Every app asks one question up front: which launcher are the covers for?
 
@@ -136,7 +136,7 @@ Configuration is documented inline in [docker-compose.yml](docker-compose.yml); 
 
 ## License
 
-GPL-3.0. See [LICENSE.md](LICENSE.md). The DSi client ships with
+GPL-3.0. See [LICENSE.md](LICENSE.md). The DS/DSi client ships with
 [Mbed TLS](https://github.com/Mbed-TLS/mbedtls) (Apache-2.0/GPL-2.0) and a patched
 [dswifi](https://codeberg.org/blocksds/dswifi) (MIT), built with
 [BlocksDS](https://blocksds.skylyrac.net/); their notices are in
@@ -150,7 +150,7 @@ Covers come from [GameTDB](https://www.gametdb.com) and
 mirror. Built for [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) and
 [Pico Launcher](https://github.com/LNH-team/pico-launcher) by
 [LNH-team](https://github.com/LNH-team).
-Music on the DSi client: "Pixel Cart Drift" by Jesse Sander.
+Music on the DS/DSi client: "Pixel Cart Drift" by Jesse Sander.
 
 ## Legal
 

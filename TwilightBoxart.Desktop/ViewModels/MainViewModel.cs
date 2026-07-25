@@ -51,8 +51,12 @@ public sealed partial class MainViewModel : ObservableObject
     {
         BackendUrl = settings.BackendUrl;
         RootFolder = settings.RootFolder;
-        // Before the boxart folder lines below: the derived folder depends on the launcher.
-        IsLauncherPico = settings.Target == RenderTarget.Pico;
+        // Before the boxart folder lines below: the derived folder depends on the launcher. The card
+        // gets the first word on which launcher that is, so swapping a card between runs is picked up
+        // without anyone touching the setting; a card with both launchers cannot say, and the stored
+        // choice stands.
+        var target = (RootFolder is null ? null : ScanService.DetectTarget(RootFolder)) ?? settings.Target;
+        IsLauncherPico = target == RenderTarget.Pico;
         IsLauncherTwilight = !IsLauncherPico;
         BoxartManual = !string.IsNullOrWhiteSpace(settings.BoxartFolder);
         BoxartFolder = BoxartManual ? settings.BoxartFolder! : DerivedBoxartFolder;
@@ -302,10 +306,23 @@ public sealed partial class MainViewModel : ObservableObject
     }
 
     /// <summary>Sets the picked card folder from the view's native folder dialog.</summary>
+    /// <remarks>
+    /// Picking the card also picks the launcher, when the card only has one of them installed.
+    /// Most people own one card set up one way, and the folder the covers land in is the thing
+    /// they are least equipped to check; a card carrying both launchers keeps whatever is selected.
+    /// </remarks>
     public void SetRootFolder(string path)
     {
         RootFolder = path;
         StatusText = $"Ready: {path}";
+
+        var detected = ScanService.DetectTarget(path);
+        if (detected is not null && detected != SelectedTarget)
+        {
+            IsLauncherPico = detected == RenderTarget.Pico;
+            IsLauncherTwilight = !IsLauncherPico;
+            StatusText = $"Ready: {path} - looks like a {(IsLauncherPico ? "Pico Launcher" : "TWiLightMenu++")} card.";
+        }
     }
 
     public void Save() => ToSettings().Save();

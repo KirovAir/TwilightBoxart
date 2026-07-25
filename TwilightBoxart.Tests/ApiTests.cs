@@ -320,7 +320,7 @@ public class ApiTests
     public async Task ArtByFingerprint_CarriesTheHeaderBytesToTheIdentifier()
     {
         // An identifier that only matches when the header sample arrived, mimicking a ROM whose
-        // name says nothing. This is the DSi client's contract: send the file's first bytes and
+        // name says nothing. This is the DS/DSi client's contract: send the file's first bytes and
         // parse nothing on-device.
         using var factory = new TwilightWebFactory(
             identifier: new FakeIdentifier(fingerprint => fingerprint.Header is { Length: > 0 }
@@ -524,7 +524,7 @@ public class ApiTests
         var response = await _client.GetAsync("/v2/formats");
         response.EnsureSuccessStatusCode();
         Assert.AreEqual("text/plain", response.Content.Headers.ContentType?.MediaType,
-            "the DSi client has no JSON parser, so this endpoint must stay plain text");
+            "the DS/DSi client has no JSON parser, so this endpoint must stay plain text");
 
         var body = await response.Content.ReadAsStringAsync();
         var lines = body.Split('\n', StringSplitOptions.RemoveEmptyEntries)
@@ -830,7 +830,7 @@ public class ApiTests
     {
         using var factory = new TwilightWebFactory(adminPassword: "owner-secret");
 
-        // Three callers: the web app declaring itself by header, a DSi build recognisable only by
+        // Three callers: the web app declaring itself by header, a DS/DSi build recognisable only by
         // its User-Agent, and a 2020 client that says nothing and is identified by the route.
         using var web = factory.CreateClient();
         web.DefaultRequestHeaders.TryAddWithoutValidation("X-Twilight-Client", "web/2.0");

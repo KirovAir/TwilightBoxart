@@ -33,6 +33,23 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         ? Path.Combine(root, "_pico", "covers", "user")
         : Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
 
+    /// <summary>
+    /// Which launcher a card is set up for, or null when the card cannot say: both installed, or
+    /// neither. Kept beside <see cref="BoxartDirectory"/> because it reads the same two folders.
+    /// </summary>
+    public static RenderTarget? DetectTarget(string root)
+    {
+        var pico = Directory.Exists(Path.Combine(root, "_pico"));
+        var twilight = Directory.Exists(Path.Combine(root, "_nds", "TWiLightMenu"));
+
+        if (pico == twilight)
+        {
+            return null;
+        }
+
+        return pico ? RenderTarget.Pico : RenderTarget.TwilightMenu;
+    }
+
     public async Task RunAsync(
         IArtBackend backend, ScanRequest request, IProgress<ScanUpdate> progress, CancellationToken ct)
     {

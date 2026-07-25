@@ -1,7 +1,7 @@
-# Builds the DSi homebrew client with BlocksDS. Runs on every push - it is the only compile check
-# main.c gets, since the toolchain lives in this container - and attaches the .nds to the GitHub
-# release when one is published.
-name: DSi client
+# Builds the DS/DSi homebrew client with BlocksDS. Runs on every push - it is the only compile
+# check main.c gets, since the toolchain lives in this container - and attaches the .nds to the
+# GitHub release when one is published.
+name: DS/DSi client
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: twilightboxart-dsi
+          name: twilightboxart-ds-dsi
           path: TwilightBoxart.DSi/twilightboxart.nds
 
   release:
@@ -39,12 +39,12 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: twilightboxart-dsi
+          name: twilightboxart-ds-dsi
           path: dist
 
       - name: Name the release asset
-        run: mv dist/twilightboxart.nds dist/TwilightBoxart-DSi.nds
+        run: mv dist/twilightboxart.nds dist/TwilightBoxart-DS-DSi.nds
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: dist/TwilightBoxart-DSi.nds
+          files: dist/TwilightBoxart-DS-DSi.nds

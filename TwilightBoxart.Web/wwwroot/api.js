@@ -14,7 +14,7 @@ const API_KEY_HEADER = 'X-Twilight-Key';
 const API_KEY = 'tb2_9f4c1d7a3e8b5062';
 
 /**
- * Says which client is calling, the way the DSi build's User-Agent does. A browser cannot set
+ * Says which client is calling, the way the DS/DSi build's User-Agent does. A browser cannot set
  * User-Agent from script, so it goes in a header of our own (ClientHeader.cs server-side); the
  * backend's anonymous activity counters group us under this label.
  *

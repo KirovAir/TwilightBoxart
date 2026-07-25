@@ -5,7 +5,7 @@ namespace TwilightBoxart.Core;
 /// </summary>
 /// <remarks>
 /// <b>This is not a secret and must never be treated as one.</b> The value ships inside the browser
-/// bundle, inside the DSi homebrew binary and inside this open-source repository, so anyone who wants
+/// bundle, inside the DS/DSi homebrew binary and inside this open-source repository, so anyone who wants
 /// it has it in about ten seconds. It buys exactly one thing: a request that reaches <c>/v2</c>
 /// without it was not written against this API, which sorts out drive-by scanners, hotlinkers and
 /// people pointing a scraper at the art routes (all of which cost us upstream bandwidth from
