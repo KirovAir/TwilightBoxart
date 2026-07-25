@@ -6,87 +6,81 @@
 
 <p align="center"><b>Box art for TWiLightMenu++ and Pico Launcher, straight onto your SD card.</b></p>
 
-A boxart downloader that works out what your games actually are and fetches the right covers in
-exactly the shape your launcher wants: PNG sized to
-[TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu)'s limits, or the fixed 8-bit BMP
-[Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) reads. Happy to fill a
-folder for any other loader too. 😊
+<p align="center">
+  <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/v/release/KirovAir/TwilightBoxart?color=7566DD&label=release" alt="Latest release"></a>
+  <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/downloads/KirovAir/TwilightBoxart/total?color=C75BB4&label=downloads" alt="Downloads"></a>
+  <a href="https://twilightboxart.com/"><img src="https://img.shields.io/badge/web%20app-twilightboxart.com-F5A05C" alt="Web app"></a>
+  <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
+</p>
 
-And not just DS games: it covers **almost every console your DS can play**, 27 of them, from Game
-Boy and SNES to Mega Drive, Neo Geo Pocket and MSX. [The full list is below.](#supported-systems)
+A boxart downloader that works out what your games actually are and grabs the right covers in the
+shape your launcher wants.
 
-## 🌐 [Open the web app →](https://twilightboxart.com/)
+Covers almost every console a DS can play, 27 of them. [List below.](#supported-systems)
 
-Nothing to install. Plug in your card, press scan, and the covers land in the right folder.
+## In your browser
+
+[twilightboxart.com](https://twilightboxart.com/). Nothing to install: plug the card in, press scan.
+
+> [!TIP]
+> Chrome, Edge, Brave, Opera and Vivaldi write straight to the card. Firefox and Safari cannot, so
+> there you get a `.zip` to extract yourself. ([Details](https://twilightboxart.com/support.html))
 
 <p align="center">
   <img src="docs/webapp.png" width="620" alt="The TwilightBoxart web app">
 </p>
 
-## 🎮 Or let the console do it
+## On the console
 
-<table>
-<tr>
-<td width="270" valign="top">
-  <img src="docs/dsi.png" width="250" alt="The DS/DSi homebrew client, running in melonDS">
-</td>
-<td valign="top">
+Copy the `.nds` to your card and launch it. It joins your WiFi and fills the boxart folder itself, so
+the card never has to come out. Works on a DSi, and on a DS or DS Lite with a flashcart.
 
-No computer at all. Copy one file onto your card, launch it from your menu, and the handheld
-gets its own box art over WiFi. The card never has to come out again.
+Reads each game's header, so badly named roms still match. Skips games that already have a cover, and
+picks up TWiLightMenu++ or Pico Launcher from what is on the card.
 
-* Runs on a **DSi**, and on an **original DS or DS Lite** with a flashcart.
-* **Every system the other apps do**, not a cut-down list.
-* Knows whether your card is set up for **TWiLightMenu++ or Pico Launcher**, and picks the right one.
-* Your WiFi details stay on the console, and the connection is encrypted.
+[Releases](https://github.com/KirovAir/TwilightBoxart/releases)
 
-[**Download it from the releases page →**](https://github.com/KirovAir/TwilightBoxart/releases)
+<p align="center">
+  <img src="docs/dsi.png" width="240" alt="The DS/DSi homebrew client, running in melonDS">
+</p>
 
-</td>
-</tr>
-</table>
+## Desktop app
 
-## 💻 Or an app on your computer
+Windows, macOS and Linux, one file. Works offline: it builds its own game database when it cannot
+reach a backend. [Releases](https://github.com/KirovAir/TwilightBoxart/releases)
 
-| | App | Good for |
-| --- | --- | --- |
-| 💻 | **Desktop app** ([Releases](https://github.com/KirovAir/TwilightBoxart/releases)) | Windows, macOS and Linux, one file. Works offline too |
-| 🐳 | **Self-hosted** | `docker compose up -d` and you run the whole thing yourself |
+> [!WARNING]
+> macOS calls the download "damaged" because it is not notarized. Clear the flag once:
+>
+> ```bash
+> xattr -rd com.apple.quarantine ~/Downloads/TwilightBoxart.app
+> ```
 
 <p align="center">
   <img src="docs/desktop.png" width="440" alt="The desktop app on macOS">
 </p>
 
-Every app asks one question up front: which launcher are the covers for?
+## Launchers
+
+Every app asks which launcher up front.
 
 | Launcher | Format | Where it goes |
 | --- | --- | --- |
 | [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
 | [Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
 
-Pico covers go into the launcher's filename-keyed `user` folder on purpose: it works for **every**
-system below (the game-code folders only cover NDS and GBA) and Pico Launcher gives it precedence.
+Pico covers go in the filename-keyed `user` folder: it works for every system below, where the
+game-code folders only do NDS and GBA.
 
-Writing straight onto the card from a browser works in Chrome, Edge, Brave, Opera and Vivaldi on
-desktop. Firefox and Safari cannot write to a folder, so there you get the same scan and a `.zip`
-to extract onto the card yourself. The full story is on the
-[browser support page](https://twilightboxart.com/support.html).
-
-**macOS:** the desktop app is not notarized with Apple, so Finder calls the download "damaged".
-It is not; clear the quarantine flag once and it opens normally:
-
-```bash
-xattr -rd com.apple.quarantine ~/Downloads/TwilightBoxart.app
-```
-
-**Your card is safe.** Every app only ever writes cover images into your launcher's boxart folder
-(or a folder you point it at). Nothing is renamed, moved or deleted, and your games and settings
-are never touched.
+Only cover images are written, into the boxart folder. Nothing else on the card is touched.
 
 ## Supported systems
 
-Games are identified by what they **contain**, not what they are called: a wrongly named file
-still gets the right cover. Matching runs down a ladder, cheapest evidence first.
+Games are identified by what they **contain**, not what they are called. Rename a rom to
+`aaaa.gba` and it still gets the right cover. Matching runs down a ladder, cheapest evidence first.
+
+<details>
+<summary><b>All 27 systems, and how each one is matched</b></summary>
 
 | System | Matching (in order) |
 | --- | --- |
@@ -126,6 +120,8 @@ them, so every lookup would miss.
 
 File extensions follow TWiLightMenu++'s own list, so anything the menu will launch is something
 this will scan. That includes `.agb`/`.mb` for GBA and `.srl`/`.ids`/`.app` for DS(i).
+
+</details>
 
 Some nice tricks along the way:
 
