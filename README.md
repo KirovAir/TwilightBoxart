@@ -18,7 +18,7 @@
 
 TwilightBoxart does one thing and does it properly. It works out what your games actually are and
 grabs the right covers in the shape your launcher wants. Covers almost every console a DS can play,
-27 of them. Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
+[27 of them](#-supported-systems). Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
 
 ## 👾 DS / DSi version
 
