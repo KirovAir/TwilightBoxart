@@ -4,7 +4,7 @@
 
 <h1 align="center">TwilightBoxart</h1>
 
-<p align="center">Box art for <a href="https://github.com/DS-Homebrew/TWiLightMenu"><b>TWiLightMenu++</b></a> and <a href="https://github.com/LNH-team/pico-launcher"><b>Pico Launcher</b></a>, straight onto your SD card.</p>
+<p align="center">Box art for <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener"><b>TWiLightMenu++</b></a> and <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener"><b>Pico Launcher</b></a>, straight onto your SD card.</p>
 
 <p align="center">
   <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/v/release/KirovAir/TwilightBoxart?color=7566DD&label=release" alt="Latest release"></a>
@@ -13,12 +13,12 @@
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
 </p>
 
-<h3 align="center"><a href="https://twilightboxart.com/">→ Open the web app ←</a></h3>
+<h3 align="center"><a href="https://twilightboxart.com/" target="_blank" rel="noopener">→ Open the web app ←</a></h3>
 <p align="center">Plug the card in, press scan.</p>
 
 TwilightBoxart does one thing and does it properly. It works out what your games actually are and
 grabs the right covers in the shape your launcher wants. Covers almost every console a DS can play,
-[27 of them](#-supported-systems). Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
+[27 of them](#supported-systems). Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
 
 ## 👾 DS / DSi version
 
@@ -60,14 +60,15 @@ Every app asks which launcher up front.
 
 | Launcher | Format | Where it goes |
 | --- | --- | --- |
-| [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
-| [Pico Launcher](https://github.com/LNH-team/pico-launcher) (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
+| <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener">TWiLightMenu++</a> | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
+| <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener">Pico Launcher</a> (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
 
 Pico covers go in the filename-keyed `user` folder: it works for every system below, where the
 game-code folders only do NDS and GBA.
 
 Only cover images are written, into the boxart folder. Nothing else on the card is touched.
 
+<a id="supported-systems"></a>
 ## 🕹️ Supported systems
 
 Games are identified by what they **contain**, not what they are called. Rename a rom to
