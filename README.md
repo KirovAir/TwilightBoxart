@@ -4,39 +4,31 @@
 
 <h1 align="center">TwilightBoxart</h1>
 
-<p align="center"><b>Box art for TWiLightMenu++ and Pico Launcher, straight onto your SD card.</b></p>
+<p align="center">Box art for <a href="https://github.com/DS-Homebrew/TWiLightMenu"><b>TWiLightMenu++</b></a> and <a href="https://github.com/LNH-team/pico-launcher"><b>Pico Launcher</b></a>, straight onto your SD card.</p>
 
 <p align="center">
   <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/v/release/KirovAir/TwilightBoxart?color=7566DD&label=release" alt="Latest release"></a>
   <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/downloads/KirovAir/TwilightBoxart/total?color=C75BB4&label=downloads" alt="Downloads"></a>
-  <a href="https://twilightboxart.com/"><img src="https://img.shields.io/badge/web%20app-twilightboxart.com-F5A05C" alt="Web app"></a>
+  <a href="https://github.com/KirovAir/TwilightBoxart/stargazers"><img src="https://img.shields.io/github/stars/KirovAir/TwilightBoxart?color=F5A05C&label=stars" alt="Stars"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="GPL-3.0"></a>
 </p>
 
-A boxart downloader that works out what your games actually are and grabs the right covers in the
-shape your launcher wants.
+<h3 align="center"><a href="https://twilightboxart.com/">→ Open the web app ←</a></h3>
+<p align="center">Plug the card in, press scan.</p>
 
-Covers almost every console a DS can play, 27 of them. [List below.](#supported-systems)
+TwilightBoxart does one thing and does it properly. It works out what your games actually are and
+grabs the right covers in the shape your launcher wants. Covers almost every console a DS can play,
+27 of them. Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
 
-## In your browser
+## 👾 DS / DSi version
 
-[twilightboxart.com](https://twilightboxart.com/). Nothing to install: plug the card in, press scan.
+Hate connecting your SD card to a computer? No problem. Copy the `.nds` to your card, launch it, and
+the console joins your WiFi and fills its own boxart folder. Works on a DSi, and on a DS or DS Lite
+with a flashcart.
 
-> [!TIP]
-> Chrome, Edge, Brave, Opera and Vivaldi write straight to the card. Firefox and Safari cannot, so
-> there you get a `.zip` to extract yourself. ([Details](https://twilightboxart.com/support.html))
-
-<p align="center">
-  <img src="docs/webapp.png" width="620" alt="The TwilightBoxart web app">
-</p>
-
-## On the console
-
-Copy the `.nds` to your card and launch it. It joins your WiFi and fills the boxart folder itself, so
-the card never has to come out. Works on a DSi, and on a DS or DS Lite with a flashcart.
-
-Reads each game's header, so badly named roms still match. Skips games that already have a cover, and
-picks up TWiLightMenu++ or Pico Launcher from what is on the card.
+Reads each game's header, so badly named roms still match. Out of the box it picks the launcher from
+what is on the card and skips games that already have a cover, but that is just the default: launcher,
+shape, size, border, overwrite and scan mode are all in the options menu.
 
 [Releases](https://github.com/KirovAir/TwilightBoxart/releases)
 
@@ -44,23 +36,25 @@ picks up TWiLightMenu++ or Pico Launcher from what is on the card.
   <img src="docs/dsi.png" width="240" alt="The DS/DSi homebrew client, running in melonDS">
 </p>
 
-## Desktop app
+## 🌐 Web version
 
-Windows, macOS and Linux, one file. Works offline: it builds its own game database when it cannot
-reach a backend. [Releases](https://github.com/KirovAir/TwilightBoxart/releases)
+[twilightboxart.com](https://twilightboxart.com/) scans the card and writes the covers straight onto
+it, no upload and no install.
 
-> [!WARNING]
-> macOS calls the download "damaged" because it is not notarized. Clear the flag once:
->
-> ```bash
-> xattr -rd com.apple.quarantine ~/Downloads/TwilightBoxart.app
-> ```
+<p align="center">
+  <img src="docs/webapp.png" width="620" alt="The TwilightBoxart web app">
+</p>
+
+## 💻 Desktop version
+
+Windows, macOS and Linux. Works offline: it builds its own game database when it cannot reach a
+backend. [Releases](https://github.com/KirovAir/TwilightBoxart/releases)
 
 <p align="center">
   <img src="docs/desktop.png" width="440" alt="The desktop app on macOS">
 </p>
 
-## Launchers
+## 🚀 Supported launchers
 
 Every app asks which launcher up front.
 
@@ -74,10 +68,10 @@ game-code folders only do NDS and GBA.
 
 Only cover images are written, into the boxart folder. Nothing else on the card is touched.
 
-## Supported systems
+## 🕹️ Supported systems
 
 Games are identified by what they **contain**, not what they are called. Rename a rom to
-`aaaa.gba` and it still gets the right cover. Matching runs down a ladder, cheapest evidence first.
+`aaaa.gba` and it still gets the right cover.
 
 <details>
 <summary><b>All 27 systems, and how each one is matched</b></summary>
@@ -123,17 +117,9 @@ this will scan. That includes `.agb`/`.mb` for GBA and `.srl`/`.ids`/`.app` for 
 
 </details>
 
-Some nice tricks along the way:
+A lot of work went into the matching. It rarely misses.
 
-* Title ids and game codes are read straight out of the ROM header: free and exact.
-* `.zip` **and `.7z`** *(new in 2.0)* archives are scanned **without decompressing**: the checksum
-  of the game inside is already in the archive's own header, so an 18,000-game card scans in
-  minutes, a few hundred bytes per file.
-* N64 games are matched whatever their byte order (`.z64` / `.v64` / `.n64`).
-* Whatever still misses gets a list telling you exactly what it was recognised as and why there
-  was no cover. Never a silent skip.
-
-## Boxart sources
+## 🖼️ Boxart sources
 
 * [GameTDB](https://www.gametdb.com) by title id matching.
 * [libretro-thumbnails](https://github.com/libretro-thumbnails) by
@@ -142,7 +128,7 @@ Some nice tricks along the way:
   refuses to show up on the console. Pico covers come pre-converted to the launcher's own 8-bit
   BMP format, no separate converter needed.
 
-## Self-hosting
+## 🐳 Self-hosting
 
 One container, one volume, no database server, no preparation:
 
