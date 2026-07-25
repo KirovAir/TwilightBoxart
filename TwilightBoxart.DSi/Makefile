@@ -37,11 +37,4 @@ DEFINES		?=
 DEFINES		+= -DMBEDTLS_USER_CONFIG_FILE=\"tb_mbedtls_config.h\"
 DEFINES		+= -DAPP_VERSION=\"$(APP_VERSION)\"
 
-# Build-time overrides, for a test ROM against a staging backend where editing the ini on the card
-# first defeats the point. Its own variable because a command-line DEFINES= would replace the two
-# above rather than add to them, and the build then fails on a missing APP_VERSION:
-#   make EXTRA_DEFINES='-DDEFAULT_BACKEND_HOST=\"my.tunnel.example\"'
-EXTRA_DEFINES	?=
-DEFINES		+= $(EXTRA_DEFINES)
-
 include $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile

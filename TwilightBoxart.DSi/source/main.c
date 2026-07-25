@@ -29,17 +29,10 @@
 
 /* Where the backend lives when the ini does not say otherwise. Nobody should ever have to
    configure anything - but the ini written on first run carries backend_host / backend_port /
-   backend_tls, so a self-hoster can point a card at their own server by editing a text file.
-
-   Overridable at build time for a test ROM against a staging backend, where editing the ini on the
-   card first defeats the point:
-     make EXTRA_DEFINES='-DDEFAULT_BACKEND_HOST=\"my.tunnel.example\"' */
-#ifndef DEFAULT_BACKEND_HOST
+   backend_tls, so a self-hoster, or anyone testing against a staging server, can point a card
+   somewhere else by editing a text file. */
 #define DEFAULT_BACKEND_HOST "boxart.kirovair.com"
-#endif
-#ifndef DEFAULT_BACKEND_TLS
 #define DEFAULT_BACKEND_TLS  1
-#endif
 
 /* APP_VERSION comes from the Makefile, which reads it out of Directory.Build.props. Deliberately
    no fallback here: a build that cannot work out its own version should fail, not ship a guess. */
