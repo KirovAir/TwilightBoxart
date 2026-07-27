@@ -16,9 +16,10 @@
 <h3 align="center"><a href="https://twilightboxart.com/" target="_blank" rel="noopener">→ Open the web app ←</a></h3>
 <p align="center">Plug the card in, press scan.</p>
 
-TwilightBoxart does one thing and does it properly. It works out what your games actually are and
-grabs the right covers in the shape your launcher wants. Covers almost every console a DS can play,
-[27 of them](#supported-systems). Runs in your browser, as a desktop app, or as homebrew on the DS itself. 😊
+Automatically downloads box art / covers for your favorite launcher. DS, DSi and GBA, plus everything
+else a Nintendo DS can play that is supported: Gameboy, SNES, NES, Mega Drive, PC Engine, WonderSwan, Neo Geo
+Pocket, the Atari consoles [and more](#supported-systems). Runs in your browser, as a desktop app,
+or as homebrew on the DS itself. 😊
 
 ## 👾 DS / DSi version
 
