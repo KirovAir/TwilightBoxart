@@ -25,10 +25,11 @@ be the one file a browser keeps serving from four-hour-old cache.
 | `zipwriter.js` | Store-only ZIP writer for the read-only fallback |
 | `sw.js` | Registration only, so the install prompt appears. Caches nothing |
 
-One list must be kept in step with the backend by hand:
-
-- `ROM_EXTENSIONS` / `ARCHIVE_EXTENSIONS` in `scan.js` mirror `SupportedFiles` in
-  `TwilightBoxart.Core/Probe/ProbeContracts.cs`.
+Nothing here is kept in step with the backend by hand. `Index.cshtml` renders the scan set and the
+console labels from `SupportedFiles` into a `<script type="application/json" id="formats">`, which
+`scan.js` reads for `ROM_EXTENSIONS` / `ARCHIVE_EXTENSIONS` and `api.js` for `PLATFORM_LABELS`. Both
+were hand-copied until 2.2 and both had drifted, the extension list by nineteen entries. **A module
+that needs backend facts should take them from that element**, not restate them.
 
 Art URLs are never built here: identify returns each match's `artPath` and `api.js` follows it
 verbatim, so the server owns its own URL scheme.

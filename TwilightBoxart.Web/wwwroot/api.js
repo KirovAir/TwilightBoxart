@@ -37,12 +37,12 @@ const identifyResults = (json) => json?.items ?? [];
  * nothing here ever travels back to the server, so an unknown name degrades to itself rather than
  * to a broken request.
  */
-const PLATFORM_LABELS = {
-    GameBoy: 'Game Boy', GameBoyColor: 'Game Boy Color', GameBoyAdvance: 'Game Boy Advance',
-    NintendoDs: 'Nintendo DS', NintendoDsi: 'Nintendo DSi', Nes: 'NES', Snes: 'SNES',
-    Nintendo64: 'Nintendo 64', FamicomDiskSystem: 'Famicom Disk System',
-    MegaDrive: 'Mega Drive', MasterSystem: 'Master System', GameGear: 'Game Gear',
-};
+/**
+ * Console name to label, rendered into the page by Index.cshtml from ConsoleTypeExtensions.Name().
+ * Written out here by hand until 2.2, when it was fourteen consoles behind the enum and the misses
+ * table was showing raw names like "NeoGeoPocketColor".
+ */
+const PLATFORM_LABELS = JSON.parse(document.getElementById('formats').textContent).labels;
 
 /** The identity's console as a human label, e.g. "Nintendo DS". */
 export function platformLabel(identity) {

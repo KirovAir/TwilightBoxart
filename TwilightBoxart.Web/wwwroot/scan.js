@@ -4,16 +4,14 @@
 import { probeZip, probe7z, zipEntryHeader, sevenZipEntryHeader, crc32File, CONST } from './romprobe.js';
 
 /**
- * Bare ROM extensions; mirrors SupportedFiles.Rom in TwilightBoxart.Core/Probe/ProbeContracts.cs.
- * Keep the two lists in step.
+ * What a scan opens, rendered into the page by Index.cshtml straight from SupportedFiles. Hand-copied
+ * into this file until 2.2, by which point it had fallen nineteen extensions behind the backend and
+ * the browser client was walking silently past every WonderSwan, Neo Geo Pocket, PC Engine, Atari,
+ * ColecoVision, Intellivision and MSX ROM on the card.
  */
-const ROM_EXTENSIONS = new Set([
-    '.nes', '.fds', '.sfc', '.smc', '.snes', '.gb', '.sgb', '.gbc', '.gba',
-    '.nds', '.ds', '.dsi', '.n64', '.z64', '.v64', '.gg', '.gen', '.md', '.sms',
-]);
-
-/** Archive containers we can look inside. Mirrors SupportedFiles.Archive. */
-const ARCHIVE_EXTENSIONS = new Set(['.zip', '.7z']);
+const formats = JSON.parse(document.getElementById('formats').textContent);
+const ROM_EXTENSIONS = new Set(formats.rom);
+const ARCHIVE_EXTENSIONS = new Set(formats.archive);
 
 /**
  * Directories that never hold ROMs. `_nds` and `_pico` are skipped because they hold the

@@ -186,6 +186,43 @@ main > .panel:nth-of-type(4) .step {
     font-size: 13px;
 }
 
+/* Which systems get scanned, folded away in step 1. Twenty-six rows is worth having on the page and
+   not worth the height by default, so it opens on demand and costs nothing shut. */
+details.formats {
+    margin: 0 0 12px;
+    font-size: 13px;
+}
+
+details.formats > summary {
+    width: fit-content;
+    color: var(--accent-deep);
+    cursor: pointer;
+}
+
+details.formats dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 3px 16px;
+    margin: 10px 0 0;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel-2);
+}
+
+details.formats dt {
+    color: var(--text);
+}
+
+details.formats dd {
+    margin: 0;
+    color: var(--muted);
+}
+
+details.formats > p {
+    margin: 8px 0 0;
+}
+
 p {
     margin: 0 0 10px;
 }

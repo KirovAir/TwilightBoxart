@@ -76,13 +76,12 @@ Games are identified by what they **contain**, not what they are called. Rename 
 `aaaa.gba` and it still gets the right cover.
 
 <details>
-<summary><b>All 27 systems, and how each one is matched</b></summary>
+<summary><b>All 26 systems, and how each one is matched</b></summary>
 
 | System | Matching (in order) |
 | --- | --- |
 | Nintendo - Nintendo DS | title id / crc32 / sha1 / filename |
 | Nintendo - Nintendo DSi | title id / crc32 / sha1 / filename |
-| Nintendo - Nintendo DSi (DSiWare) | title id / crc32 / sha1 / filename |
 | Nintendo - Game Boy Advance | title id / crc32 / sha1 / filename |
 | Nintendo - Game Boy | game code / crc32 / sha1 / filename |
 | Nintendo - Game Boy Color | game code / crc32 / sha1 / filename |

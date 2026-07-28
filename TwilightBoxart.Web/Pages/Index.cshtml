@@ -11,7 +11,7 @@
 
     <title>TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher</title>
     <meta name="description"
-        content="Scans your SD card, works out what your games actually are, and writes the right covers into TWiLightMenu++ or Pico Launcher (DS Pico). Runs in the browser, nothing to install.">
+        content="Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.">
 
     <!-- Absolute and hardcoded on purpose. A self-hosted instance is not a rival copy of the site
          competing for the same results, it is this app run privately, so it points at the original. -->
@@ -22,7 +22,7 @@
     <meta property="og:url" content="https://twilightboxart.com/">
     <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher">
     <meta property="og:description"
-        content="Point it at your SD card and it works out what your games are, then writes the right covers straight onto it. 27 systems, nothing to install.">
+        content="Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.">
     <meta property="og:image" content="https://twilightboxart.com/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -46,7 +46,7 @@
         "url": "https://twilightboxart.com/",
         "applicationCategory": "UtilitiesApplication",
         "operatingSystem": "Web, Windows, macOS, Linux",
-        "description": "Downloads box art for TWiLightMenu++ and Pico Launcher by identifying games from their contents rather than their filenames, and writes the covers straight onto the SD card.",
+        "description": "Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.",
         "license": "https://www.gnu.org/licenses/gpl-3.0.html",
         "isAccessibleForFree": true,
         "offers": { "@@type": "Offer", "price": "0", "priceCurrency": "EUR" }
@@ -99,11 +99,21 @@
 
         <section class="panel">
             <h2><span class="step">1</span> Your SD card</h2>
-            <p class="muted">
-                Pick the card itself, not a folder inside it. Covers go into your launcher's box art
-                folder and nothing else on the card is ever touched: not your games, not your
-                settings.
-            </p>
+            <p class="muted">Pick the card itself, not a folder inside it.</p>
+            <details class="formats">
+                <summary>What gets scanned (@SupportedFiles.ByConsole.Count systems)</summary>
+                <dl>
+                    @foreach (var entry in SupportedFiles.ByConsole)
+                    {
+                        <dt>@entry.Console.Name()</dt>
+                        <dd>@string.Join(' ', entry.Extensions)</dd>
+                    }
+                </dl>
+                <p class="muted">
+                    ROMs inside @string.Join(" and ", SupportedFiles.Archive.Order(StringComparer.Ordinal))
+                    archives are read too, without unpacking them.
+                </p>
+            </details>
             <div class="row">
                 <button id="pick" class="primary">Choose SD card folder…</button>
                 <button id="reconnect" class="ghost" hidden>Reconnect to “<span id="reconnect-name"></span>”</button>
@@ -229,10 +239,26 @@
             <a href="support.html">browser support notes</a>
         </p>
         <p class="legal">
-            A fan-made tool, not affiliated with Nintendo. It distributes no games: it identifies
-            what is already on your card and fetches cover images, nothing more. © KirovAir 2026
+            This is a fan made tool and not affiliated with Nintendo. It distributes no games, it
+            only transforms boxart. © KirovAir 2026
         </p>
     </footer>
+
+@{
+    // The scan set and the console labels, rendered from the same SupportedFiles the backend
+    // identifies against. Both used to be copied into the modules below by hand, and both had
+    // drifted: scan.js knew 19 of the 38 ROM extensions, api.js 12 of the 26 consoles. Handed over
+    // in the page rather than fetched from /v2/formats because this client only ever talks to its
+    // own origin (BASE in api.js), so the page's server IS the backend, and the shell is served
+    // no-cache where that endpoint is cached for a day.
+    var formats = JsonSerializer.Serialize(new
+    {
+        rom = SupportedFiles.Rom.Order(StringComparer.Ordinal),
+        archive = SupportedFiles.Archive.Order(StringComparer.Ordinal),
+        labels = SupportedFiles.ByConsole.ToDictionary(e => e.Console.ToString(), e => e.Console.Name()),
+    });
+}
+    <script type="application/json" id="formats">@Html.Raw(formats)</script>
 
 @{
     // app.js pulls its siblings in with relative specifiers, and asp-append-version only ever sees

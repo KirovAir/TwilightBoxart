@@ -278,7 +278,7 @@ async function useRoot(root) {
 
     const launchers = [hasTwilight && 'TWiLightMenu++', hasPico && 'Pico Launcher'].filter(Boolean);
     if (launchers.length) setStatus(`Ready: "${root.name}" looks like a ${launchers.join(' + ')} card.`, 'good');
-    else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ or Pico Launcher card. Pick the card itself, not a folder inside it.`, 'warn');
+    else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ or Pico Launcher card.`, 'warn');
     $('start').disabled = false;
     $('card-name').textContent = root.name;
     refreshCacheNote();

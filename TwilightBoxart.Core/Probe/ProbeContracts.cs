@@ -61,6 +61,9 @@ public interface IRomProbe
     Task<ProbeResult?> ProbeAsync(Stream stream, string path, bool wantHeader, CancellationToken ct = default);
 }
 
+/// <summary>A console and the ROM extensions a card carries for it.</summary>
+public sealed record ConsoleFiles(ConsoleType Console, IReadOnlyList<string> Extensions);
+
 /// <summary>Container extensions the scanner will open, and the ROM extensions it looks for inside.</summary>
 public static class SupportedFiles
 {
@@ -156,6 +159,33 @@ public static class SupportedFiles
     /// </summary>
     public static readonly IReadOnlySet<string> Scannable =
         Rom.Concat(Archive).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Every console a scan can produce a cover for, paired with the extensions a card carries for it.
+    /// This is what a user is shown, so it is NOT just the inverse of <see cref="RomExtensions"/>:
+    /// MSX2 has no extension of its own (see <see cref="ConsoleType.Msx2"/>) and arrives on .msx like
+    /// MSX does, and reading the map alone would list it as unsupported when its covers work fine.
+    /// </summary>
+    public static readonly IReadOnlyList<ConsoleFiles> ByConsole = BuildByConsole();
+
+    private static IReadOnlyList<ConsoleFiles> BuildByConsole()
+    {
+        var extensions = RomExtensions
+            .GroupBy(pair => pair.Value, pair => pair.Key)
+            .ToDictionary(group => group.Key, group => (IReadOnlyList<string>)[.. group]);
+
+        extensions[ConsoleType.Msx2] = extensions[ConsoleType.Msx];
+
+        // An empty list rather than an indexer: a console added to the enum without an extension is a
+        // missing row on a page, not a type initializer that takes the server down at startup.
+        // ConsoleFileTypesTests pins that it never actually happens.
+        return
+        [
+            .. Enum.GetValues<ConsoleType>()
+                .Where(console => console != ConsoleType.Unknown)
+                .Select(console => new ConsoleFiles(console, extensions.GetValueOrDefault(console, [])))
+        ];
+    }
 
     public static bool IsRom(string path) => Rom.Contains(Path.GetExtension(path));
 
