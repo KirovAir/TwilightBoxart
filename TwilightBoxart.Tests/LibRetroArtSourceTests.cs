@@ -1,4 +1,7 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 using TwilightBoxart.Core.Art;
 using TwilightBoxart.Core.Models;
 
@@ -125,5 +128,101 @@ public class LibRetroArtSourceTests
         Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, Encoding.UTF8.GetBytes("../../../etc/evil.png")));
         Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, [0x89, 0x50, 0x4E, 0x47]));
         Assert.IsNull(LibRetroArtSource.ResolveSymlinkTarget(url, Encoding.UTF8.GetBytes("a.png\nb.png")));
+    }
+
+    // The mirror exists because a renamed default branch on the primary is indistinguishable from a
+    // dead host. These pin that BOTH a primary miss and a primary OUTAGE fall through to it - the second
+    // is the one that moving transport failures onto the exception path could quietly have dropped, which
+    // is exactly the backwards-compatibility the desktop clients depend on.
+    private static readonly RomIdentity GameBoyTitle = new()
+    {
+        ConsoleType = ConsoleType.GameBoy,
+        Key = "tetris",
+        CanonicalName = "Tetris (World)",
+        MatchMethod = MatchMethod.Filename,
+    };
+
+    private const string PrimaryHost = "raw.githubusercontent.com";
+    private const string MirrorHost = "thumbnails.libretro.com";
+
+    [TestMethod]
+    public async Task PrimaryUnreachable_FallsBackToTheMirror()
+    {
+        // raw.githubusercontent times out; the branch-independent mirror answers. A swallowed-to-null
+        // timeout used to reach the mirror incidentally - this keeps it reaching it deliberately.
+        var handler = new RoutingHandler(uri =>
+            uri.Host == PrimaryHost ? Timeout() : Image());
+        var source = new LibRetroArtSource(new SingleClientFactory(handler), NullLogger<LibRetroArtSource>.Instance);
+
+        var blob = await source.TryFetchAsync(GameBoyTitle);
+
+        Assert.IsNotNull(blob, "the mirror had the art, so the outage on the primary must not lose it");
+        CollectionAssert.AreEqual(FakeArtSource.Png, blob.Data);
+        Assert.IsTrue(handler.Hosts.Contains(MirrorHost), "the mirror must actually have been tried");
+    }
+
+    [TestMethod]
+    public async Task PrimaryMisses_FallsBackToTheMirror()
+    {
+        // The unchanged path: a primary 404 (a real miss, or a renamed branch) still tries the mirror.
+        var handler = new RoutingHandler(uri =>
+            uri.Host == PrimaryHost ? NotFound() : Image());
+        var source = new LibRetroArtSource(new SingleClientFactory(handler), NullLogger<LibRetroArtSource>.Instance);
+
+        var blob = await source.TryFetchAsync(GameBoyTitle);
+
+        Assert.IsNotNull(blob);
+        CollectionAssert.AreEqual(FakeArtSource.Png, blob.Data);
+    }
+
+    [TestMethod]
+    public async Task PrimaryAndMirrorBothUnreachable_SurfacesTheOutage()
+    {
+        // Both hosts down: there is nothing left to fall back to, so the outage propagates as a failure
+        // rather than being reported as a miss the ladder would negative-cache for hours.
+        var handler = new RoutingHandler(_ => Timeout());
+        var source = new LibRetroArtSource(new SingleClientFactory(handler), NullLogger<LibRetroArtSource>.Instance);
+
+        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(
+            () => source.TryFetchAsync(GameBoyTitle));
+    }
+
+    private static Func<HttpResponseMessage> Timeout() =>
+        () => throw new TaskCanceledException("timed out", new TimeoutException());
+
+    private static Func<HttpResponseMessage> NotFound() =>
+        () => new HttpResponseMessage(HttpStatusCode.NotFound);
+
+    private static Func<HttpResponseMessage> Image() =>
+        () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(FakeArtSource.Png)
+            {
+                Headers = { ContentType = new MediaTypeHeaderValue("image/png") },
+            },
+        };
+
+    private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+    }
+
+    /// <summary>Answers by host, so a test can make the primary fail while the mirror succeeds.</summary>
+    private sealed class RoutingHandler(Func<Uri, Func<HttpResponseMessage>> route) : HttpMessageHandler
+    {
+        public HashSet<string> Hosts { get; } = [];
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            Hosts.Add(request.RequestUri!.Host);
+            try
+            {
+                return Task.FromResult(route(request.RequestUri!)());
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException<HttpResponseMessage>(ex);
+            }
+        }
     }
 }

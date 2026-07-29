@@ -67,6 +67,15 @@ public class CacheSettings
     /// </summary>
     public static readonly TimeSpan NegativeCacheDuration = TimeSpan.FromHours(12);
 
+    /// <summary>
+    /// How long a title is left alone after a source could not be REACHED (timeout, reset, DNS), as
+    /// opposed to answering "no art". Minutes, not the hours a genuine miss earns
+    /// (<see cref="NegativeCacheDuration"/>): an outage is transient, so the next scan should retry
+    /// soon rather than inheriting a half-day of hidden art from one passing blip. Non-zero only so a
+    /// 500-ROM scan burst cannot re-hammer an upstream that is already struggling.
+    /// </summary>
+    public static readonly TimeSpan TransientFailureBackoff = TimeSpan.FromMinutes(5);
+
     /// <summary>Clamps both budgets into a range that cannot fill the disk or starve the cache.</summary>
     public CacheSettings Normalized() => new()
     {

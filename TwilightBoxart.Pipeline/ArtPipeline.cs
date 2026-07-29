@@ -189,32 +189,41 @@ public sealed class ArtPipeline(
                 : identity.Serial;
 
             var fetched = await fetcher.TryFetchAsync(identity, shared);
-            if (fetched is null)
+            if (fetched.Status != FetchStatus.Hit)
             {
+                // A source that could not be REACHED is not evidence the art is missing, so it must not
+                // earn the 12-hour "no art" back-off: that is exactly how a passing GameTDB timeout during
+                // a scan used to hide a title's cover for half a day. Back off only briefly on an outage,
+                // so the next scan retries; a genuine miss still gets the full negative-cache duration.
+                var backoff = fetched.Status == FetchStatus.Unavailable
+                    ? CacheSettings.TransientFailureBackoff
+                    : CacheSettings.NegativeCacheDuration;
+
                 var missed = await records.UpsertAsync(console, key, r =>
                 {
                     // Remember what this attempt knew: a later retry from the key-only route can
                     // then still address the name-keyed sources.
                     r.Serial ??= learnedSerial;
                     r.CanonicalName ??= identity.CanonicalName;
-                    r.MissUntil = DateTime.UtcNow + CacheSettings.NegativeCacheDuration;
+                    r.MissUntil = DateTime.UtcNow + backoff;
                 }, shared);
-                logger.LogDebug("No art for {Console}/{Key}; backing off until {Until}",
-                    console.Slug(), key, missed.MissUntil);
+                logger.LogDebug("No art for {Console}/{Key} ({Status}); backing off until {Until}",
+                    console.Slug(), key, fetched.Status, missed.MissUntil);
                 return null;
             }
 
-            var sha = Convert.ToHexStringLower(SHA256.HashData(fetched.Blob.Data));
-            await cacheIndex.WriteAsync(caches.Originals, ArtCaches.OriginalPath(sha), fetched.Blob.Data, sha, shared);
+            var art = fetched.Art!;
+            var sha = Convert.ToHexStringLower(SHA256.HashData(art.Blob.Data));
+            await cacheIndex.WriteAsync(caches.Originals, ArtCaches.OriginalPath(sha), art.Blob.Data, sha, shared);
 
             return await records.UpsertAsync(console, key, r =>
             {
                 r.Serial ??= learnedSerial;
                 r.CanonicalName ??= identity.CanonicalName;
                 r.Sha256 = sha;
-                r.SourceUrl = fetched.Blob.SourceUrl;
-                r.ContentType = fetched.Blob.ContentType;
-                r.Source = fetched.Source;
+                r.SourceUrl = art.Blob.SourceUrl;
+                r.ContentType = art.Blob.ContentType;
+                r.Source = art.Source;
                 r.MissUntil = null;
             }, shared);
         }, ct);

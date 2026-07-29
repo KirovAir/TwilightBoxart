@@ -79,16 +79,29 @@ public sealed class LibRetroArtSource(
             return null;
         }
 
-        var blob = await TryGetAsync(url, ct);
-        if (blob is not null)
+        var mirrorUrl = BuildMirrorUrl(identity.ConsoleType, identity.CanonicalName);
+        try
         {
-            return blob;
+            var blob = await TryGetAsync(url, ct);
+            if (blob is not null)
+            {
+                return blob;
+            }
+        }
+        catch (ArtSourceUnavailableException) when (mirrorUrl is not null)
+        {
+            // The primary is unreachable, which is precisely the case the branch-independent mirror
+            // exists for (a renamed default branch is indistinguishable from a dead host). Try it before
+            // giving up; if the mirror is down too, its own failure propagates and the ladder records a
+            // real outage rather than a miss. Without this, moving transport failures onto the exception
+            // path would have quietly dropped the mirror fallback that a swallowed-to-null timeout used
+            // to reach.
+            return await TryGetAsync(mirrorUrl, ct);
         }
 
         // Primary missed. That is usually a genuine "no art for this title", but it is also what a
         // renamed default branch looks like, so give the branch-independent mirror a chance before
         // reporting a miss. See MirrorBaseUrl.
-        var mirrorUrl = BuildMirrorUrl(identity.ConsoleType, identity.CanonicalName);
         return mirrorUrl is null ? null : await TryGetAsync(mirrorUrl, ct);
     }
 

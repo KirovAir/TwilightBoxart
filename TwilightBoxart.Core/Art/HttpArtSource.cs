@@ -6,9 +6,30 @@ namespace TwilightBoxart.Core.Art;
 
 /// <summary>
 /// Shared HTTP plumbing for the art sources: a politeness gate, real status-code handling, and
-/// <c>Retry-After</c> back-off. Everything here funnels into "a hit, or null"; a miss is not an
-/// exception, per <see cref="IArtSource"/>.
+/// <c>Retry-After</c> back-off. A hit returns the blob and a miss returns null, per
+/// <see cref="IArtSource"/>; the one thing that IS an exception is an upstream we could not reach at
+/// all after retrying (<see cref="ArtSourceUnavailableException"/>), because a failure and a miss must
+/// stay distinguishable to the fetch ladder above.
 /// </summary>
+/// <remarks>
+/// The time knobs in this subsystem sit at three nested scopes. They are easier to keep straight with
+/// the whole map in one place; each is a different question at a different timescale, not a duplicate:
+/// <list type="number">
+///   <item><b>One request</b> to an upstream - bounded by <see cref="ArtSourceLimits.RequestTimeout"/>
+///     (20s) and gated by <see cref="ArtSourceLimits.MaxConcurrency"/>. This is <c>AttemptAsync</c>.</item>
+///   <item><b>Retrying that one request</b> - up to <see cref="ArtSourceLimits.MaxRetries"/> times. A
+///     429/503 waits the server's <c>Retry-After</c> (capped by <see cref="ArtSourceLimits.MaxRetryAfter"/>)
+///     and arms a process-wide cooldown so a queued scan burst backs off together; a transport failure
+///     waits <see cref="ArtSourceLimits.TransportRetryDelay"/>. When the retries run out a 429 becomes a
+///     miss, a transport failure becomes an outage (the exception). This is the <c>TryGetAsync</c> loop.</item>
+///   <item><b>Remembering the outcome across requests</b> - not here, but in the pipeline, which stamps
+///     <c>ArtRecord.MissUntil</c>: a genuine miss for <c>CacheSettings.NegativeCacheDuration</c> (12h), an
+///     outage for only <c>CacheSettings.TransientFailureBackoff</c> (5m). That split is the whole reason a
+///     miss and an outage must not collapse into one null here.</item>
+/// </list>
+/// (Cache eviction - <c>OriginalsMaxAge</c>, <c>EvictionInterval</c> and friends - is a separate
+/// background subsystem and touches none of this.)
+/// </remarks>
 public abstract class HttpArtSource(
     IHttpClientFactory httpClientFactory,
     ILogger logger)
@@ -58,6 +79,25 @@ public abstract class HttpArtSource(
                 continue;
             }
 
+            if (result.Failure is { } failure)
+            {
+                // A transport failure is "we never got an answer", not "no art". Retry a passing blip;
+                // once the retries are spent, surface it as a failure (throw) rather than returning the
+                // null that reads as a miss. That distinction is what stops one timeout from negative-
+                // caching a title: the fetch ladder catches this and backs off for minutes, not hours.
+                if (attempt >= ArtSourceLimits.MaxRetries)
+                {
+                    logger.LogWarning(failure, "{Source}: giving up on {Url} after {Attempts} attempt(s)",
+                        SourceName, url, attempt + 1);
+                    throw new ArtSourceUnavailableException(SourceName, url, failure);
+                }
+
+                logger.LogDebug(failure, "{Source}: transport failure for {Url}, retrying (attempt {Attempt})",
+                    SourceName, url, attempt + 1);
+                await Task.Delay(ArtSourceLimits.TransportRetryDelay, ct);
+                continue;
+            }
+
             if (result.Backoff is not { } backoff)
             {
                 return result.Blob;
@@ -93,9 +133,11 @@ public abstract class HttpArtSource(
         }
         catch (Exception ex)
         {
-            // Includes the TaskCanceledException HttpClient raises on its own timeout.
-            logger.LogWarning(ex, "{Source}: transport failure for {Url}", SourceName, url);
-            return AttemptResult.Miss;
+            // Includes the TaskCanceledException HttpClient raises on its own timeout (our ct is not the
+            // one that fired, so it fell through the guard above). Not a miss: a transport-level failure
+            // is "we don't know", so the caller retries it or surfaces it as an outage rather than
+            // concluding the art is absent. Logged by the caller once retries are spent, not per attempt.
+            return AttemptResult.Failed(ex);
         }
 
         using (response)
@@ -184,9 +226,13 @@ public abstract class HttpArtSource(
         }
     }
 
-    private readonly record struct AttemptResult(ArtBlob? Blob, TimeSpan? Backoff, string? Follow = null)
+    private readonly record struct AttemptResult(
+        ArtBlob? Blob, TimeSpan? Backoff, string? Follow = null, Exception? Failure = null)
     {
         public static readonly AttemptResult Miss = new(null, null);
+
+        /// <summary>A transport-level failure the caller should retry, then surface as an outage.</summary>
+        public static AttemptResult Failed(Exception failure) => new(null, null, null, failure);
     }
 
     /// <summary>Buffers the body, or returns null the moment it grows past <paramref name="maxBytes"/>.</summary>

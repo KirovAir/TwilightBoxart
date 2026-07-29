@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TwilightBoxart.Core;
+using TwilightBoxart.Core.Art;
 using TwilightBoxart.Core.Identify;
 using TwilightBoxart.Core.Models;
 using TwilightBoxart.Core.Probe;
@@ -68,10 +69,19 @@ public sealed class LocalArtBackend(
                 continue;
             }
 
-            var blob = await source.TryFetchAsync(identity, ct);
-            if (blob is { Data.Length: > 0 })
+            try
             {
-                return renderer.Render(blob, options);
+                var blob = await source.TryFetchAsync(identity, ct);
+                if (blob is { Data.Length: > 0 })
+                {
+                    return renderer.Render(blob, options);
+                }
+            }
+            catch (ArtSourceUnavailableException)
+            {
+                // A source that could not be reached is not a match and not fatal: let the next source
+                // try, exactly as a miss would. Local mode keeps no negative cache to poison, so there is
+                // nothing to record - just move on. A cancelled run still propagates via ct.
             }
         }
 

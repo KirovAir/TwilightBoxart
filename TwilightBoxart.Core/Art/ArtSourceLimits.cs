@@ -29,8 +29,21 @@ public static class ArtSourceLimits
     /// </summary>
     public const int MaxConcurrency = 4;
 
-    /// <summary>Extra attempts after a 429/503. Only throttling responses are retried; a miss never is.</summary>
+    /// <summary>
+    /// Extra attempts after a retryable failure. Two kinds qualify and share this one count: a 429/503
+    /// the upstream asked us to wait out, and a transport-level failure (timeout, connection reset, DNS)
+    /// that never got an answer. They differ only in how they wait - a 429 honours the server's
+    /// <c>Retry-After</c>, a transport failure waits <see cref="TransportRetryDelay"/> - not in how many
+    /// times they try. A miss is never retried: a 404 is a definitive "no art".
+    /// </summary>
     public const int MaxRetries = 2;
+
+    /// <summary>
+    /// Pause between transport retries. Short on purpose: this filters a momentary blip, it is not the
+    /// politeness back-off a <c>Retry-After</c> earns, and the per-source concurrency cap already bounds
+    /// how hard a retry storm can lean on the upstream.
+    /// </summary>
+    public static readonly TimeSpan TransportRetryDelay = TimeSpan.FromSeconds(1);
 
     /// <summary>
     /// Largest upstream image we will buffer. GameTDB HQ covers are ~700 KB; anything past a few MB is
