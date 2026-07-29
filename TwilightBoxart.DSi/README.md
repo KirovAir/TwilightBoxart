@@ -84,10 +84,14 @@ WPA2 still needs a console.
 
 ## Building
 
-With [BlocksDS](https://blocksds.skylyrac.net/) installed: `make`. Without it, use the container:
+With BlocksDS 1.22.1 installed: `make`. Without it, use the pinned container:
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work skylyrac/blocksds:slim-latest make
+docker run --rm -v "$PWD:/work" -w /work \
+  skylyrac/blocksds@sha256:6d885f5e4245b31feca2db5ab51924556145d539b5184cafdc40cd306ba34587 make
 ```
+
+That digest is intentionally fixed: the checked-in patched DSWiFi archive was built against its
+socket ABI. `source/networking.c` rejects a mismatched SDK at compile time.
 
 CI builds the `.nds` on every change under `.github/workflows/build-dsi.yml`.

@@ -1,5 +1,5 @@
-# BlocksDS ROM makefile. `make` with BlocksDS installed, or use the container:
-#   docker run --rm -v "$PWD:/work" -w /work skylyrac/blocksds:slim-latest make
+# BlocksDS ROM makefile. `make` with BlocksDS 1.22.1 installed, or use the pinned container:
+#   docker run --rm -v "$PWD:/work" -w /work skylyrac/blocksds@sha256:6d885f5e4245b31feca2db5ab51924556145d539b5184cafdc40cd306ba34587 make
 
 BLOCKSDS	?= /opt/blocksds/core
 BLOCKSDSEXT	?= /opt/blocksds/external
