@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using TwilightBoxart.Core.Art;
 using TwilightBoxart.Core.Identify;
 using TwilightBoxart.Core.Models;
 using TwilightBoxart.Core.Index;
@@ -70,6 +71,18 @@ public class IndexRoundTripTests
             Name = "Tetris (World) (Rev 1)",
             Crc32 = 0x0000000A,
             Sha1 = "3333333333333333333333333333333333333333"
+        },
+
+        // The art name is what the cover is FILED under upstream, which is not this row's name. It has
+        // its own column and its own reader path, both added without moving the schema version.
+        new()
+        {
+            Console = ConsoleType.GameBoy,
+            Name = "Fidgetts, The (Japan) (En)",
+            Crc32 = 0x0000000B,
+            Sha1 = "4444444444444444444444444444444444444444",
+            ArtName = "Fidgetts, The (Japan)",
+            ArtTier = ArtMatchTier.Language
         }
     ];
 
@@ -120,6 +133,43 @@ public class IndexRoundTripTests
             "0xC1F8B000 is negative as a signed 32-bit integer; writer and reader must agree on the cast.");
         Assert.AreEqual("New Super Mario Bros. (Europe)", entry.Name);
         Assert.AreEqual(0xC1F8B000u, entry.Crc32);
+    }
+
+    /// <summary>
+    /// The art name has to survive the writer, the reader's feature detection, and identification, and
+    /// then actually reach the URL. Nothing else covers that path end to end, and a break in it is
+    /// invisible: the cover simply stops being found.
+    /// </summary>
+    [TestMethod]
+    public void IndexRoundTrip_ArtName_ReachesTheLibRetroUrl()
+    {
+        using var index = WriteAndOpen();
+
+        Assert.IsTrue(index.TryByCrc32(0x0000000B, out var entry));
+        Assert.AreEqual("Fidgetts, The (Japan)", entry.ArtName);
+
+        var identity = new RomIdentity
+        {
+            ConsoleType = entry.ConsoleType,
+            Key = "irrelevant",
+            CanonicalName = entry.Name,
+            ArtName = entry.ArtName,
+            MatchMethod = MatchMethod.Crc32
+        };
+
+        StringAssert.EndsWith(
+            LibRetroArtSource.BuildUrl(identity.ConsoleType, identity.ArtName ?? identity.CanonicalName),
+            "/Fidgetts%2C%20The%20%28Japan%29.png");
+    }
+
+    /// <summary>A row with no cover upstream leaves the column null, and the reader must say so.</summary>
+    [TestMethod]
+    public void IndexRoundTrip_RowsWithoutArt_ReadBackAsNull()
+    {
+        using var index = WriteAndOpen();
+
+        Assert.IsTrue(index.TryByCrc32(0xAABBCCDD, out var entry));
+        Assert.IsNull(entry.ArtName);
     }
 
     [TestMethod]

@@ -63,23 +63,8 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
 
     private const string Projection = "console, name, serial, crc32, sha1";
 
-    private const string CrcSql = $"SELECT {Projection} FROM entry WHERE crc32 = $crc LIMIT 1;";
-    private const string Sha1Sql = $"SELECT {Projection} FROM entry WHERE sha1 = $sha1 LIMIT 1;";
-
-    private const string SerialSql =
-        $"SELECT {Projection} FROM entry WHERE console = $console AND serial = $serial LIMIT 1;";
-
-    // $console = 0 (ConsoleType.Unknown) means "every partition"; see the remarks on SearchByName.
-    private static readonly string NameSql = $"""
-                                              SELECT e.console, e.name, e.serial, e.crc32, e.sha1
-                                              FROM entry_fts
-                                              JOIN entry e ON e.id = entry_fts.rowid
-                                              WHERE entry_fts MATCH $q AND ($console = 0 OR e.console = $console)
-                                              ORDER BY bm25(entry_fts)
-                                              LIMIT {CandidateLimit};
-                                              """;
-
     private readonly string _connectionString;
+    private readonly Statements _statements;
     private readonly ILogger _logger;
     private readonly ConcurrentBag<Reader> _readers = [];
     private readonly SemaphoreSlim _slots;
@@ -122,14 +107,18 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         // this exists to bound connections under a request spike, not to unlock parallelism.
         _slots = new SemaphoreSlim(Math.Max(4, Environment.ProcessorCount * 2));
 
-        var reader = CreateReader();
+        var connection = new SqliteConnection(_connectionString);
+        Reader reader;
         try
         {
-            (Version, RowCount) = ReadMeta(reader.Connection);
+            connection.Open();
+            (Version, RowCount) = ReadMeta(connection);
+            _statements = Statements.For(HasColumn(connection, "entry", "art_name"));
+            reader = new Reader(connection, _statements);
         }
         catch
         {
-            reader.Dispose();
+            connection.Dispose();
             _slots.Dispose();
             throw;
         }
@@ -198,7 +187,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
             // SQLite INTEGER is signed, so the builder stores the CRC reinterpreted as int32. Undo the
             // same reinterpretation on the way in, or every CRC with the high bit set misses.
             reader.ByCrc.Parameters[0].Value = unchecked((int)crc32);
-            return TryReadOne(reader.ByCrc, out entry);
+            return TryReadOne(reader.ByCrc, _statements.HasArtName, out entry);
         }
         finally
         {
@@ -223,7 +212,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         try
         {
             reader.BySha1.Parameters[0].Value = normalized;
-            return TryReadOne(reader.BySha1, out entry);
+            return TryReadOne(reader.BySha1, _statements.HasArtName, out entry);
         }
         finally
         {
@@ -250,7 +239,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         {
             reader.BySerial.Parameters[0].Value = (int)console;
             reader.BySerial.Parameters[1].Value = normalized;
-            return TryReadOne(reader.BySerial, out entry);
+            return TryReadOne(reader.BySerial, _statements.HasArtName, out entry);
         }
         finally
         {
@@ -322,7 +311,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         using var rows = reader.ByName.ExecuteReader();
         while (rows.Read())
         {
-            var candidate = Read(rows);
+            var candidate = Read(rows, _statements.HasArtName);
             var parts = NameParts.From(candidate.Name);
 
             if (SequelMismatch(query.Stem, parts.Stem))
@@ -576,7 +565,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         return sb.ToString();
     }
 
-    private static bool TryReadOne(SqliteCommand command, out IndexEntry entry)
+    private static bool TryReadOne(SqliteCommand command, bool hasArtName, out IndexEntry entry)
     {
         using var rows = command.ExecuteReader();
         if (!rows.Read())
@@ -585,14 +574,14 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
             return false;
         }
 
-        entry = Read(rows);
+        entry = Read(rows, hasArtName);
         return true;
     }
 
-    private static IndexEntry Read(SqliteDataReader rows)
+    private static IndexEntry Read(SqliteDataReader rows, bool hasArtName)
     {
         var console = rows.GetInt32(0);
-        return new IndexEntry(
+        var entry = new IndexEntry(
             // A value outside the enum would otherwise travel all the way into an art URL as a number.
             // Surfacing it as Unknown keeps a DatBuilder mistake from becoming a broken public route.
             Enum.IsDefined((ConsoleType)console) ? (ConsoleType)console : ConsoleType.Unknown,
@@ -600,6 +589,21 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
             rows.IsDBNull(2) ? null : rows.GetString(2),
             rows.IsDBNull(3) ? null : unchecked((uint)rows.GetInt32(3)),
             rows.IsDBNull(4) ? null : rows.GetString(4));
+
+        // Driven by the statement shape rather than by FieldCount: if Projection ever grows a column,
+        // ordinal 5 would otherwise start feeding some unrelated value into art URLs, silently.
+        return hasArtName && !rows.IsDBNull(5)
+            ? entry with { ArtName = rows.GetString(5) }
+            : entry;
+    }
+
+    /// <summary>Whether a column exists, so an index built before it was added still opens.</summary>
+    private static bool HasColumn(SqliteConnection connection, string table, string column)
+    {
+        using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $column;";
+        command.Parameters.AddWithValue("$column", column);
+        return Convert.ToInt32(command.ExecuteScalar(), CultureInfo.InvariantCulture) > 0;
     }
 
     private (string Version, int RowCount) ReadMeta(SqliteConnection connection)
@@ -684,10 +688,10 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
     private Reader CreateReader()
     {
         var connection = new SqliteConnection(_connectionString);
-        connection.Open();
         try
         {
-            return new Reader(connection);
+            connection.Open();
+            return new Reader(connection, _statements);
         }
         catch
         {
@@ -712,6 +716,44 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         _slots.Dispose();
     }
 
+    /// <summary>
+    /// The four lookup statements, in the shape this particular index file supports.
+    /// <para>
+    /// <c>art_name</c> was added without moving the schema version, because bumping it would make
+    /// every shipped desktop install refuse the next index (see <c>IndexWriter.SchemaVersion</c>).
+    /// The price of that is here: the column's presence is detected rather than assumed, so one
+    /// reader binary serves an index built before it existed and one built after.
+    /// </para>
+    /// </summary>
+    private sealed record Statements(string ByCrc, string BySha1, string BySerial, string ByName)
+    {
+        /// <summary>Whether the statements select <c>art_name</c>, and so whether ordinal 5 exists.</summary>
+        public bool HasArtName { get; private init; }
+
+        public static Statements For(bool hasArtName)
+        {
+            var columns = hasArtName ? Projection + ", art_name" : Projection;
+            var joined = hasArtName
+                ? "e.console, e.name, e.serial, e.crc32, e.sha1, e.art_name"
+                : "e.console, e.name, e.serial, e.crc32, e.sha1";
+
+            return new Statements(
+                $"SELECT {columns} FROM entry WHERE crc32 = $crc LIMIT 1;",
+                $"SELECT {columns} FROM entry WHERE sha1 = $sha1 LIMIT 1;",
+                $"SELECT {columns} FROM entry WHERE console = $console AND serial = $serial LIMIT 1;",
+
+                // $console = 0 (ConsoleType.Unknown) means "every partition"; see the remarks on SearchByName.
+                $"""
+                 SELECT {joined}
+                 FROM entry_fts
+                 JOIN entry e ON e.id = entry_fts.rowid
+                 WHERE entry_fts MATCH $q AND ($console = 0 OR e.console = $console)
+                 ORDER BY bm25(entry_fts)
+                 LIMIT {CandidateLimit};
+                 """) { HasArtName = hasArtName };
+        }
+    }
+
     /// <summary>One connection with all four statements compiled and their parameters bound once.</summary>
     private sealed class Reader : IDisposable
     {
@@ -721,13 +763,13 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         public SqliteCommand BySerial { get; }
         public SqliteCommand ByName { get; }
 
-        public Reader(SqliteConnection connection)
+        public Reader(SqliteConnection connection, Statements statements)
         {
             Connection = connection;
-            ByCrc = Prepared(connection, CrcSql, "$crc");
-            BySha1 = Prepared(connection, Sha1Sql, "$sha1");
-            BySerial = Prepared(connection, SerialSql, "$console", "$serial");
-            ByName = Prepared(connection, NameSql, "$q", "$console");
+            ByCrc = Prepared(connection, statements.ByCrc, "$crc");
+            BySha1 = Prepared(connection, statements.BySha1, "$sha1");
+            BySerial = Prepared(connection, statements.BySerial, "$console", "$serial");
+            ByName = Prepared(connection, statements.ByName, "$q", "$console");
         }
 
         private static SqliteCommand Prepared(SqliteConnection connection, string sql, params string[] parameters)

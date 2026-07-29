@@ -353,6 +353,7 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
             Serial = serial,
             Title = detection.Title,
             CanonicalName = entry.Name,
+            ArtName = entry.ArtName,
             RegionId = detection.RegionId,
             MatchMethod = method,
             Tag = tag

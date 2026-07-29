@@ -31,4 +31,13 @@ public sealed record BuildOptions
 
     /// <summary>Fail the build when any source is missing, rather than warning and continuing.</summary>
     public bool Strict { get; init; }
+
+    /// <summary>
+    /// Directory of libretro-thumbnails file listings, one text file per console. An HTTP cache rather
+    /// than a snapshot, on the same terms as <see cref="CacheDirectory"/>: an online build refetches
+    /// and overwrites it, and it answers only when GitHub is unreachable or rate-limits us. A build
+    /// with <see cref="InputDirectory"/> set reads it and never touches the network, which is what
+    /// makes that build reproducible. Defaults to <see cref="CacheDirectory"/>.
+    /// </summary>
+    public string? ThumbnailCacheDirectory { get; init; }
 }

@@ -675,6 +675,12 @@ footer .legal {
     margin-top: 6px;
 }
 
+/* The clear buttons sit directly above the next section's heading, which read as cramped. Spacing the
+   heading rather than the row itself keeps the panels whose actions come last unchanged. */
+.admin-actions + h2 {
+    margin-top: 28px;
+}
+
 .admin-log {
     background: var(--screen);
     color: var(--screen-text);

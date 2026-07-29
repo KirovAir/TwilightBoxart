@@ -47,6 +47,11 @@ public sealed class IndexBuilder(BuildOptions options, Action<string> log)
 
         var ordered = EntryDeduplicator.Order(deduped);
 
+        log("");
+        log("Resolving box art names against libretro-thumbnails..");
+        var (named, unresolvedArt) = await ResolveArtNamesAsync(ordered, ct);
+        ordered = named;
+
         // "local" rather than the input path: a machine-specific directory has no business inside a
         // file that gets served and copied around.
         _provenance["attribution"] = "Identification data derived from No-Intro DAT files " +
@@ -69,7 +74,8 @@ public sealed class IndexBuilder(BuildOptions options, Action<string> log)
             // non-discriminating ones.
             Coverage = BuildReport.Measure(ordered),
             SourceCoverage = BuildReport.MeasureBySource(parsed),
-            MissingSources = missing
+            MissingSources = missing,
+            UnresolvedArtConsoles = unresolvedArt
         };
     }
 
@@ -111,6 +117,109 @@ public sealed class IndexBuilder(BuildOptions options, Action<string> log)
         }
 
         return (entries, missing);
+    }
+
+    /// <summary>
+    /// Fills in <see cref="DatEntry.ArtName"/> for every row whose console has a thumbnails repository.
+    /// <para>
+    /// Doing this at build time rather than per request is the whole point. The two naming schemes have
+    /// drifted apart, and discovering that at runtime would mean tens of thousands of speculative 404s
+    /// per library scan, each one indistinguishable from "this game genuinely has no cover".
+    /// </para>
+    /// </summary>
+    private async Task<(IReadOnlyList<DatEntry> Entries, IReadOnlyList<ConsoleType> Unresolved)> ResolveArtNamesAsync(
+        IReadOnlyList<DatEntry> entries, CancellationToken ct)
+    {
+        // An --input build is an offline build: it must not silently depend on GitHub being reachable,
+        // and it has to produce the same index twice in a row for the same directory.
+        var offline = options.InputDirectory is not null;
+        using var fetcher = new ThumbnailFetcher(options.ThumbnailCacheDirectory ?? options.CacheDirectory, offline);
+        var indexes = new Dictionary<ConsoleType, ThumbnailIndex>();
+        var unresolved = new List<ConsoleType>();
+
+        foreach (var console in entries.Select(e => e.Console).Distinct().Order())
+        {
+            // DSi is the one console libretro-thumbnails does not usefully cover (13 covers against a
+            // library in the thousands), and LibRetroArtSource declines it outright; GameTDB serves it
+            // by title id instead. Asking would cost a request to learn nothing.
+            if (console is ConsoleType.Unknown or ConsoleType.NintendoDsi)
+            {
+                continue;
+            }
+
+            ThumbnailListing? listing;
+            try
+            {
+                listing = await fetcher.FetchAsync(console, ct);
+            }
+            catch (Exception ex) when (ex is IOException or InvalidDataException)
+            {
+                // One console's listing going bad must not cost the other twenty-four their names, and
+                // must not take the build down. Same reasoning as the DAT loop above.
+                log($"  ! {console.Slug(),-5} {ex.Message}");
+                listing = null;
+            }
+
+            if (listing is null)
+            {
+                // Build on regardless: a console without resolved names still serves every cover whose
+                // canonical name happens to match, and half an index beats none. But this must never be
+                // quiet. Unresolved rows are indistinguishable from "this console has no art", which is
+                // the failure the whole step exists to end, so it is recorded in three places that
+                // outlive the build log: the result, the report, and the artifact's own provenance.
+                log($"  ! {console.Slug(),-5} NO THUMBNAIL LISTING - names unresolved for this console");
+                unresolved.Add(console);
+                _provenance[$"thumbnails:{console.Slug()}"] = "unavailable";
+                continue;
+            }
+
+            // LibRetroArtSource addresses covers on "master" (see its BaseUrl). Resolving names against
+            // a listing from a different branch would publish an index whose art coverage looks healthy
+            // and whose every request 404s: the same whole-console silent failure this step exists to
+            // stop, just moved from the name to the branch.
+            if (!string.Equals(listing.Branch, "master", StringComparison.Ordinal))
+            {
+                log($"  ! {console.Slug(),-5} listed from '{listing.Branch}', but covers are fetched from " +
+                    "'master'; requests will fall through to the mirror");
+            }
+
+            // Offline is the asked-for behaviour for an --input build, so only an online build falling
+            // back to disk is worth remarking on: there, the cache is standing in for an upstream we
+            // could not reach, and the listing may be months old.
+            if (listing.FromCache && !offline)
+            {
+                log($"  - {console.Slug(),-5} upstream unreachable, using the cached listing");
+            }
+
+            indexes[console] = new ThumbnailIndex(listing.FileNames);
+            _provenance[$"thumbnails:{console.Slug()}"] =
+                (listing.FromCache && !offline ? "cached " : "") + $"{listing.Branch}@{listing.TreeSha}";
+        }
+
+        var resolved = new List<DatEntry>(entries.Count);
+        var hits = new Dictionary<ConsoleType, int>();
+        foreach (var entry in entries)
+        {
+            var match = indexes.TryGetValue(entry.Console, out var index) ? index.Resolve(entry.Name) : null;
+            if (match is null)
+            {
+                resolved.Add(entry);
+                continue;
+            }
+
+            hits[entry.Console] = hits.GetValueOrDefault(entry.Console) + 1;
+            resolved.Add(entry with { ArtName = match.FileName, ArtTier = match.Tier });
+        }
+
+        foreach (var (console, index) in indexes)
+        {
+            var total = entries.Count(e => e.Console == console);
+            var found = hits.GetValueOrDefault(console);
+            log(string.Create(CultureInfo.InvariantCulture,
+                $"  {console.Slug(),-5} {found,6:N0} / {total,6:N0} rows have art ({(double)found / total:P1}), {index.Count:N0} covers listed"));
+        }
+
+        return (resolved, unresolved);
     }
 
     private (List<DatEntry> Entries, List<string> Missing) ReadLocalDirectory(DatCatalog catalog, string directory)

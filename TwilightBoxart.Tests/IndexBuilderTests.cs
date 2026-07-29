@@ -415,7 +415,11 @@ public class IndexBuilderTests
         // Column order and affinities are part of the contract with SqliteMetadataIndex.
         var columns = Query(connection, "SELECT name || ':' || type FROM pragma_table_info('entry');");
         CollectionAssert.AreEqual(
-            new[] { "id:INTEGER", "console:INTEGER", "name:TEXT", "serial:TEXT", "crc32:INTEGER", "sha1:TEXT", "status:TEXT" },
+            new[]
+            {
+                "id:INTEGER", "console:INTEGER", "name:TEXT", "serial:TEXT", "crc32:INTEGER", "sha1:TEXT",
+                "status:TEXT", "art_name:TEXT", "art_tier:INTEGER"
+            },
             columns);
 
         var indexes = Query(connection,

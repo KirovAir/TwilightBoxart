@@ -28,6 +28,17 @@ public sealed record DatEntry
 
     /// <summary>Which DAT this came from. Diagnostics only; never written to the index.</summary>
     public string SourceName { get; init; } = "";
+
+    /// <summary>
+    /// The libretro-thumbnails file name this title's box art lives under, when the build could find
+    /// one. Null means no cover exists upstream, and unlike a failed string comparison at request time
+    /// that is an answer rather than a guess. Resolved by <see cref="ThumbnailIndex"/>.
+    /// </summary>
+    public string? ArtName { get; init; }
+
+    /// <summary>How <see cref="ArtName"/> was arrived at. Kept so a bad match can be audited straight
+    /// out of a shipped index, without a rebuild.</summary>
+    public ArtMatchTier ArtTier { get; init; }
 }
 
 /// <summary>

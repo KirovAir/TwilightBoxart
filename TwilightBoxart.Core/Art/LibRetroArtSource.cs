@@ -73,13 +73,19 @@ public sealed class LibRetroArtSource(
             return null;
         }
 
-        var url = BuildUrl(identity.ConsoleType, identity.CanonicalName);
+        // The name the art is FILED under, which is not always the canonical one: the thumbnail repo is
+        // a decade of hand-added files following no single No-Intro vintage, so "Fidgetts, The (Japan)
+        // (En)" lives there as "Fidgetts, The (Japan)". The index resolves that at build time; falling
+        // back to the canonical name keeps this working against an index built before the column existed.
+        var artName = identity.ArtName ?? identity.CanonicalName;
+
+        var url = BuildUrl(identity.ConsoleType, artName);
         if (url is null)
         {
             return null;
         }
 
-        var mirrorUrl = BuildMirrorUrl(identity.ConsoleType, identity.CanonicalName);
+        var mirrorUrl = BuildMirrorUrl(identity.ConsoleType, artName);
         try
         {
             var blob = await TryGetAsync(url, ct);

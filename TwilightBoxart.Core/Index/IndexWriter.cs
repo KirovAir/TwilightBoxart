@@ -16,7 +16,17 @@ namespace TwilightBoxart.Core.Index;
 /// </summary>
 public static class IndexWriter
 {
-    /// <summary>Written to <c>meta.schema</c>. Readers should refuse a value they were not built for.</summary>
+    /// <summary>
+    /// Written to <c>meta.schema</c>. Readers should refuse a value they were not built for.
+    /// <para>
+    /// <c>art_name</c> and <c>art_tier</c> were added WITHOUT moving this, deliberately. Both are
+    /// nullable columns nobody's SELECT list mentions, so a reader that predates them is unaffected -
+    /// whereas bumping the version would make every desktop install already in the wild refuse the
+    /// next index outright, because <c>SqliteMetadataIndex.SupportedSchemaVersion</c> is compiled into
+    /// the client that downloads this file. Move this only for a change that genuinely breaks an old
+    /// reader, and let readers feature-detect additive columns instead.
+    /// </para>
+    /// </summary>
     public const int SchemaVersion = 1;
 
     public const string DefaultFileName = "nointro.db";
@@ -44,7 +54,9 @@ public static class IndexWriter
                                         serial    TEXT    NULL,
                                         crc32     INTEGER NULL,
                                         sha1      TEXT    NULL,
-                                        status    TEXT    NULL
+                                        status    TEXT    NULL,
+                                        art_name  TEXT    NULL,
+                                        art_tier  INTEGER NULL
                                     );
                                     """;
 
@@ -136,7 +148,8 @@ public static class IndexWriter
         using var transaction = connection.BeginTransaction();
         using var command = connection.CreateCommand();
         command.CommandText =
-            "INSERT INTO entry (id, console, name, serial, crc32, sha1, status) VALUES ($id, $console, $name, $serial, $crc32, $sha1, $status);";
+            "INSERT INTO entry (id, console, name, serial, crc32, sha1, status, art_name, art_tier) " +
+            "VALUES ($id, $console, $name, $serial, $crc32, $sha1, $status, $artName, $artTier);";
 
         var id = command.Parameters.Add("$id", SqliteType.Integer);
         var console = command.Parameters.Add("$console", SqliteType.Integer);
@@ -145,6 +158,8 @@ public static class IndexWriter
         var crc32 = command.Parameters.Add("$crc32", SqliteType.Integer);
         var sha1 = command.Parameters.Add("$sha1", SqliteType.Text);
         var status = command.Parameters.Add("$status", SqliteType.Text);
+        var artName = command.Parameters.Add("$artName", SqliteType.Text);
+        var artTier = command.Parameters.Add("$artTier", SqliteType.Integer);
         command.Prepare();
 
         for (var i = 0; i < entries.Count; i++)
@@ -159,6 +174,8 @@ public static class IndexWriter
             crc32.Value = entry.Crc32 is { } crc ? unchecked((int)crc) : DBNull.Value;
             sha1.Value = (object?)entry.Sha1 ?? DBNull.Value;
             status.Value = (object?)entry.Status ?? DBNull.Value;
+            artName.Value = (object?)entry.ArtName ?? DBNull.Value;
+            artTier.Value = entry.ArtName is null ? DBNull.Value : (int)entry.ArtTier;
             command.ExecuteNonQuery();
         }
 

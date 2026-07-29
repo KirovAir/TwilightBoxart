@@ -90,6 +90,15 @@ public sealed record RomIdentity
     /// <summary>Canonical No-Intro name, when the index matched.</summary>
     public string? CanonicalName { get; init; }
 
+    /// <summary>
+    /// The name this title's box art is published under, which is not always the canonical one:
+    /// libretro-thumbnails follows no single No-Intro vintage, so "Fidgetts, The (Japan) (En)"
+    /// is filed there as "Fidgetts, The (Japan)". Null when the index could not resolve one, and the
+    /// art sources then fall back to <see cref="CanonicalName"/>. Never used to build the art KEY -
+    /// see <see cref="Key"/>, which is a public URL and a cache key and must not move.
+    /// </summary>
+    public string? ArtName { get; init; }
+
     /// <summary>Region character from the header (NDS/DSi byte 0x0F), when present.</summary>
     public char? RegionId { get; init; }
 
@@ -414,7 +423,15 @@ public sealed record IndexEntry(
     string Name,
     string? Serial,
     uint? Crc32,
-    string? Sha1);
+    string? Sha1)
+{
+    /// <summary>
+    /// The libretro-thumbnails file name carrying this title's box art, resolved at index-build time
+    /// by <c>ThumbnailIndex</c>. Null both when the index predates the column and when no cover
+    /// exists upstream; either way the art sources fall back to <see cref="Name"/>.
+    /// </summary>
+    public string? ArtName { get; init; }
+}
 
 /// <summary>
 /// Renders upstream art for the options' <see cref="RenderTarget"/>: a TWiLightMenu-safe PNG, or

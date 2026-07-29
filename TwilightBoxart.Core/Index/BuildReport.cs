@@ -7,7 +7,16 @@ namespace TwilightBoxart.Core.Index;
 /// <summary>Per-console row counts and how many of them carry each identifier.</summary>
 public sealed record ConsoleCoverage(ConsoleType Console, int Rows, int WithSerial, int WithCrc32, int WithSha1)
 {
+    /// <summary>
+    /// Rows that resolved to a libretro-thumbnails file. Worth reporting because nothing else would
+    /// ever have told you it was wrong: before this was measured, NES box art coverage sat at 34% and
+    /// every one of the missing two thirds looked, from the outside, like a game with no cover.
+    /// </summary>
+    public int WithArt { get; init; }
+
     public double SerialPercent => Percentage(WithSerial, Rows);
+
+    public double ArtPercent => Percentage(WithArt, Rows);
 
     public double Crc32Percent => Percentage(WithCrc32, Rows);
 
@@ -43,6 +52,15 @@ public sealed record BuildResult
 
     /// <summary>Sources that could not be fetched. Non-empty means the index is thinner than it should be.</summary>
     public required IReadOnlyList<string> MissingSources { get; init; }
+
+    /// <summary>
+    /// Consoles whose box art listing could not be obtained, so none of their rows carries a resolved
+    /// art name. They fall back to canonical-name matching, which is what the code did before this
+    /// existed, so nothing breaks; they just quietly lose the recovered covers. Surfaced here because
+    /// a build log scrolls away and "no art for this whole console" must not be something you only
+    /// find out from users.
+    /// </summary>
+    public IReadOnlyList<ConsoleType> UnresolvedArtConsoles { get; init; } = [];
 }
 
 /// <summary>
@@ -95,7 +113,10 @@ public static class BuildReport
                 g.Count(),
                 g.Count(e => e.Serial is not null),
                 g.Count(e => e.Crc32 is not null),
-                g.Count(e => e.Sha1 is not null)))
+                g.Count(e => e.Sha1 is not null))
+            {
+                WithArt = g.Count(e => e.ArtName is not null)
+            })
             .OrderBy(c => (int)c.Console)
             .ToList();
     }
@@ -119,23 +140,26 @@ public static class BuildReport
 
         text.AppendLine();
         text.AppendLine("Index contents, by console");
-        text.AppendLine("  console        rows    serial %     crc32 %      sha1 %");
-        text.AppendLine("  ---------  --------  ----------  ----------  ----------");
+        text.AppendLine("  console        rows    serial %     crc32 %      sha1 %       art %");
+        text.AppendLine("  ---------  --------  ----------  ----------  ----------  ----------");
 
         foreach (var row in result.Coverage)
         {
             text.AppendLine(string.Create(invariant,
-                $"  {row.Console.Slug(),-9}  {row.Rows,8:N0}  {row.SerialPercent,9:F1}%  {row.Crc32Percent,9:F1}%  {row.Sha1Percent,9:F1}%"));
+                $"  {row.Console.Slug(),-9}  {row.Rows,8:N0}  {row.SerialPercent,9:F1}%  {row.Crc32Percent,9:F1}%  " +
+                $"{row.Sha1Percent,9:F1}%  {row.ArtPercent,9:F1}%"));
         }
 
         var totals = result.Coverage.Aggregate(
-            (Rows: 0, Serial: 0, Crc: 0, Sha: 0),
-            (acc, c) => (acc.Rows + c.Rows, acc.Serial + c.WithSerial, acc.Crc + c.WithCrc32, acc.Sha + c.WithSha1));
+            (Rows: 0, Serial: 0, Crc: 0, Sha: 0, Art: 0),
+            (acc, c) => (acc.Rows + c.Rows, acc.Serial + c.WithSerial, acc.Crc + c.WithCrc32,
+                acc.Sha + c.WithSha1, acc.Art + c.WithArt));
 
-        text.AppendLine("  ---------  --------  ----------  ----------  ----------");
+        text.AppendLine("  ---------  --------  ----------  ----------  ----------  ----------");
         text.AppendLine(string.Create(invariant,
             $"  {"total",-9}  {totals.Rows,8:N0}  {ConsoleCoverage.Percentage(totals.Serial, totals.Rows),9:F1}%  " +
-            $"{ConsoleCoverage.Percentage(totals.Crc, totals.Rows),9:F1}%  {ConsoleCoverage.Percentage(totals.Sha, totals.Rows),9:F1}%"));
+            $"{ConsoleCoverage.Percentage(totals.Crc, totals.Rows),9:F1}%  {ConsoleCoverage.Percentage(totals.Sha, totals.Rows),9:F1}%  " +
+            $"{ConsoleCoverage.Percentage(totals.Art, totals.Rows),9:F1}%"));
 
         text.AppendLine();
         text.AppendLine("Serial coverage by source, as published in the DAT (baseline)");
@@ -178,6 +202,17 @@ public static class BuildReport
             foreach (var missing in result.MissingSources)
             {
                 text.AppendLine($"  - {missing}");
+            }
+        }
+
+        if (result.UnresolvedArtConsoles.Count > 0)
+        {
+            text.AppendLine();
+            text.AppendLine(string.Create(invariant,
+                $"Box art names unresolved ({result.UnresolvedArtConsoles.Count} console(s)), listing unreachable:"));
+            foreach (var console in result.UnresolvedArtConsoles)
+            {
+                text.AppendLine($"  - {console.Name()}");
             }
         }
 
