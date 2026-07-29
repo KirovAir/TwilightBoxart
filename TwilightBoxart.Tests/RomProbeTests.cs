@@ -335,6 +335,97 @@ public class RomProbeTests
         Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, wantHeader: false));
     }
 
+    // lz77 (Nintendo-LZ77-wrapped SNES/Mega Drive/etc., the ".lz77.<ext>" convention nds-bootstrap loads)
+
+    [TestMethod]
+    public async Task Lz77RomProbe_DecompressesAndIdentifiesAsThePlainRom()
+    {
+        // A non-multiple-of-8 length exercises the partial final flag group and the exact-length stop.
+        var rom = MakeRawRom(size: 5003, seed: 21);
+        var packed = Lz77PackLiterals(rom);
+
+        await using var stream = new MemoryStream(packed, writable: false);
+        var result = await new Lz77RomProbe().ProbeAsync(stream, "game.lz77.sfc", wantHeader: true);
+
+        Assert.IsNotNull(result);
+        Assert.AreEqual(ContainerKind.Lz77, result.Container);
+
+        // The identifying hash is of the INFLATED ROM - byte-identical to the plain .sfc, so it matches
+        // the very No-Intro entry the uncompressed cart would.
+        Assert.AreEqual(Crc32.HashToUInt32(rom), result.Crc32);
+        Assert.AreEqual(rom.Length, result.UncompressedSize);
+
+        // The cover has to be named for the file ON THE CARD, not the stripped inner name, or the menu
+        // never finds it.
+        Assert.AreEqual("game.lz77.sfc", result.InnerName);
+
+        // The tally is the compressed bytes actually read, not the larger inflated stream.
+        Assert.AreEqual(packed.Length, result.BytesRead);
+        Assert.IsNotNull(result.Header);
+    }
+
+    [TestMethod]
+    public async Task RomProbeService_RoutesLz77Files_AndLeavesPlainRomsAlone()
+    {
+        var rom = MakeRawRom(size: 4096, seed: 22);
+
+        // A compressed Mega Drive ROM routes to the LZ77 probe and identifies off the inflated bytes.
+        var lz77Path = await WriteTempAsync("game.lz77.gen", Lz77PackLiterals(rom));
+        var compressed = await new RomProbeService().ProbeFileAsync(lz77Path, wantHeader: false);
+
+        Assert.IsNotNull(compressed);
+        Assert.AreEqual(ContainerKind.Lz77, compressed.Container);
+        Assert.AreEqual(Crc32.HashToUInt32(rom), compressed.Crc32);
+        Assert.AreEqual("game.lz77.gen", compressed.InnerName);
+
+        // The SAME bytes as a plain .gen still route to the loose probe, untouched by the new branch:
+        // the two produce the same CRC, so the compressed cart resolves to the same game as the plain one.
+        var plainPath = await WriteTempAsync("game.gen", rom);
+        var plain = await new RomProbeService().ProbeFileAsync(plainPath, wantHeader: false);
+
+        Assert.IsNotNull(plain);
+        Assert.AreEqual(ContainerKind.Loose, plain.Container);
+        Assert.AreEqual(Crc32.HashToUInt32(rom), plain.Crc32);
+    }
+
+    [TestMethod]
+    public void Lz77RomProbe_TryDecompress_DecodesLiteralsAndBackReferences()
+    {
+        // All literals: header (length 5), one flag byte of zeros, then the five bytes.
+        byte[] literals = [0x10, 0x05, 0x00, 0x00, 0x00, (byte)'H', (byte)'E', (byte)'L', (byte)'L', (byte)'O'];
+        Assert.IsTrue(Lz77RomProbe.TryDecompress(literals, out var hello));
+        Assert.AreEqual("HELLO", Encoding.ASCII.GetString(hello));
+
+        // "AAAA": a literal 'A', then a 3-byte back-reference at distance 1 (flag bit 1 set = 0x40).
+        byte[] backref = [0x10, 0x04, 0x00, 0x00, 0x40, (byte)'A', 0x00, 0x00];
+        Assert.IsTrue(Lz77RomProbe.TryDecompress(backref, out var aaaa));
+        Assert.AreEqual("AAAA", Encoding.ASCII.GetString(aaaa));
+    }
+
+    [TestMethod]
+    public void Lz77RomProbe_TryDecompress_RejectsMalformedStreams()
+    {
+        // Wrong type byte.
+        Assert.IsFalse(Lz77RomProbe.TryDecompress([0x11, 0x04, 0x00, 0x00, 0x00, 1, 2, 3, 4], out _));
+        // Declares eight bytes, but the input runs out first.
+        Assert.IsFalse(Lz77RomProbe.TryDecompress([0x10, 0x08, 0x00, 0x00, 0x00, 1, 2, 3], out _));
+        // First token is a back-reference, with nothing decoded to point back at.
+        Assert.IsFalse(Lz77RomProbe.TryDecompress([0x10, 0x04, 0x00, 0x00, 0x80, 0x00, 0x00], out _));
+        // Too short to even hold a header.
+        Assert.IsFalse(Lz77RomProbe.TryDecompress([0x10, 0x04], out _));
+    }
+
+    [TestMethod]
+    public async Task RomProbeService_CorruptLz77_ReturnsNullWithoutThrowing()
+    {
+        // The right name, but the bytes are not a valid LZ77 stream. A scan skips it, never throws.
+        var junk = new byte[1024];
+        junk[0] = 0xFF;
+        var path = await WriteTempAsync("broken.lz77.sfc", junk);
+
+        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, wantHeader: true));
+    }
+
     // entry selection
 
     [TestMethod]
@@ -425,6 +516,41 @@ public class RomProbeTests
         Assert.AreEqual("NEWSUPERMARI", Encoding.ASCII.GetString(header, 0x00, 12));
         Assert.AreEqual("A2DE", Encoding.ASCII.GetString(header, 0x0C, 4));
         Assert.AreEqual(0x24FFAE51u, BinaryPrimitives.ReadUInt32BigEndian(header.AsSpan(0xC0)));
+    }
+
+    /// <summary>Deterministic random bytes standing in for a headerless ROM (SNES/Mega Drive identify by CRC32).</summary>
+    private static byte[] MakeRawRom(int size, int seed)
+    {
+        var rom = new byte[size];
+        new Random(seed).NextBytes(rom);
+        return rom;
+    }
+
+    /// <summary>
+    /// Wraps bytes in a valid Nintendo LZ77 (type 0x10) stream using literal tokens only - the simplest
+    /// stream the decoder must accept, and enough to prove the round trip end to end. The back-reference
+    /// path is asserted separately against hand-built vectors.
+    /// </summary>
+    private static byte[] Lz77PackLiterals(byte[] data)
+    {
+        var output = new List<byte>(data.Length + (data.Length / 8) + 4)
+        {
+            0x10,
+            (byte)data.Length,
+            (byte)(data.Length >> 8),
+            (byte)(data.Length >> 16),
+        };
+
+        for (var i = 0; i < data.Length; i += 8)
+        {
+            output.Add(0x00); // eight literal flags; the decoder stops at the declared length
+            for (var j = i; j < i + 8 && j < data.Length; j++)
+            {
+                output.Add(data[j]);
+            }
+        }
+
+        return output.ToArray();
     }
 
     private static byte[] BuildZip(params (string Name, byte[] Data, CompressionLevel Level)[] entries)

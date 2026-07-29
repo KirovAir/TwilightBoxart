@@ -26,6 +26,7 @@
 #include "music_bin.h"
 #include "tls.h"
 #include "credit_font.h"
+#include "lz77.h"
 
 /* Where the backend lives when the ini does not say otherwise. Nobody should ever have to
    configure anything - but the ini written on first run carries backend_host / backend_port /
@@ -702,18 +703,26 @@ static void fetch_art(const char *path, const char *name)
     static char encoded_name[512];
     url_encode(name, encoded_name, sizeof(encoded_name));
 
+    /* An ".lz77.<ext>" ROM is Nintendo-LZ77 compressed (SNES/Mega Drive/...); its identity comes from
+       the CRC32 of the DECOMPRESSED ROM, computed on the 404 retry below. The bytes on disk are the
+       LZ77 wrapper - not a ROM header the server could read, and these consoles carry no header serial
+       anyway - so no header sample is sent for them (and none is decompressed just to be discarded). */
+    bool is_lz77 = is_lz77_name(name);
+
     static unsigned char header[HEADER_SAMPLE];
     static char header_b64[((HEADER_SAMPLE + 2) / 3) * 4 + 1];
     static char encoded_header[sizeof(header_b64) * 3];
     encoded_header[0] = '\0';
 
-    FILE *f = fopen(path, "rb");
-    if (f) {
-        size_t got = fread(header, 1, sizeof(header), f);
-        fclose(f);
-        if (got > 0) {
-            base64_encode(header, got, header_b64);
-            url_encode(header_b64, encoded_header, sizeof(encoded_header));
+    if (!is_lz77) {
+        FILE *f = fopen(path, "rb");
+        if (f) {
+            size_t got = fread(header, 1, sizeof(header), f);
+            fclose(f);
+            if (got > 0) {
+                base64_encode(header, got, header_b64);
+                url_encode(header_b64, encoded_header, sizeof(encoded_header));
+            }
         }
     }
 
@@ -732,10 +741,15 @@ static void fetch_art(const char *path, const char *name)
     bool crc32_known = false;
     u32 crc32 = 0;
     if (status == 404 && !g_config.quick_scan && !is_ds_ext(file_ext(name))) {
-        scan_dashboard(name, "Calculating CRC32...");
+        scan_dashboard(name, is_lz77 ? "Decompressing LZ77..." : "Calculating CRC32...");
         bool cancelled;
         u32 size;
-        if (file_crc32(path, &crc32, &size, &cancelled)) {
+        /* For a .lz77 ROM the identifying hash is of the DECOMPRESSED bytes, streamed so the ROM is
+           never held whole; for everything else it is the plain whole-file CRC32. */
+        bool have_crc = is_lz77
+            ? lz77_decode(path, &crc32, &size, &cancelled)
+            : file_crc32(path, &crc32, &size, &cancelled);
+        if (have_crc) {
             crc32_known = true;
             size_t length = strlen(query);
             snprintf(query + length, sizeof(query) - length, "&crc32=%08lX&size=%lu",

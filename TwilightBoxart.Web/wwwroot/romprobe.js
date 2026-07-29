@@ -62,6 +62,54 @@ export async function crc32File(file, signal) {
     return crc;
 }
 
+/* Nintendo LZ77 */
+
+/** The header's 24-bit length caps a ROM here anyway; this is the guard against a hostile length field. */
+const LZ77_MAX = 16 * 1024 * 1024;
+
+/**
+ * Decompress a Nintendo LZ77 (LZSS, type 0x10) blob to the raw ROM, or return null when `bytes` is not
+ * a well-formed stream (truncated, wrong type byte, a back-reference before the start).
+ *
+ * This is NOT deflate. DEFLATE is LZ77 + Huffman, bit-packed; this is plain byte-aligned LZSS with a
+ * 4-byte header (0x10, then a 24-bit little-endian length), the format the GBA/DS BIOS decompresses in
+ * hardware and the DS scene wraps SNES/Mega Drive/etc. ROMs in as "Game.lz77.sfc". Browsers have no
+ * native decoder for it (DecompressionStream is deflate/gzip only), so here it is. Same decode as
+ * Lz77RomProbe.TryDecompress in TwilightBoxart.Core, bounds-checked so a hostile file returns null
+ * rather than throwing.
+ */
+export function lz77Decompress(bytes) {
+    if (bytes.length < 4 || bytes[0] !== 0x10) return null;
+
+    const length = bytes[1] | (bytes[2] << 8) | (bytes[3] << 16);
+    if (length <= 0 || length > LZ77_MAX) return null;
+
+    const out = new Uint8Array(length);
+    let src = 4, dst = 0;
+
+    while (dst < length) {
+        if (src >= bytes.length) return null;
+        let flags = bytes[src++];
+
+        for (let bit = 0; bit < 8 && dst < length; bit++, flags <<= 1) {
+            if ((flags & 0x80) === 0) {
+                if (src >= bytes.length) return null;
+                out[dst++] = bytes[src++];
+            } else {
+                if (src + 1 >= bytes.length) return null;
+                const high = bytes[src++], low = bytes[src++];
+                const distance = (((high & 0x0F) << 8) | low) + 1;
+                const run = (high >> 4) + 3;
+                // A distance past the start, or a run past the declared end, is a corrupt stream.
+                if (distance > dst || dst + run > length) return null;
+                for (let i = 0; i < run; i++, dst++) out[dst] = out[dst - distance];
+            }
+        }
+    }
+
+    return out;
+}
+
 /* ZIP */
 
 /**

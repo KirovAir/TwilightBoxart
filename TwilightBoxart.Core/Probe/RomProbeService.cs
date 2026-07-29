@@ -23,6 +23,7 @@ public sealed class RomProbeService : IRomProbe
     private static readonly byte[] ZipMagic = [0x50, 0x4B];
 
     private readonly LooseRomProbe _loose;
+    private readonly Lz77RomProbe _lz77;
     private readonly ZipRomProbe _zip = new();
     private readonly SevenZipRomProbe _sevenZip = new();
     private readonly ILogger _logger;
@@ -33,6 +34,7 @@ public sealed class RomProbeService : IRomProbe
     {
         _logger = logger ?? NullLogger<RomProbeService>.Instance;
         _loose = new LooseRomProbe(looseCrcByteBudget);
+        _lz77 = new Lz77RomProbe(looseCrcByteBudget);
     }
 
     public bool CanHandle(string path) => SupportedFiles.IsScannable(path);
@@ -140,6 +142,15 @@ public sealed class RomProbeService : IRomProbe
         if (_zip.CanHandle(path))
         {
             return (_zip, read);
+        }
+
+        // Before the loose fallback: a ".lz77.sfc" and friends are a bare ROM under a Nintendo-LZ77
+        // wrapper. This branch is inert for every other file (it needs the ".lz77." marker), so a plain
+        // ROM still routes to _loose exactly as before; without it the loose probe would hash the
+        // still-compressed bytes and never identify the game.
+        if (_lz77.CanHandle(path))
+        {
+            return (_lz77, read);
         }
 
         if (_loose.CanHandle(path))

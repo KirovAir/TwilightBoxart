@@ -37,6 +37,9 @@ public enum ContainerKind
     Loose = 0,
     Zip,
     SevenZip,
+
+    /// <summary>A bare ROM under a Nintendo-LZ77 wrapper (<c>Game.lz77.sfc</c>); see <see cref="Lz77RomProbe"/>.</summary>
+    Lz77,
 }
 
 /// <summary>Reads identification data out of a ROM container as cheaply as possible.</summary>

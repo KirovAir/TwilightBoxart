@@ -1,7 +1,7 @@
 // scan.js: what counts as a ROM, walking the card (File System Access handles or a
 // webkitdirectory FileList, both normalised to { name, path, getFile() }), and probing each one.
 
-import { probeZip, probe7z, zipEntryHeader, sevenZipEntryHeader, crc32File, CONST } from './romprobe.js';
+import { probeZip, probe7z, zipEntryHeader, sevenZipEntryHeader, crc32, crc32File, lz77Decompress, CONST } from './romprobe.js';
 
 /**
  * What a scan opens, rendered into the page by Index.cshtml straight from SupportedFiles. Hand-copied
@@ -40,6 +40,22 @@ function extname(name) {
 export const isRom = (name) => ROM_EXTENSIONS.has(extname(name));
 const isArchive = (name) => ARCHIVE_EXTENSIONS.has(extname(name));
 export const isScannable = (name) => isRom(name) || isArchive(name);
+
+/**
+ * A Nintendo-LZ77-wrapped ROM: "Game.lz77.sfc". The inner extension is the real console - which is why
+ * extname()/isRom() already treat these as .sfc/.gen/... and the walk picks them up - while the ".lz77"
+ * infix means the bytes are LZSS-0x10 compressed. Only the consoles nds-bootstrap decompresses on-device
+ * qualify (its hb/arm9/source/main.cpp), matching Lz77RomProbe in Core, so a cover we make is one the
+ * menu can actually use. Largest compressed ROM we will read into memory to inflate.
+ */
+const LZ77_EXTENSIONS = new Set(['.sfc', '.smc', '.gen', '.md', '.sms', '.gg', '.pce']);
+const LZ77_MAX_COMPRESSED = 24 * 1024 * 1024;
+function isLz77(name) {
+    const ext = extname(name);
+    if (!LZ77_EXTENSIONS.has(ext)) return false;
+    const base = name.slice(name.lastIndexOf('/') + 1, name.length - ext.length);
+    return base.toLowerCase().endsWith('.lz77');
+}
 
 /* walking */
 
@@ -196,16 +212,33 @@ export async function probeFile(file, fileName, wantHeader = false) {
         };
     }
 
+    if (isLz77(fileName)) {
+        // Nintendo LZ77 (LZSS-0x10). These ROMs are a few MB, so inflate the whole thing and identify
+        // off the raw bytes: the CRC32 of the decompressed ROM is the one No-Intro recorded, so an
+        // ".lz77.sfc" resolves to the exact same game as its plain ".sfc" twin. The cover is keyed on
+        // the on-card name (innerName = fileName), which is what the launcher looks the art up by.
+        if (file.size > LZ77_MAX_COMPRESSED) {
+            return { ok: false, container: 'lz77', reason: 'file too large to be a compressed ROM' };
+        }
+        const rom = lz77Decompress(new Uint8Array(await file.arrayBuffer()));
+        if (!rom) return { ok: false, container: 'lz77', reason: 'not a valid LZ77 stream' };
+        return {
+            ok: true, container: 'lz77', innerName: fileName, size: rom.length,
+            crc32: crc32(rom), header: rom.slice(0, Math.min(CONST.HDR_WANT, rom.length)),
+        };
+    }
+
     // Loose ROM. No container header to read, so the 512-byte ROM header is the cheap path, plus a
     // full-read CRC32. Mirrors LooseRomProbe in Core: the size budget applies only where a header
     // title id makes the hash redundant, which is DS and DSi and nothing else. Everything else is
     // hashed whatever its size, or the biggest SNES and N64 romhacks arrive with nothing to match on.
     const want = Math.min(CONST.HDR_WANT, file.size);
     const header = new Uint8Array(await file.slice(0, want).arrayBuffer());
-    const crc32 = !hasTitleId(fileName) || file.size <= CRC_BYTE_BUDGET ? await crc32File(file) : null;
+    // Named `crc` rather than `crc32` so it does not shadow the imported crc32() across this function.
+    const crc = !hasTitleId(fileName) || file.size <= CRC_BYTE_BUDGET ? await crc32File(file) : null;
     return {
         ok: true, container: 'loose', innerName: fileName,
-        size: file.size, crc32, header,
+        size: file.size, crc32: crc, header,
     };
 }
 
