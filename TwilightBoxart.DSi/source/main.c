@@ -1650,7 +1650,7 @@ int main(void)
     printf(" connected.\n");
 
     if (g_config.backend_tls) {
-        printf(" securing the line..");
+        printf("Securing the line..");
         if (!tls_global_init(g_config.backend_host)) {
             printf("\n\nCould not set up HTTPS.\n");
             wait_for_start();
