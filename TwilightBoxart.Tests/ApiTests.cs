@@ -1014,9 +1014,12 @@ public sealed class FakeMetadataIndex : IMetadataIndex
         return false;
     }
 
+    /// <summary>The art name this fake reports, so a test can stand in for a rebuilt index.</summary>
+    public string? ArtName { get; init; }
+
     public bool TryBySerial(ConsoleType console, string serial, out IndexEntry entry)
     {
-        entry = new IndexEntry(console, $"Test Game ({serial})", serial, null, null);
+        entry = new IndexEntry(console, $"Test Game ({serial})", serial, null, null) { ArtName = ArtName };
         return true;
     }
 

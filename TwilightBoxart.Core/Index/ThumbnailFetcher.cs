@@ -32,8 +32,8 @@ public sealed record ThumbnailListing(ConsoleType Console, string Branch, string
 /// <para>
 /// That directory is an HTTP cache, not a snapshot, exactly as <see cref="DatFetcher"/>'s is: an
 /// online build always refetches and overwrites it, and it only answers when GitHub is unreachable or
-/// rate-limits us. Pass <paramref name="offline"/> to read it and nothing else, which is what an
-/// <c>--input</c> build and the tests want and what makes a run reproducible.
+/// rate-limits us. Constructing it with <c>offline</c> reads that directory and nothing else, which is
+/// what an <c>--input</c> build and the tests want, and what makes such a run reproducible.
 /// </para>
 /// </summary>
 public sealed class ThumbnailFetcher : IDisposable

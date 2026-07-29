@@ -39,6 +39,16 @@ public class ArtRecord : AuditableEntity
     /// </summary>
     public string? CanonicalName { get; set; }
 
+    /// <summary>
+    /// The name libretro-thumbnails actually files this title's cover under, which is not always the
+    /// canonical one: the thumbnail repository follows no single No-Intro vintage, so
+    /// "Fidgetts, The (Japan) (En)" is filed there as "Fidgetts, The (Japan)". Resolved once at index
+    /// build time and carried here so that <c>GET /v2/art/{platform}/{key}</c>, which arrives with no
+    /// identity attached, can still address the cover. Null means the index had no name for it, and
+    /// the fetch falls back to <see cref="CanonicalName"/>.
+    /// </summary>
+    public string? ArtName { get; set; }
+
     /// <summary>Internal title from the ROM header, when the client read one.</summary>
     public string? Title { get; set; }
 

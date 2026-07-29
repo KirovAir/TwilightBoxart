@@ -210,6 +210,11 @@ public sealed class ArtPipeline(
                     // then still address the name-keyed sources.
                     r.Serial ??= learnedSerial;
                     r.CanonicalName ??= identity.CanonicalName;
+
+                    // Assignment, not coalesce, and load-bearing: ResolvedKnowsMore retries whenever the
+                    // resolved name DIFFERS from the stored one, so failing to store the name we just
+                    // tried would make every later request bypass the backoff and re-hit upstream.
+                    r.ArtName = identity.ArtName ?? r.ArtName;
                     r.MissUntil = DateTime.UtcNow + backoff;
                 }, shared);
                 logger.LogDebug("No art for {Console}/{Key} ({Status}); backing off until {Until}",
@@ -225,6 +230,11 @@ public sealed class ArtPipeline(
             {
                 r.Serial ??= learnedSerial;
                 r.CanonicalName ??= identity.CanonicalName;
+
+                // The name this succeeded with, kept for the same reason the miss branch keeps it: when
+                // the original is later evicted, the refetch arrives with no identity attached and has
+                // only this row to address the source from.
+                r.ArtName = identity.ArtName ?? r.ArtName;
                 r.Sha256 = sha;
                 r.SourceUrl = art.Blob.SourceUrl;
                 r.ContentType = art.Blob.ContentType;
@@ -246,19 +256,28 @@ public sealed class ArtPipeline(
         var serial = record?.Serial ?? resolved?.Serial;
         var canonicalName = record?.CanonicalName ?? resolved?.CanonicalName;
 
+        // The name the cover is FILED under upstream. Prefer what the caller just resolved, because it
+        // came from the current index, over what the record remembers from an older one.
+        var artName = resolved?.ArtName ?? record?.ArtName;
+
         // A key that is not a name digest IS the title id, which is exactly what GameTDB addresses by.
         if (serial is null && !ArtKey.IsNameDigest(key))
         {
             serial = key;
         }
 
-        if (canonicalName is null && serial is not null)
+        // Consulted when EITHER is missing, not just the name. Records written before art names existed
+        // carry a CanonicalName and no ArtName, and gating on the name alone would skip the lookup for
+        // every one of them: they would keep asking for the canonical name, keep 404ing, and keep
+        // earning a fresh back-off that the key-only route has no resolved identity to bypass.
+        if ((canonicalName is null || artName is null) && serial is not null)
         {
             try
             {
                 if (index.TryBySerial(console, serial, out var entry))
                 {
-                    canonicalName = entry.Name;
+                    canonicalName ??= entry.Name;
+                    artName ??= entry.ArtName;
                 }
             }
             catch (Exception ex)
@@ -275,6 +294,7 @@ public sealed class ArtPipeline(
             Key = key,
             Serial = serial,
             CanonicalName = canonicalName,
+            ArtName = artName,
             Title = record?.Title,
             RegionId = record?.RegionId is { Length: > 0 } region ? region[0] : null,
             MatchMethod = serial is not null ? MatchMethod.HeaderSerial : MatchMethod.Filename
@@ -282,12 +302,27 @@ public sealed class ArtPipeline(
     }
 
     /// <summary>
-    /// True when the caller's resolved identity carries a canonical name the stored record lacks. A
-    /// miss recorded identity-blind (the key-only route, before anything identified the title) must
-    /// not hold back a request that can actually address the name-keyed sources.
+    /// True when the caller's resolved identity can address a source the stored miss could not.
+    /// <para>
+    /// Two cases. A miss recorded identity-blind (the key-only route, before anything identified the
+    /// title) must not hold back a request that can actually reach the name-keyed sources. And a miss
+    /// recorded against a DIFFERENT art name than the index now resolves was recorded against the
+    /// wrong URL, so it is not evidence that the cover is missing.
+    /// </para>
+    /// <para>
+    /// Self-limiting in both cases, because whatever the retry learns is written to the record: a
+    /// given record can bypass its backoff once per change, not once per request. That is what keeps
+    /// this from turning every rebuild into a stampede on a volunteer-run upstream.
+    /// </para>
     /// </summary>
     private static bool ResolvedKnowsMore(RomIdentity? resolved, ArtRecord record)
     {
-        return resolved?.CanonicalName is { Length: > 0 } && string.IsNullOrEmpty(record.CanonicalName);
+        if (resolved?.CanonicalName is { Length: > 0 } && string.IsNullOrEmpty(record.CanonicalName))
+        {
+            return true;
+        }
+
+        return resolved?.ArtName is { Length: > 0 } artName &&
+               !string.Equals(record.ArtName, artName, StringComparison.Ordinal);
     }
 }

@@ -85,10 +85,7 @@ public sealed class ArtRecordStore(IDbContextFactory<AppDbContext> dbFactory, IL
         // Null-coalescing rather than assignment throughout: identify runs repeatedly over the same
         // library and a later, thinner match (filename only, no header) must not erase what an
         // earlier, richer one established.
-        record.Serial ??= identity.Serial;
-        record.CanonicalName ??= identity.CanonicalName;
-        record.Title ??= identity.Title;
-        record.RegionId ??= identity.RegionId?.ToString();
+        Apply(record, identity);
 
         if (db.Entry(record).State == EntityState.Unchanged)
         {
@@ -101,11 +98,55 @@ public sealed class ArtRecordStore(IDbContextFactory<AppDbContext> dbFactory, IL
         }
         catch (DbUpdateException ex)
         {
-            // Two identify batches racing on the same new key: the unique index rejects the loser.
-            // The winner wrote the same facts, so there is nothing to retry and nothing lost.
-            logger.LogDebug(ex, "Concurrent identity write for {Console}/{Key}",
+            // The unique index rejected this insert because something else created the row first.
+            // That is NOT always another identify batch writing the same facts: the art route's
+            // UpsertAsync creates rows too, and it can win with nothing but a negative-cache stamp.
+            // Dropping the loser's write then loses the identity entirely - serial, canonical name and
+            // art name - which leaves the key-only art route unable to address libretro at all until
+            // some later identify happens to repeat it. Reload the winner and reapply, the same way
+            // UpsertAsync above does.
+            logger.LogDebug(ex, "Concurrent record write for {Console}/{Key}; reloading",
                 identity.ConsoleType.Slug(), identity.Key);
+
+            await using var retry = await dbFactory.CreateDbContextAsync(ct);
+            var winner = await LoadOrCreateAsync(retry, identity.ConsoleType, identity.Key, ct);
+            Apply(winner, identity);
+            await retry.SaveChangesAsync(ct);
         }
+    }
+
+    /// <summary>
+    /// What identify is allowed to write onto a record. Shared by the first attempt and the
+    /// reload-after-conflict retry so both apply exactly the same rules.
+    /// </summary>
+    private static void Apply(ArtRecord record, RomIdentity identity)
+    {
+        record.Serial ??= identity.Serial;
+        record.CanonicalName ??= identity.CanonicalName;
+        record.Title ??= identity.Title;
+        record.RegionId ??= identity.RegionId?.ToString();
+
+        // The one field that ASSIGNS rather than coalesces, and deliberately. Every other column here
+        // records something a client observed, where an earlier richer match must win. ArtName is not
+        // observed, it is derived from the generated index, so the newest index is by definition the
+        // most correct answer and a rebuild that learns a better name must be able to replace it.
+        if (identity.ArtName is not { Length: > 0 } artName ||
+            string.Equals(record.ArtName, artName, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        record.ArtName = artName;
+
+        // A miss recorded before we knew this name was recorded against the WRONG name, so it is not
+        // evidence of anything. Clearing it is what lets a plain index rebuild fix a title instead of
+        // the operator having to wait out a 12-hour backoff or empty the cache.
+        //
+        // Racy in the narrow window between the read above and the save below: a miss written for the
+        // NEW name in between is cleared too, costing one extra upstream fetch. Bounded and
+        // self-correcting (that fetch rewrites the same name and a fresh backoff), so it is left
+        // alone rather than paid for with a compare-and-swap on every identify.
+        record.MissUntil = null;
     }
 
     /// <summary>
@@ -119,7 +160,7 @@ public sealed class ArtRecordStore(IDbContextFactory<AppDbContext> dbFactory, IL
         var now = DateTime.UtcNow;
         return await db.ArtRecords
             .Where(r => r.Sha256 == null && r.CanonicalName == null && r.Title == null &&
-                        r.Serial == null && r.MissUntil != null && r.MissUntil < now)
+                        r.Serial == null && r.ArtName == null && r.MissUntil != null && r.MissUntil < now)
             .ExecuteDeleteAsync(ct);
     }
 
