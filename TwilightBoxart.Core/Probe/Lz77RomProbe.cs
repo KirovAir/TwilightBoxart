@@ -37,7 +37,7 @@ public sealed class Lz77RomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcBy
     /// </summary>
     private static readonly HashSet<string> Compressible = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".sfc", ".smc", ".gen", ".md", ".sms", ".gg", ".pce",
+        ".sfc", ".smc", ".gen", ".md", ".sms", ".gg", ".pce"
     };
 
     /// <summary>
@@ -52,8 +52,10 @@ public sealed class Lz77RomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcBy
 
     private readonly LooseRomProbe _inner = new(crcByteBudget);
 
-    public bool CanHandle(string path) =>
-        TryStripMarker(path, out var bare) && Compressible.Contains(Path.GetExtension(bare));
+    public bool CanHandle(string path)
+    {
+        return TryStripMarker(path, out var bare) && Compressible.Contains(Path.GetExtension(bare));
+    }
 
     public async Task<ProbeResult?> ProbeAsync(
         Stream stream, string path, bool wantHeader, CancellationToken ct = default)
@@ -78,7 +80,7 @@ public sealed class Lz77RomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcBy
 
         stream.Seek(0, SeekOrigin.Begin);
         var compressed = new byte[size];
-        var read = await stream.ReadAtLeastAsync(compressed, compressed.Length, throwOnEndOfStream: false, ct);
+        var read = await stream.ReadAtLeastAsync(compressed, compressed.Length, false, ct);
 
         if (!TryDecompress(compressed.AsSpan(0, read), out var rom))
         {
@@ -86,7 +88,7 @@ public sealed class Lz77RomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcBy
             return null;
         }
 
-        await using var inner = new MemoryStream(rom, writable: false);
+        await using var inner = new MemoryStream(rom, false);
         var result = await _inner.ProbeAsync(inner, bareName, wantHeader, ct);
         if (result is null)
         {
@@ -104,7 +106,7 @@ public sealed class Lz77RomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcBy
 
             // Report the compressed bytes actually read off disk; the inner probe measured the inflated
             // in-memory stream, which never touched it.
-            BytesRead = read,
+            BytesRead = read
         };
     }
 

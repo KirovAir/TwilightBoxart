@@ -16,7 +16,7 @@ public enum FetchStatus
     /// At least one source could not be REACHED and none of the others had art. A passing outage, not
     /// evidence the art is absent: back off for minutes so the next scan retries, never for hours.
     /// </summary>
-    Unavailable,
+    Unavailable
 }
 
 /// <summary>Outcome of walking the source ladder: a hit carries its art, a non-hit carries only why.</summary>
@@ -24,7 +24,11 @@ public readonly record struct FetchResult(FetchStatus Status, FetchedArt? Art)
 {
     public static readonly FetchResult Miss = new(FetchStatus.Miss, null);
     public static readonly FetchResult Unavailable = new(FetchStatus.Unavailable, null);
-    public static FetchResult Hit(FetchedArt art) => new(FetchStatus.Hit, art);
+
+    public static FetchResult Hit(FetchedArt art)
+    {
+        return new FetchResult(FetchStatus.Hit, art);
+    }
 }
 
 /// <summary>

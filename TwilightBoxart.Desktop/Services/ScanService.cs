@@ -29,9 +29,12 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
     /// filename-keyed <c>user</c> folder: it covers every system (the game-code folders only do
     /// NDS/GBA) and the launcher gives it precedence.
     /// </summary>
-    public static string BoxartDirectory(string root, RenderTarget target) => target == RenderTarget.Pico
-        ? Path.Combine(root, "_pico", "covers", "user")
-        : Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
+    public static string BoxartDirectory(string root, RenderTarget target)
+    {
+        return target == RenderTarget.Pico
+            ? Path.Combine(root, "_pico", "covers", "user")
+            : Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
+    }
 
     /// <summary>
     /// Which launcher a card is set up for, or null when the card cannot say: both installed, or
@@ -65,7 +68,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         var scannable = await backend.GetScannableExtensionsAsync(ct);
         var files = CollectFiles(request.RootFolder, boxartDir, scannable);
         counters.Found = files.Count;
-        progress.Report(new ScanUpdate(counters.Snapshot(), Log: $"Found {files.Count:N0} games and archives."));
+        progress.Report(new ScanUpdate(counters.Snapshot(), $"Found {files.Count:N0} games and archives."));
         if (files.Count == 0)
         {
             progress.Report(new ScanUpdate(counters.Snapshot(), Status: "No games found under that folder."));
@@ -77,7 +80,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         var probeOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = Math.Max(2, Environment.ProcessorCount),
-            CancellationToken = ct,
+            CancellationToken = ct
         };
         await Parallel.ForAsync(0, files.Count, probeOptions, async (i, c) =>
         {
@@ -85,7 +88,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             var item = new Item { FileName = Path.GetFileName(path) };
             try
             {
-                item.Probe = await prober.ProbeFileAsync(path, wantHeader: true, c);
+                item.Probe = await prober.ProbeFileAsync(path, true, c);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -103,7 +106,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 progress.Report(new ScanUpdate(counters.Snapshot()));
             }
         });
-        progress.Report(new ScanUpdate(counters.Snapshot(), Log: "Identifying..."));
+        progress.Report(new ScanUpdate(counters.Snapshot(), "Identifying..."));
 
         // 3. Identify, batched, correlated back by tag.
         var probed = items.Where(i => i.Probe is not null).ToList();
@@ -136,7 +139,8 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 counters.IncMissed();
             }
         }
-        progress.Report(new ScanUpdate(counters.Snapshot(), Log: $"Identified {counters.Identified:N0}. Fetching art..."));
+
+        progress.Report(new ScanUpdate(counters.Snapshot(), $"Identified {counters.Identified:N0}. Fetching art..."));
 
         // 4. Fetch and write. Outbound is capped at the requested concurrency to stay a good neighbour.
         var matched = probed.Where(i => i.Identity is not null).ToList();
@@ -144,7 +148,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         var artOptions = new ParallelOptions
         {
             MaxDegreeOfParallelism = Math.Max(1, request.Concurrency),
-            CancellationToken = ct,
+            CancellationToken = ct
         };
         await Parallel.ForEachAsync(matched, artOptions, async (item, c) =>
         {
@@ -180,7 +184,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             {
                 logger.LogWarning(ex, "Art fetch failed for {Name}", outName);
                 counters.IncMissed();
-                progress.Report(new ScanUpdate(counters.Snapshot(), Log: $"{outName}: {ex.Message}"));
+                progress.Report(new ScanUpdate(counters.Snapshot(), $"{outName}: {ex.Message}"));
                 return;
             }
 
@@ -201,7 +205,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             {
                 logger.LogWarning(ex, "Write failed for {Name}", outName);
                 counters.IncMissed();
-                progress.Report(new ScanUpdate(counters.Snapshot(), Log: $"{outName}: {ex.Message}"));
+                progress.Report(new ScanUpdate(counters.Snapshot(), $"{outName}: {ex.Message}"));
                 return;
             }
 
@@ -238,7 +242,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         {
             RecurseSubdirectories = true,
             IgnoreInaccessible = true,
-            AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
+            AttributesToSkip = FileAttributes.Hidden | FileAttributes.System
         };
 
         // Trailing separator, so a sibling like "boxart-old" is not mistaken for the output folder.
@@ -295,7 +299,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             Crc32 = probe.Crc32,
             Header = probe.Header,
             Size = probe.UncompressedSize,
-            Tag = item.Tag,
+            Tag = item.Tag
         };
     }
 
@@ -333,21 +337,39 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         public int Identified => Volatile.Read(ref _identified);
 
         /// <summary>Progress cadence only: one deterministic count of delivered items, never displayed.</summary>
-        public int IncProcessed() => Interlocked.Increment(ref _processed);
+        public int IncProcessed()
+        {
+            return Interlocked.Increment(ref _processed);
+        }
 
-        public void IncIdentified() => Interlocked.Increment(ref _identified);
+        public void IncIdentified()
+        {
+            Interlocked.Increment(ref _identified);
+        }
 
-        public void IncWritten() => Interlocked.Increment(ref _written);
+        public void IncWritten()
+        {
+            Interlocked.Increment(ref _written);
+        }
 
-        public void IncSkipped() => Interlocked.Increment(ref _skipped);
+        public void IncSkipped()
+        {
+            Interlocked.Increment(ref _skipped);
+        }
 
-        public void IncMissed() => Interlocked.Increment(ref _missed);
+        public void IncMissed()
+        {
+            Interlocked.Increment(ref _missed);
+        }
 
-        public ScanCounters Snapshot() => new(
-            Found,
-            Volatile.Read(ref _identified),
-            Volatile.Read(ref _written),
-            Volatile.Read(ref _skipped),
-            Volatile.Read(ref _missed));
+        public ScanCounters Snapshot()
+        {
+            return new ScanCounters(
+                Found,
+                Volatile.Read(ref _identified),
+                Volatile.Read(ref _written),
+                Volatile.Read(ref _skipped),
+                Volatile.Read(ref _missed));
+        }
     }
 }

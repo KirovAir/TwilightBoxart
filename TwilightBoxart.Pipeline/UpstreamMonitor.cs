@@ -24,7 +24,10 @@ public sealed class UpstreamMonitor
     }
 
     /// <summary>The source answered, and it has no art for this game. Normal, not an outage.</summary>
-    public void RecordMiss(string source) => Interlocked.Increment(ref Get(source).Misses);
+    public void RecordMiss(string source)
+    {
+        Interlocked.Increment(ref Get(source).Misses);
+    }
 
     public void RecordFailure(string source, Exception exception)
     {
@@ -36,28 +39,36 @@ public sealed class UpstreamMonitor
         state.LastError = exception.Message;
     }
 
-    public IReadOnlyList<UpstreamHealth> Snapshot() =>
-    [
-        .. _sources.Select(kv => new UpstreamHealth(
-            kv.Key,
-            IsHealthy(kv.Value),
-            Interlocked.Read(ref kv.Value.Successes),
-            Interlocked.Read(ref kv.Value.Misses),
-            Interlocked.Read(ref kv.Value.Failures),
-            kv.Value.LastSuccess,
-            kv.Value.LastFailure,
-            kv.Value.LastError))
-        .OrderBy(h => h.Name, StringComparer.Ordinal)
-    ];
+    public IReadOnlyList<UpstreamHealth> Snapshot()
+    {
+        return
+        [
+            .. _sources.Select(kv => new UpstreamHealth(
+                    kv.Key,
+                    IsHealthy(kv.Value),
+                    Interlocked.Read(ref kv.Value.Successes),
+                    Interlocked.Read(ref kv.Value.Misses),
+                    Interlocked.Read(ref kv.Value.Failures),
+                    kv.Value.LastSuccess,
+                    kv.Value.LastFailure,
+                    kv.Value.LastError))
+                .OrderBy(h => h.Name, StringComparer.Ordinal)
+        ];
+    }
 
     /// <summary>
     /// A source counts as unhealthy only once it has failed and has not succeeded since. One 404 in a
     /// row of hits should not paint the dashboard red.
     /// </summary>
-    private static bool IsHealthy(State state) =>
-        state.LastFailure is null || (state.LastSuccess is not null && state.LastSuccess > state.LastFailure);
+    private static bool IsHealthy(State state)
+    {
+        return state.LastFailure is null || (state.LastSuccess is not null && state.LastSuccess > state.LastFailure);
+    }
 
-    private State Get(string source) => _sources.GetOrAdd(source, static _ => new State());
+    private State Get(string source)
+    {
+        return _sources.GetOrAdd(source, static _ => new State());
+    }
 
     private sealed class State
     {

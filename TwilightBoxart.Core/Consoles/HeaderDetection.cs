@@ -18,7 +18,7 @@ public enum N64ByteOrder
     ByteSwapped,
 
     /// <summary>.n64 - 32-bit little-endian, <c>40 12 37 80</c>.</summary>
-    LittleEndian,
+    LittleEndian
 }
 
 /// <summary>

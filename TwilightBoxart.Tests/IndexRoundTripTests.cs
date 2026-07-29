@@ -33,7 +33,7 @@ public class IndexRoundTripTests
     {
         try
         {
-            Directory.Delete(_workDirectory, recursive: true);
+            Directory.Delete(_workDirectory, true);
         }
         catch (IOException)
         {
@@ -54,7 +54,7 @@ public class IndexRoundTripTests
             Name = "Mario Kart DS (USA)",
             Serial = "AMCE",
             Crc32 = 0xAABBCCDD,
-            Sha1 = "1111111111111111111111111111111111111111",
+            Sha1 = "1111111111111111111111111111111111111111"
         },
         new()
         {
@@ -62,15 +62,15 @@ public class IndexRoundTripTests
             Name = "New Super Mario Bros. (Europe)",
             Serial = "A2DP",
             Crc32 = 0xC1F8B000,
-            Sha1 = "2222222222222222222222222222222222222222",
+            Sha1 = "2222222222222222222222222222222222222222"
         },
         new()
         {
             Console = ConsoleType.GameBoy,
             Name = "Tetris (World) (Rev 1)",
             Crc32 = 0x0000000A,
-            Sha1 = "3333333333333333333333333333333333333333",
-        },
+            Sha1 = "3333333333333333333333333333333333333333"
+        }
     ];
 
     private SqliteMetadataIndex WriteAndOpen()

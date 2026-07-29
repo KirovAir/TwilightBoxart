@@ -266,7 +266,7 @@ public static class EntryDeduplicator
             Crc32Duplicates = crc32Duplicates,
             Crc32CollisionsCleared = collisionsCleared,
             AmbiguousSerialsCleared = ambiguousSerialsCleared,
-            BadDumpsSuperseded = badDumpsSuperseded,
+            BadDumpsSuperseded = badDumpsSuperseded
         });
     }
 
@@ -287,8 +287,9 @@ public static class EntryDeduplicator
     /// only required to be total and stable, so the same inputs always produce the same file (the
     /// determinism requirement: a CI diff should mean something).
     /// </summary>
-    public static IReadOnlyList<DatEntry> Order(IReadOnlyList<DatEntry> entries) =>
-        entries
+    public static IReadOnlyList<DatEntry> Order(IReadOnlyList<DatEntry> entries)
+    {
+        return entries
             .OrderBy(e => (int)e.Console)
             .ThenBy(e => e.Serial ?? string.Empty, StringComparer.Ordinal)
             .ThenBy(DatEntryQuality.Rank)
@@ -296,6 +297,7 @@ public static class EntryDeduplicator
             .ThenBy(e => e.Crc32 ?? uint.MaxValue)
             .ThenBy(e => e.Sha1 ?? string.Empty, StringComparer.Ordinal)
             .ToList();
+    }
 
     /// <summary>
     /// True when <paramref name="candidate"/> should supersede <paramref name="incumbent"/>. Rank first;
@@ -324,10 +326,13 @@ public static class EntryDeduplicator
     }
 
     /// <summary>Fills the winner's null fields from a row describing the same bytes. Never overwrites.</summary>
-    private static DatEntry Inherit(DatEntry winner, DatEntry loser) => winner with
+    private static DatEntry Inherit(DatEntry winner, DatEntry loser)
     {
-        Serial = winner.Serial ?? loser.Serial,
-        Crc32 = winner.Crc32 ?? loser.Crc32,
-        Sha1 = winner.Sha1 ?? loser.Sha1,
-    };
+        return winner with
+        {
+            Serial = winner.Serial ?? loser.Serial,
+            Crc32 = winner.Crc32 ?? loser.Crc32,
+            Sha1 = winner.Sha1 ?? loser.Sha1
+        };
+    }
 }

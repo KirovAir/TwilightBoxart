@@ -10,10 +10,15 @@ namespace TwilightBoxart.Desktop.Views;
 
 public partial class MainWindow : Window
 {
-    public MainWindow() => InitializeComponent();
+    public MainWindow()
+    {
+        InitializeComponent();
+    }
 
-    private void OnLogoPressed(object? sender, PointerPressedEventArgs e) =>
-        _ = Launcher.LaunchUriAsync(new Uri(TwilightBoxart.Core.About.RepositoryUrl));
+    private void OnLogoPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _ = Launcher.LaunchUriAsync(new Uri(Core.About.RepositoryUrl));
+    }
 
     // async void on a lifecycle event: nothing awaits it, and the check is best-effort, so any failure is
     // swallowed rather than allowed to reach the UI thread's unhandled handler.
@@ -45,7 +50,7 @@ public partial class MainWindow : Window
             Content = new TextBlock { Text = body, TextWrapping = Avalonia.Media.TextWrapping.Wrap },
             PrimaryButtonText = "View release",
             CloseButtonText = "Later",
-            DefaultButton = FAContentDialogButton.Primary,
+            DefaultButton = FAContentDialogButton.Primary
         };
 
         if (await dialog.ShowAsync() == FAContentDialogResult.Primary)
@@ -102,7 +107,7 @@ public partial class MainWindow : Window
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
             Title = title,
-            AllowMultiple = false,
+            AllowMultiple = false
         });
 
         var path = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;

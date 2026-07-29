@@ -46,7 +46,7 @@ public sealed class MegaDriveHeaderParser : IConsoleHeaderParser
         {
             ConsoleType = ConsoleType.MegaDrive,
             Title = title,
-            Serial = serial,
+            Serial = serial
         };
     }
 

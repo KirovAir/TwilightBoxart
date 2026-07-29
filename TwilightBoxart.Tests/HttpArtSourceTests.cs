@@ -26,8 +26,7 @@ public class HttpArtSourceTests
         var handler = new ScriptedHandler(Timeout(), Timeout(), Timeout(), Timeout());
         var source = new TestHttpArtSource(new SingleClientFactory(handler));
 
-        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(
-            () => source.Fetch("https://art.example/cover.jpg"));
+        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(() => source.Fetch("https://art.example/cover.jpg"));
     }
 
     [TestMethod]
@@ -38,8 +37,7 @@ public class HttpArtSourceTests
         var handler = new ScriptedHandler(Timeout(), Timeout(), Timeout(), Timeout());
         var source = new TestHttpArtSource(new SingleClientFactory(handler));
 
-        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(
-            () => source.Fetch("https://art.example/cover.jpg"));
+        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(() => source.Fetch("https://art.example/cover.jpg"));
 
         Assert.AreEqual(ArtSourceLimits.MaxRetries + 1, handler.Calls,
             "a transport failure must be retried, then surfaced - not retried forever, not given up on the first try");
@@ -96,26 +94,31 @@ public class HttpArtSourceTests
         var handler = new ScriptedHandler(Timeout());
         var source = new TestHttpArtSource(new SingleClientFactory(handler));
 
-        await Assert.ThrowsExactlyAsync<TaskCanceledException>(
-            () => source.Fetch("https://art.example/cover.jpg", cts.Token));
+        await Assert.ThrowsExactlyAsync<TaskCanceledException>(() => source.Fetch("https://art.example/cover.jpg", cts.Token));
     }
 
     // A timeout as HttpClient raises it: a TaskCanceledException whose cancellation is the client's own,
     // not the caller's. HttpArtSource distinguishes the two by whether ITS token requested cancellation.
-    private static Func<HttpResponseMessage> Timeout() =>
-        () => throw new TaskCanceledException("timed out", new TimeoutException());
+    private static Func<HttpResponseMessage> Timeout()
+    {
+        return () => throw new TaskCanceledException("timed out", new TimeoutException());
+    }
 
-    private static Func<HttpResponseMessage> NotFound() =>
-        () => new HttpResponseMessage(HttpStatusCode.NotFound);
+    private static Func<HttpResponseMessage> NotFound()
+    {
+        return () => new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
 
-    private static Func<HttpResponseMessage> Image() =>
-        () => new HttpResponseMessage(HttpStatusCode.OK)
+    private static Func<HttpResponseMessage> Image()
+    {
+        return () => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new ByteArrayContent(FakeArtSource.Png)
             {
-                Headers = { ContentType = new MediaTypeHeaderValue("image/png") },
-            },
+                Headers = { ContentType = new MediaTypeHeaderValue("image/png") }
+            }
         };
+    }
 
     /// <summary>Concrete HttpArtSource that exposes the protected fetch for a test.</summary>
     private sealed class TestHttpArtSource(IHttpClientFactory factory)
@@ -123,12 +126,18 @@ public class HttpArtSourceTests
     {
         protected override string SourceName => "test";
 
-        public Task<ArtBlob?> Fetch(string url, CancellationToken ct = default) => TryGetAsync(url, ct);
+        public Task<ArtBlob?> Fetch(string url, CancellationToken ct = default)
+        {
+            return TryGetAsync(url, ct);
+        }
     }
 
     private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
-        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+        public HttpClient CreateClient(string name)
+        {
+            return new HttpClient(handler, false);
+        }
     }
 
     /// <summary>Answers each call with the next scripted outcome; a throwing entry models a transport failure.</summary>

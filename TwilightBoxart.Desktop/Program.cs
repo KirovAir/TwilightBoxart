@@ -31,11 +31,13 @@ internal static class Program
     }
 
     // Referenced by the Avalonia XAML tooling, so it stays public and static.
-    public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
             .LogToTrace();
+    }
 
 #if DEBUG
     private static void Screenshot(string path)
@@ -50,7 +52,7 @@ internal static class Program
         {
             DataContext = services.GetRequiredService<MainViewModel>(),
             Width = 420,
-            Height = 480,
+            Height = 480
         };
         window.Show();
 

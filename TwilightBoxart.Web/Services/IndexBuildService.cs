@@ -29,7 +29,7 @@ public sealed class DatIndexSource(TwilightSettings settings) : IIndexSource
         {
             OutputPath = outputPath,
             CacheDirectory = Path.Combine(settings.DataPath, "dat-cache"),
-            Version = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture),
+            Version = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture)
         };
 
         var result = await new IndexBuilder(options, log).RunAsync(ct);

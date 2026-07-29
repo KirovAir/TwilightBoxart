@@ -55,13 +55,13 @@ public sealed class SegaEightBitHeaderParser : IConsoleHeaderParser
             // 3 and 4 are Master System; so is anything unrecognised. The magic already established this
             // is a Sega 8-bit ROM, and Master System is by far the larger set, so an unknown region code
             // is better served by the more likely platform than by dropping the detection entirely.
-            _ => ConsoleType.MasterSystem,
+            _ => ConsoleType.MasterSystem
         };
 
         return new HeaderDetection
         {
             ConsoleType = console,
-            Serial = ReadProductCode(header, found),
+            Serial = ReadProductCode(header, found)
         };
     }
 

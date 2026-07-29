@@ -5,13 +5,13 @@
 
 const $ = (id) => document.getElementById(id);
 
-const state = { timer: null };
+const state = {timer: null};
 
 async function fetchStats() {
     const res = await fetch('/v2/admin/stats');
-    if (res.status === 401) return { authed: false };
+    if (res.status === 401) return {authed: false};
     if (!res.ok) throw new Error(`${res.status} from stats`);
-    return { authed: true, stats: await res.json() };
+    return {authed: true, stats: await res.json()};
 }
 
 function show(authed) {
@@ -74,7 +74,7 @@ function render(stats) {
 
 async function refresh() {
     try {
-        const { authed, stats } = await fetchStats();
+        const {authed, stats} = await fetchStats();
         show(authed);
         if (authed) render(stats);
     } catch (e) {
@@ -87,8 +87,8 @@ $('login-form').addEventListener('submit', async (e) => {
     $('login-error').hidden = true;
     const res = await fetch('/v2/admin/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: $('password').value }),
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({password: $('password').value}),
     });
     if (res.ok) {
         $('password').value = '';
@@ -103,13 +103,16 @@ $('login-form').addEventListener('submit', async (e) => {
 });
 
 $('logout').addEventListener('click', async () => {
-    await fetch('/v2/admin/logout', { method: 'POST' });
+    await fetch('/v2/admin/logout', {method: 'POST'});
     show(false);
 });
 
 $('rebuild').addEventListener('click', async () => {
-    const res = await fetch('/v2/admin/index/rebuild', { method: 'POST' });
-    if (res.status === 401) { show(false); return; }
+    const res = await fetch('/v2/admin/index/rebuild', {method: 'POST'});
+    if (res.status === 401) {
+        show(false);
+        return;
+    }
     await refresh();
 });
 
@@ -127,8 +130,11 @@ async function clearCache(button, originals) {
     buttons.forEach(b => b.disabled = true);
     $('clear-state').textContent = 'Clearing…';
     try {
-        const res = await fetch(`/v2/admin/cache/clear${originals ? '?originals=1' : ''}`, { method: 'POST' });
-        if (res.status === 401) { show(false); return; }
+        const res = await fetch(`/v2/admin/cache/clear${originals ? '?originals=1' : ''}`, {method: 'POST'});
+        if (res.status === 401) {
+            show(false);
+            return;
+        }
         const cleared = await res.json();
         $('clear-state').textContent = cleared.length
             ? cleared.map(c => `${c.cache}: ${c.filesRemoved.toLocaleString()} file(s), ${mb(c.bytesFreed)} freed`).join(' · ')

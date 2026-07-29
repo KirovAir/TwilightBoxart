@@ -1,7 +1,7 @@
 // store.js: IndexedDB persistence: the picked directory handle, plus identity and written-art
 // caches keyed by CONTENT rather than path, so renaming or moving a ROM invalidates nothing.
 
-import { crc32 } from './romprobe.js';
+import {crc32} from './romprobe.js';
 
 const DB_NAME = 'twilightboxart';
 const DB_VERSION = 1;
@@ -81,7 +81,7 @@ export const saveRoot = (handle) => put('kv', 'root', handle);
  * size, which is not collision-proof in theory but is exact for every real ROM (headers carry the
  * title and serial). Falls back to name plus size when we have neither.
  */
-export function contentKey({ crc32: crc, header, size, innerName }) {
+export function contentKey({crc32: crc, header, size, innerName}) {
     if (crc != null) return `c${(crc >>> 0).toString(16)}-${size}`;
     if (header?.length) return `h${crc32(header).toString(16)}-${size}`;
     return `n${innerName}-${size}`;
@@ -90,7 +90,7 @@ export function contentKey({ crc32: crc, header, size, innerName }) {
 export const loadIdentities = (keys) => getMany('identity', keys);
 
 export const saveIdentities = (entries) =>
-    putMany('identity', entries.map(([k, v]) => [k, { ...v, at: Date.now() }]));
+    putMany('identity', entries.map(([k, v]) => [k, {...v, at: Date.now()}]));
 
 /* Render settings are part of the written-art key: changing the box art size or border must
    re-download, but changing nothing must not. */
@@ -100,7 +100,7 @@ export const writtenKey = (contentKey, renderKey) => `${contentKey}|${renderKey}
 export const loadWritten = (keys) => getMany('written', keys);
 
 export const saveWritten = (entries) =>
-    putMany('written', entries.map(([k, v]) => [k, { ...v, at: Date.now() }]));
+    putMany('written', entries.map(([k, v]) => [k, {...v, at: Date.now()}]));
 
 /** Forget every cached identity and download record. Does not touch anything on the SD card. */
 export async function clearCache() {
@@ -118,5 +118,5 @@ export async function cacheStats() {
         request(tx.objectStore('identity').count()),
         request(tx.objectStore('written').count()),
     ]);
-    return { identities, written };
+    return {identities, written};
 }

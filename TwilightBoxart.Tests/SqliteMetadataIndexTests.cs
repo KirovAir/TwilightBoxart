@@ -12,8 +12,10 @@ namespace TwilightBoxart.Tests;
 [TestClass]
 public class SqliteMetadataIndexTests
 {
-    private static SqliteMetadataIndex OpenIndex(NoIntroIndexFile file) =>
-        new(file.Path, NullLogger.Instance);
+    private static SqliteMetadataIndex OpenIndex(NoIntroIndexFile file)
+    {
+        return new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+    }
 
     [TestMethod]
     public void SqliteMetadataIndex_TryByCrc32_FindsSeededRow()
@@ -68,8 +70,8 @@ public class SqliteMetadataIndexTests
     public void SqliteMetadataIndex_TryBySerial_IsScopedToItsConsole()
     {
         using var file = NoIntroIndexFile.Create(
-            new IndexRow(ConsoleType.NintendoDs, "Mario Kart DS (USA)", Serial: "AMCE"),
-            new IndexRow(ConsoleType.GameBoyAdvance, "Some GBA Game (USA)", Serial: "AMCE"));
+            new IndexRow(ConsoleType.NintendoDs, "Mario Kart DS (USA)", "AMCE"),
+            new IndexRow(ConsoleType.GameBoyAdvance, "Some GBA Game (USA)", "AMCE"));
         using var index = OpenIndex(file);
 
         Assert.IsTrue(index.TryBySerial(ConsoleType.NintendoDs, "AMCE", out var ds));
@@ -224,7 +226,7 @@ public class SqliteMetadataIndexTests
                      "mario\" AND \"bros\" OR \"",
                      "NEAR(mario bros, 2)",
                      "castlevania* OR mario*",
-                     "^mario",
+                     "^mario"
                  })
         {
             // Must not throw, and must not be tricked into returning the row by query syntax alone:
@@ -283,7 +285,7 @@ public class SqliteMetadataIndexTests
     public void SqliteMetadataIndex_Open_UnsupportedSchema_ReturnsAnIndexThatAlwaysMisses()
     {
         using var file = NoIntroIndexFile.Create(
-            "2026-01-01T00:00:00Z", schemaVersion: 2, new IndexRow(ConsoleType.Nes, "Future"));
+            "2026-01-01T00:00:00Z", 2, new IndexRow(ConsoleType.Nes, "Future"));
 
         var index = SqliteMetadataIndex.Open(file.Path, NullLogger.Instance);
 
@@ -321,7 +323,7 @@ public class SqliteMetadataIndexTests
         var results = new bool[512];
         Parallel.For(0, results.Length, i =>
         {
-            var crc = (uint)((i % 64) + 1);
+            var crc = (uint)(i % 64 + 1);
             results[i] = index.TryByCrc32(crc, out var entry) && entry.Name == $"Game {crc - 1}";
         });
 

@@ -37,7 +37,10 @@ public sealed class RomProbeService : IRomProbe
         _lz77 = new Lz77RomProbe(looseCrcByteBudget);
     }
 
-    public bool CanHandle(string path) => SupportedFiles.IsScannable(path);
+    public bool CanHandle(string path)
+    {
+        return SupportedFiles.IsScannable(path);
+    }
 
     /// <summary>Opens <paramref name="path"/> for sequential-ish reading and probes it.</summary>
     public async Task<ProbeResult?> ProbeFileAsync(string path, bool wantHeader, CancellationToken ct = default)
@@ -47,7 +50,7 @@ public sealed class RomProbeService : IRomProbe
         {
             stream = new FileStream(
                 path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite,
-                bufferSize: 0, FileOptions.Asynchronous);
+                0, FileOptions.Asynchronous);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -105,10 +108,12 @@ public sealed class RomProbeService : IRomProbe
     /// inside its 7z header reader on malformed input, and a library scan that aborts on one bad
     /// download is worse than one that skips it. Cancellation is re-thrown before this is consulted.
     /// </summary>
-    private static bool IsMalformedContainer(Exception ex) =>
-        ex is InvalidDataException or EndOfStreamException or IOException or NotSupportedException
+    private static bool IsMalformedContainer(Exception ex)
+    {
+        return ex is InvalidDataException or EndOfStreamException or IOException or NotSupportedException
             or InvalidOperationException or FormatException or OverflowException
             or IndexOutOfRangeException or ArgumentException;
+    }
 
     /// <summary>
     /// Chooses a probe, returning it alongside the bytes the sniff cost. Magic wins over extension:
@@ -119,7 +124,7 @@ public sealed class RomProbeService : IRomProbe
     {
         var magic = new byte[MagicBytes];
         stream.Seek(0, SeekOrigin.Begin);
-        var read = await stream.ReadAtLeastAsync(magic, MagicBytes, throwOnEndOfStream: false, ct);
+        var read = await stream.ReadAtLeastAsync(magic, MagicBytes, false, ct);
 
         if (read >= SevenZipMagic.Length && magic.AsSpan(0, SevenZipMagic.Length).SequenceEqual(SevenZipMagic))
         {

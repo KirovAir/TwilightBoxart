@@ -51,12 +51,16 @@ public sealed class LocalArtBackend(
     /// Local mode identifies with this build's own code, so this build's own list IS the truth here -
     /// there is no server whose opinion could be newer.
     /// </summary>
-    public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct) =>
-        Task.FromResult(SupportedFiles.Scannable);
+    public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct)
+    {
+        return Task.FromResult(SupportedFiles.Scannable);
+    }
 
     public Task<IReadOnlyList<RomIdentity>> IdentifyAsync(
-        IReadOnlyList<RomFingerprint> fingerprints, CancellationToken ct) =>
-        identifier.IdentifyBatchAsync(fingerprints, ct);
+        IReadOnlyList<RomFingerprint> fingerprints, CancellationToken ct)
+    {
+        return identifier.IdentifyBatchAsync(fingerprints, ct);
+    }
 
     public async Task<byte[]?> GetArtAsync(RomIdentity identity, RenderOptions options, CancellationToken ct)
     {
@@ -88,7 +92,10 @@ public sealed class LocalArtBackend(
         return null;
     }
 
-    public void Dispose() => (index as IDisposable)?.Dispose();
+    public void Dispose()
+    {
+        (index as IDisposable)?.Dispose();
+    }
 }
 
 /// <summary>
@@ -101,7 +108,7 @@ public sealed class RemoteArtBackend : IArtBackend
     // is how the API serialises ConsoleType and MatchMethod.
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
-        Converters = { new JsonStringEnumConverter() },
+        Converters = { new JsonStringEnumConverter() }
     };
 
     private readonly HttpClient _client;
@@ -201,7 +208,10 @@ public sealed class RemoteArtBackend : IArtBackend
         return await response.Content.ReadAsByteArrayAsync(ct);
     }
 
-    public void Dispose() => _client.Dispose();
+    public void Dispose()
+    {
+        _client.Dispose();
+    }
 }
 
 /// <summary>Picks the backend for a run automatically: the server when it answers, the local index when it does not.</summary>

@@ -27,10 +27,12 @@ public static class About
     public static Version CurrentVersion { get; } = Normalize(typeof(About).Assembly.GetName().Version);
 
     /// <summary>Fills unspecified (-1) version components with 0, so tags of differing part counts compare by value.</summary>
-    public static Version Normalize(Version? version) =>
-        version is null
+    public static Version Normalize(Version? version)
+    {
+        return version is null
             ? new Version(0, 0, 0, 0)
             : new Version(Math.Max(version.Major, 0), Math.Max(version.Minor, 0), Math.Max(version.Build, 0), Math.Max(version.Revision, 0));
+    }
 
     /// <summary>Honest and contactable, so an upstream operator can find us rather than block us.</summary>
     public static string UserAgent { get; } = $"TwilightBoxart/{Version} (+{RepositoryUrl})";

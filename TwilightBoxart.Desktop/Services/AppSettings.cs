@@ -47,21 +47,24 @@ public sealed class AppSettings
     public bool CheckForUpdates { get; set; } = true;
 
     /// <summary>The one mapping from stored settings to render parameters.</summary>
-    public RenderOptions ToRenderOptions() => new RenderOptions
+    public RenderOptions ToRenderOptions()
     {
-        Target = Target,
-        Width = Width,
-        Height = Height,
-        KeepAspectRatio = KeepAspectRatio,
-        BorderStyle = BorderStyle,
-        BorderThickness = BorderThickness,
-        BorderColor = RenderOptions.ParseColor(BorderColor) ?? 0xFF000000,
-    }.Normalized();
+        return new RenderOptions
+        {
+            Target = Target,
+            Width = Width,
+            Height = Height,
+            KeepAspectRatio = KeepAspectRatio,
+            BorderStyle = BorderStyle,
+            BorderThickness = BorderThickness,
+            BorderColor = RenderOptions.ParseColor(BorderColor) ?? 0xFF000000
+        }.Normalized();
+    }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
+        Converters = { new JsonStringEnumConverter() }
     };
 
     private static string SettingsPath =>

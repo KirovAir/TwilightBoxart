@@ -57,13 +57,25 @@ internal sealed class CountingStream(Stream inner) : Stream
         return value;
     }
 
-    public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        return inner.Seek(offset, origin);
+    }
 
-    public override void Flush() => inner.Flush();
+    public override void Flush()
+    {
+        inner.Flush();
+    }
 
-    public override void SetLength(long value) => throw new NotSupportedException();
+    public override void SetLength(long value)
+    {
+        throw new NotSupportedException();
+    }
 
-    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        throw new NotSupportedException();
+    }
 
     // Deliberately does not dispose the inner stream: ownership stays with whoever opened the file.
     protected override void Dispose(bool disposing)

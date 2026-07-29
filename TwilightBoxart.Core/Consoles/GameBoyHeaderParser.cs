@@ -87,7 +87,7 @@ public sealed class GameBoyHeaderParser : IConsoleHeaderParser
             0x80 => (ConsoleType.GameBoyColor, ConsoleType.GameBoy),
 
             // No flag. Almost always a real DMG cart, but see the Action Replay case above.
-            _ => (ConsoleType.GameBoy, ConsoleType.GameBoyColor),
+            _ => (ConsoleType.GameBoy, ConsoleType.GameBoyColor)
         };
 
         return new HeaderDetection
@@ -95,7 +95,7 @@ public sealed class GameBoyHeaderParser : IConsoleHeaderParser
             ConsoleType = console,
             AlternateConsoleType = alternate,
             Title = header.ReadAscii(TitleOffset, titleLength),
-            Serial = serial,
+            Serial = serial
         };
     }
 }

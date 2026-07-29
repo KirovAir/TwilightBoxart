@@ -14,8 +14,10 @@ namespace TwilightBoxart.Core.Consoles;
 internal static class HeaderSpan
 {
     /// <summary>Returns the byte at <paramref name="offset"/>, or -1 when it is past the end.</summary>
-    public static int ByteAt(this ReadOnlySpan<byte> header, int offset) =>
-        (uint)offset < (uint)header.Length ? header[offset] : -1;
+    public static int ByteAt(this ReadOnlySpan<byte> header, int offset)
+    {
+        return (uint)offset < (uint)header.Length ? header[offset] : -1;
+    }
 
     /// <summary>True when <paramref name="magic"/> appears at <paramref name="offset"/> in full.</summary>
     public static bool Match(this ReadOnlySpan<byte> header, int offset, ReadOnlySpan<byte> magic)

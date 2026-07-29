@@ -51,9 +51,9 @@ public static class Activity
                 activity.RecordRequest(client, status);
 
                 if (endpoint is "GetArt" or "GetArtByFingerprint" or "GetArtByFingerprintPng" or "LegacyApi"
-                    && (status is 200 or 304 or 404))
+                    && status is 200 or 304 or 404)
                 {
-                    activity.RecordArt(client, hit: status != 404);
+                    activity.RecordArt(client, status != 404);
                 }
 
                 if (logger.IsEnabled(LogLevel.Debug))

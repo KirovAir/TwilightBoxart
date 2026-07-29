@@ -46,7 +46,7 @@ public static class IdentifyEndpoints
             {
                 Title = "No items",
                 Detail = "Supply at least one fingerprint in 'items'.",
-                Status = StatusCodes.Status400BadRequest,
+                Status = StatusCodes.Status400BadRequest
             });
         }
 
@@ -58,7 +58,7 @@ public static class IdentifyEndpoints
             {
                 Title = "Batch too large",
                 Detail = $"A batch may contain at most {ApiLimits.MaxIdentifyItems} items; got {request.Items.Count}.",
-                Status = StatusCodes.Status400BadRequest,
+                Status = StatusCodes.Status400BadRequest
             });
         }
 

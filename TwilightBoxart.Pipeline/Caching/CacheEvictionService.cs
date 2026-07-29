@@ -42,6 +42,7 @@ public sealed class CacheEvictionService(
                 logger.LogWarning(ex, "Temp sweep of {Root} failed", cache.Root);
                 continue;
             }
+
             if (swept > 0)
             {
                 logger.LogInformation("Swept {Count} stale temp file(s) from the {Cache} cache", swept, cache.Name);

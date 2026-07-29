@@ -19,8 +19,10 @@ public sealed record MaxRequestBodyMetadata(long Bytes);
 /// </remarks>
 public static class RequestLimits
 {
-    public static RouteHandlerBuilder WithMaxRequestBody(this RouteHandlerBuilder builder, long bytes) =>
-        builder.WithMetadata(new MaxRequestBodyMetadata(bytes));
+    public static RouteHandlerBuilder WithMaxRequestBody(this RouteHandlerBuilder builder, long bytes)
+    {
+        return builder.WithMetadata(new MaxRequestBodyMetadata(bytes));
+    }
 
     public static WebApplication UseRequestBodyLimits(this WebApplication app)
     {

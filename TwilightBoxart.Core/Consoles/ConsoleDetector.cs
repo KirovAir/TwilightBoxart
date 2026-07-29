@@ -59,15 +59,15 @@ public static class ConsoleDetector
     /// <summary>The parsers, already in the order described on this type.</summary>
     public static IReadOnlyList<IConsoleHeaderParser> DefaultParsers { get; } =
     [
-        new GameBoyAdvanceHeaderParser(),        // magic at 0x04
-        new NintendoDsHeaderParser(),            // magic at 0xC0
-        new NesHeaderParser(),                   // magic at 0x00
-        new FamicomDiskSystemHeaderParser(),     // magic at 0x00
-        new Nintendo64HeaderParser(),            // magic at 0x00
-        new GameBoyHeaderParser(),               // logo at 0x104, weak heuristic at 0x100
-        new MegaDriveHeaderParser(),             // text at 0x100
-        new SegaEightBitHeaderParser(),          // text at 0x7FF0/0x3FF0/0x1FF0
-        new SnesHeaderParser(),                  // no magic; scored. Must be last.
+        new GameBoyAdvanceHeaderParser(), // magic at 0x04
+        new NintendoDsHeaderParser(), // magic at 0xC0
+        new NesHeaderParser(), // magic at 0x00
+        new FamicomDiskSystemHeaderParser(), // magic at 0x00
+        new Nintendo64HeaderParser(), // magic at 0x00
+        new GameBoyHeaderParser(), // logo at 0x104, weak heuristic at 0x100
+        new MegaDriveHeaderParser(), // text at 0x100
+        new SegaEightBitHeaderParser(), // text at 0x7FF0/0x3FF0/0x1FF0
+        new SnesHeaderParser() // no magic; scored. Must be last.
     ];
 
     /// <summary>

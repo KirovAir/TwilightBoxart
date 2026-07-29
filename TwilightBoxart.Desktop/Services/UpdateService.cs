@@ -68,8 +68,10 @@ public sealed class UpdateService(IHttpClientFactory httpFactory)
         return version > current;
     }
 
-    private static string ReleaseLink(GithubRelease release) =>
-        string.IsNullOrWhiteSpace(release.HtmlUrl) ? About.ReleasesUrl : release.HtmlUrl;
+    private static string ReleaseLink(GithubRelease release)
+    {
+        return string.IsNullOrWhiteSpace(release.HtmlUrl) ? About.ReleasesUrl : release.HtmlUrl;
+    }
 
     /// <summary>Release bodies split the user-facing summary from the mechanical notes with a "---"; keep the first half.</summary>
     private static string ShortNotes(string? body)
@@ -85,9 +87,16 @@ public sealed class UpdateService(IHttpClientFactory httpFactory)
 
     private sealed record GithubRelease
     {
-        [JsonPropertyName("tag_name")] public string? TagName { get; init; }
-        [JsonPropertyName("html_url")] public string? HtmlUrl { get; init; }
-        [JsonPropertyName("body")] public string? Body { get; init; }
-        [JsonPropertyName("prerelease")] public bool PreRelease { get; init; }
+        [JsonPropertyName("tag_name")]
+        public string? TagName { get; init; }
+
+        [JsonPropertyName("html_url")]
+        public string? HtmlUrl { get; init; }
+
+        [JsonPropertyName("body")]
+        public string? Body { get; init; }
+
+        [JsonPropertyName("prerelease")]
+        public bool PreRelease { get; init; }
     }
 }

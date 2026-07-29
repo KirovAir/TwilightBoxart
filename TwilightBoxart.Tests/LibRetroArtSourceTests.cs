@@ -139,7 +139,7 @@ public class LibRetroArtSourceTests
         ConsoleType = ConsoleType.GameBoy,
         Key = "tetris",
         CanonicalName = "Tetris (World)",
-        MatchMethod = MatchMethod.Filename,
+        MatchMethod = MatchMethod.Filename
     };
 
     private const string PrimaryHost = "raw.githubusercontent.com";
@@ -183,28 +183,36 @@ public class LibRetroArtSourceTests
         var handler = new RoutingHandler(_ => Timeout());
         var source = new LibRetroArtSource(new SingleClientFactory(handler), NullLogger<LibRetroArtSource>.Instance);
 
-        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(
-            () => source.TryFetchAsync(GameBoyTitle));
+        await Assert.ThrowsExactlyAsync<ArtSourceUnavailableException>(() => source.TryFetchAsync(GameBoyTitle));
     }
 
-    private static Func<HttpResponseMessage> Timeout() =>
-        () => throw new TaskCanceledException("timed out", new TimeoutException());
+    private static Func<HttpResponseMessage> Timeout()
+    {
+        return () => throw new TaskCanceledException("timed out", new TimeoutException());
+    }
 
-    private static Func<HttpResponseMessage> NotFound() =>
-        () => new HttpResponseMessage(HttpStatusCode.NotFound);
+    private static Func<HttpResponseMessage> NotFound()
+    {
+        return () => new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
 
-    private static Func<HttpResponseMessage> Image() =>
-        () => new HttpResponseMessage(HttpStatusCode.OK)
+    private static Func<HttpResponseMessage> Image()
+    {
+        return () => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new ByteArrayContent(FakeArtSource.Png)
             {
-                Headers = { ContentType = new MediaTypeHeaderValue("image/png") },
-            },
+                Headers = { ContentType = new MediaTypeHeaderValue("image/png") }
+            }
         };
+    }
 
     private sealed class SingleClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
-        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+        public HttpClient CreateClient(string name)
+        {
+            return new HttpClient(handler, false);
+        }
     }
 
     /// <summary>Answers by host, so a test can make the primary fail while the mirror succeeds.</summary>

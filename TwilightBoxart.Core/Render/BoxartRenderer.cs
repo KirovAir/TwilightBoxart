@@ -35,7 +35,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
         (16, PngBitDepth.Bit4),
         (8, PngBitDepth.Bit4),
         (4, PngBitDepth.Bit2),
-        (2, PngBitDepth.Bit1),
+        (2, PngBitDepth.Bit1)
     ];
 
     /// <summary>
@@ -143,8 +143,8 @@ public sealed class BoxartRenderer : IBoxartRenderer
         // filled with a blurred copy of the cover rather than left black: the bars read as part of
         // the artwork instead of as a broken image.
         using (var backdrop = artwork.Clone(context => context
-            .Resize(window)
-            .GaussianBlur(PicoBackdropBlur)))
+                   .Resize(window)
+                   .GaussianBlur(PicoBackdropBlur)))
         {
             canvas.Mutate(context => context.DrawImage(backdrop, Point.Empty, 1f));
         }
@@ -157,14 +157,16 @@ public sealed class BoxartRenderer : IBoxartRenderer
         return EncodePico(canvas);
     }
 
-    private static byte[] EncodePico(Image<Rgba32> canvas) =>
-        EncodeWith(canvas, new BmpEncoder
+    private static byte[] EncodePico(Image<Rgba32> canvas)
+    {
+        return EncodeWith(canvas, new BmpEncoder
         {
             BitsPerPixel = BmpBitsPerPixel.Pixel8,
             // No dithering: 256 colours is generous for 106x96, and the launcher crushes the palette
             // to 15-bit on load anyway, so error diffusion only adds speckle to a flat sky.
-            Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256, Dither = null }),
+            Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = 256, Dither = null })
         });
+    }
 
     /// <summary>
     /// How far <paramref name="source"/> is from <paramref name="target"/>'s shape, as the fraction
@@ -180,7 +182,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
         var horizontal = (double)target.Width / source.Width;
         var vertical = (double)target.Height / source.Height;
 
-        return 1 - (Math.Min(horizontal, vertical) / Math.Max(horizontal, vertical));
+        return 1 - Math.Min(horizontal, vertical) / Math.Max(horizontal, vertical);
     }
 
     /// <summary>
@@ -290,8 +292,8 @@ public sealed class BoxartRenderer : IBoxartRenderer
                     continue;
                 }
 
-                destination[(targetY * destinationStride) + targetX] =
-                    source[((sourceY + row) * sourceStride) + sourceX + column];
+                destination[targetY * destinationStride + targetX] =
+                    source[(sourceY + row) * sourceStride + sourceX + column];
             }
         }
     }
@@ -325,7 +327,8 @@ public sealed class BoxartRenderer : IBoxartRenderer
         });
     }
 
-    private static void FillRows(Image<Rgba32> canvas, Rgba32 color) =>
+    private static void FillRows(Image<Rgba32> canvas, Rgba32 color)
+    {
         canvas.ProcessPixelRows(accessor =>
         {
             for (var y = 0; y < accessor.Height; y++)
@@ -333,6 +336,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
                 accessor.GetRowSpan(y).Fill(color);
             }
         });
+    }
 
     /// <summary>Source-over composite of a single colour onto a span. Degenerates to a fill when opaque.</summary>
     private static void BlendOver(Span<Rgba32> row, Rgba32 color)
@@ -353,9 +357,9 @@ public sealed class BoxartRenderer : IBoxartRenderer
             row[i] = outAlpha <= 0f
                 ? default
                 : new Rgba32(
-                    (byte)(((color.R * sourceAlpha) + (destination.R * destinationAlpha)) / outAlpha),
-                    (byte)(((color.G * sourceAlpha) + (destination.G * destinationAlpha)) / outAlpha),
-                    (byte)(((color.B * sourceAlpha) + (destination.B * destinationAlpha)) / outAlpha),
+                    (byte)((color.R * sourceAlpha + destination.R * destinationAlpha) / outAlpha),
+                    (byte)((color.G * sourceAlpha + destination.G * destinationAlpha) / outAlpha),
+                    (byte)((color.B * sourceAlpha + destination.B * destinationAlpha) / outAlpha),
                     (byte)(outAlpha * 255f));
         }
     }
@@ -367,11 +371,14 @@ public sealed class BoxartRenderer : IBoxartRenderer
     /// <c>Rgba32(uint)</c>, which reads it as <c>0xRRGGBBAA</c>, so the default black border was in fact
     /// rendered as fully transparent red.
     /// </summary>
-    public static Rgba32 ToPixel(uint argb) => new(
-        (byte)(argb >> 16),
-        (byte)(argb >> 8),
-        (byte)argb,
-        (byte)(argb >> 24));
+    public static Rgba32 ToPixel(uint argb)
+    {
+        return new Rgba32(
+            (byte)(argb >> 16),
+            (byte)(argb >> 8),
+            (byte)argb,
+            (byte)(argb >> 24));
+    }
 
     /// <summary>
     /// Encodes at PNG level 9, dropping to a quantized palette until the result fits under
@@ -392,7 +399,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
             ColorType = HasTransparency(canvas) ? PngColorType.RgbWithAlpha : PngColorType.Rgb,
             InterlaceMethod = PngInterlaceMode.None,
             FilterMethod = PngFilterMethod.Adaptive,
-            SkipMetadata = true,
+            SkipMetadata = true
         });
 
         if (direct.Length <= maxBytes)
@@ -412,7 +419,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
                 SkipMetadata = true,
                 // No dithering: it trades banding for high-frequency noise, and noise is precisely what
                 // inflates a deflate stream. Shrinking the file is the entire point of this ladder.
-                Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = colors, Dither = null }),
+                Quantizer = new WuQuantizer(new QuantizerOptions { MaxColors = colors, Dither = null })
             });
 
             if (candidate.Length <= maxBytes)

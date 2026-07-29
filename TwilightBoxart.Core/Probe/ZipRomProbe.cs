@@ -48,8 +48,10 @@ public sealed class ZipRomProbe : IRomProbe
     /// </summary>
     private const int MaxCentralDirectoryBytes = 64 * 1024 * 1024;
 
-    public bool CanHandle(string path) =>
-        string.Equals(Path.GetExtension(path), ".zip", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".zip", StringComparison.OrdinalIgnoreCase);
+    }
 
     public async Task<ProbeResult?> ProbeAsync(
         Stream stream, string path, bool wantHeader, CancellationToken ct = default)
@@ -94,7 +96,7 @@ public sealed class ZipRomProbe : IRomProbe
             Crc32 = entry.Crc32,
             Header = header,
             Container = ContainerKind.Zip,
-            BytesRead = reader.BytesRead,
+            BytesRead = reader.BytesRead
         };
     }
 
@@ -312,8 +314,8 @@ public sealed class ZipRomProbe : IRomProbe
         // The local header's own name and extra lengths may differ from the central directory's, so
         // the data offset has to be derived from the local copy.
         var dataOffset = entry.LocalHeaderOffset + LocalHeaderSize
-            + BinaryPrimitives.ReadUInt16LittleEndian(local.AsSpan(26))
-            + BinaryPrimitives.ReadUInt16LittleEndian(local.AsSpan(28));
+                                                 + BinaryPrimitives.ReadUInt16LittleEndian(local.AsSpan(26))
+                                                 + BinaryPrimitives.ReadUInt16LittleEndian(local.AsSpan(28));
 
         var wanted = (int)Math.Min(IRomProbe.HeaderBytesWanted, entry.UncompressedSize);
 
@@ -334,7 +336,7 @@ public sealed class ZipRomProbe : IRomProbe
 
         try
         {
-            await using var compressed = new MemoryStream(prefix, writable: false);
+            await using var compressed = new MemoryStream(prefix, false);
             await using var inflater = new DeflateStream(compressed, CompressionMode.Decompress);
             while (filled < wanted)
             {
@@ -362,7 +364,10 @@ public sealed class ZipRomProbe : IRomProbe
     /// real-world tools write UTF-8 without setting the flag, and CP437 is not even a registered
     /// encoding on .NET without an extra provider. Invalid sequences become U+FFFD rather than throwing.
     /// </summary>
-    private static string DecodeName(ReadOnlySpan<byte> raw) => Encoding.UTF8.GetString(raw);
+    private static string DecodeName(ReadOnlySpan<byte> raw)
+    {
+        return Encoding.UTF8.GetString(raw);
+    }
 
     private static int FindLastSignature(ReadOnlySpan<byte> buffer, uint signature)
     {
@@ -412,7 +417,7 @@ public sealed class ZipRomProbe : IRomProbe
 
             stream.Seek(offset, SeekOrigin.Begin);
             var buffer = new byte[length];
-            var read = await stream.ReadAtLeastAsync(buffer, length, throwOnEndOfStream: false, ct);
+            var read = await stream.ReadAtLeastAsync(buffer, length, false, ct);
             BytesRead += read;
             return read == length ? buffer : buffer[..read];
         }

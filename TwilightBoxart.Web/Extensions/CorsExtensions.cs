@@ -20,8 +20,9 @@ public static class CorsExtensions
 
     private static readonly TimeSpan PreflightMaxAge = TimeSpan.FromSeconds(86400);
 
-    public static IServiceCollection AddTwilightCors(this IServiceCollection services, SecuritySettings security) =>
-        services.AddCors(options =>
+    public static IServiceCollection AddTwilightCors(this IServiceCollection services, SecuritySettings security)
+    {
+        return services.AddCors(options =>
         {
             options.AddPolicy(PublicGetPolicy, policy => policy
                 .AllowAnyOrigin()
@@ -44,4 +45,5 @@ public static class CorsExtensions
                 // AllowAnyOrigin: these endpoints write to disk, and same-origin callers are unaffected.
             });
         });
+    }
 }

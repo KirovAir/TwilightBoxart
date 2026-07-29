@@ -38,7 +38,14 @@ public class CacheRetentionTests
     public void Cleanup()
     {
         _db.Dispose();
-        try { Directory.Delete(_dir, true); } catch { /* best effort */ }
+        try
+        {
+            Directory.Delete(_dir, true);
+        }
+        catch
+        {
+            /* best effort */
+        }
     }
 
     /// <summary>
@@ -58,7 +65,7 @@ public class CacheRetentionTests
             Kind = kind,
             SizeBytes = 1024,
             HitCount = hits,
-            LastAccessUtc = DateTime.UtcNow,
+            LastAccessUtc = DateTime.UtcNow
         };
         _db.CacheEntries.Add(entry);
         await _db.SaveChangesAsync();
@@ -84,7 +91,7 @@ public class CacheRetentionTests
     {
         // Served a second ago, 9999 hits, but taken 10 days ago. Retention is about how long we have
         // HELD the copy, not how wanted it is - otherwise a popular cover would never age out at all.
-        await AddAsync(CacheKind.Original, "popular", DateTime.UtcNow.AddDays(-10), hits: 9999);
+        await AddAsync(CacheKind.Original, "popular", DateTime.UtcNow.AddDays(-10), 9999);
 
         var expired = await _db.ExpiredAsync(CacheKind.Original, TimeSpan.FromDays(7), 100);
 
@@ -125,7 +132,7 @@ public class CacheRetentionTests
                 ConsoleType = ConsoleType.NintendoDs,
                 Key = "CCCC",
                 CanonicalName = "Some Game (USA)",
-                MissUntil = DateTime.UtcNow.AddDays(-1),
+                MissUntil = DateTime.UtcNow.AddDays(-1)
             });
         await _db.SaveChangesAsync();
 
@@ -140,6 +147,9 @@ public class CacheRetentionTests
     /// <summary>Hands out contexts over this test's database, the way the app's factory does.</summary>
     private sealed class SingleDbFactory(DbContextOptions<AppDbContext> options) : IDbContextFactory<AppDbContext>
     {
-        public AppDbContext CreateDbContext() => new(options);
+        public AppDbContext CreateDbContext()
+        {
+            return new AppDbContext(options);
+        }
     }
 }

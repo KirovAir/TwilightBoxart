@@ -166,7 +166,7 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
             Title = detection.Title,
             RegionId = detection.RegionId,
             MatchMethod = MatchMethod.None,
-            Tag = fingerprint.Tag,
+            Tag = fingerprint.Tag
         };
     }
 
@@ -212,7 +212,7 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
             Title = detection.Title,
             RegionId = detection.RegionId,
             MatchMethod = MatchMethod.HeaderSerial,
-            Tag = tag,
+            Tag = tag
         };
     }
 
@@ -355,7 +355,7 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
             CanonicalName = entry.Name,
             RegionId = detection.RegionId,
             MatchMethod = method,
-            Tag = tag,
+            Tag = tag
         };
     }
 
@@ -465,7 +465,7 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
         {
             { Crc32: not null } or { Sha1: not null } => null,
             { Header: { Length: > 0 } header } => Convert.ToHexStringLower(SHA256.HashData(header)[..DigestBytes]),
-            _ => null,
+            _ => null
         };
 
         return string.Create(

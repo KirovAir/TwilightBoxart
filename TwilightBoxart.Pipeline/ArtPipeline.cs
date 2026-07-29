@@ -33,16 +33,20 @@ public sealed class ArtPipeline(
     /// controller only caught NoMatchException, so every unmatched N64 zip produced an HTTP 500.
     /// </summary>
     public Task<RenderedArt?> TryGetAsync(
-        ConsoleType console, string key, RenderOptions options, CancellationToken ct = default) =>
-        TryGetAsync(console, key, resolved: null, options, ct);
+        ConsoleType console, string key, RenderOptions options, CancellationToken ct = default)
+    {
+        return TryGetAsync(console, key, null, options, ct);
+    }
 
     /// <summary>
     /// Same, carrying the identity the caller just resolved. The canonical name the ladder produced
     /// is what keeps the name-addressed sources reachable for a cold name-keyed title (GB, NES, ..).
     /// </summary>
     public Task<RenderedArt?> TryGetAsync(
-        RomIdentity identity, RenderOptions options, CancellationToken ct = default) =>
-        TryGetAsync(identity.ConsoleType, identity.Key, identity, options, ct);
+        RomIdentity identity, RenderOptions options, CancellationToken ct = default)
+    {
+        return TryGetAsync(identity.ConsoleType, identity.Key, identity, options, ct);
+    }
 
     private async Task<RenderedArt?> TryGetAsync(
         ConsoleType console, string key, RomIdentity? resolved, RenderOptions options, CancellationToken ct)
@@ -75,6 +79,7 @@ public sealed class ArtPipeline(
             {
                 return null;
             }
+
             (bytes, _) = await RenderAsync(console, key, record, options, ct);
         }
 
@@ -272,7 +277,7 @@ public sealed class ArtPipeline(
             CanonicalName = canonicalName,
             Title = record?.Title,
             RegionId = record?.RegionId is { Length: > 0 } region ? region[0] : null,
-            MatchMethod = serial is not null ? MatchMethod.HeaderSerial : MatchMethod.Filename,
+            MatchMethod = serial is not null ? MatchMethod.HeaderSerial : MatchMethod.Filename
         };
     }
 
@@ -281,6 +286,8 @@ public sealed class ArtPipeline(
     /// miss recorded identity-blind (the key-only route, before anything identified the title) must
     /// not hold back a request that can actually address the name-keyed sources.
     /// </summary>
-    private static bool ResolvedKnowsMore(RomIdentity? resolved, ArtRecord record) =>
-        resolved?.CanonicalName is { Length: > 0 } && string.IsNullOrEmpty(record.CanonicalName);
+    private static bool ResolvedKnowsMore(RomIdentity? resolved, ArtRecord record)
+    {
+        return resolved?.CanonicalName is { Length: > 0 } && string.IsNullOrEmpty(record.CanonicalName);
+    }
 }

@@ -84,7 +84,7 @@ public static class LegacyEndpoints
         {
             FileName = name,
             Sha1 = sha1.Length == 40 && sha1.All(Uri.IsHexDigit) ? sha1 : null,
-            Header = header,
+            Header = header
         }, ct);
 
         var matched = identity.IsMatched && ArtKey.IsValid(identity.Key);
@@ -125,8 +125,10 @@ public static class LegacyEndpoints
     /// a speed bump, not a gate, and it is deliberately all this claims to be: the rate limiter is
     /// what actually bounds the damage here.
     /// </remarks>
-    private static bool LooksLikeV07Client(IFormCollection form) =>
-        V07Signature.All(form.ContainsKey);
+    private static bool LooksLikeV07Client(IFormCollection form)
+    {
+        return V07Signature.All(form.ContainsKey);
+    }
 
     /// <summary>
     /// Maps the v0.7 form fields onto <see cref="RenderOptions"/>. Anything absent or unparseable
@@ -153,7 +155,7 @@ public static class LegacyEndpoints
 
         // v0.7 spells these "NintendoDSi" / "Nintendo3DS"; ignoreCase folds them onto the current
         // names, and the ordinals have never changed either way.
-        if (Enum.TryParse<BoxartBorderStyle>(form["BoxartBorderStyle"], ignoreCase: true, out var style))
+        if (Enum.TryParse<BoxartBorderStyle>(form["BoxartBorderStyle"], true, out var style))
         {
             options = options with { BorderStyle = style };
         }

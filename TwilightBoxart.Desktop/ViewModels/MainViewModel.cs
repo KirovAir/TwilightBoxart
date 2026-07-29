@@ -43,8 +43,10 @@ public sealed partial class MainViewModel : ObservableObject
     /// One startup poll for a newer release; null when the user disabled it or the build is current. UI-free
     /// so the view owns the dialog. Awaited off the window's load, never blocking the first paint.
     /// </summary>
-    public Task<UpdateInfo?> CheckForUpdatesAsync() =>
-        _checkForUpdates ? _updateService.CheckAsync() : Task.FromResult<UpdateInfo?>(null);
+    public Task<UpdateInfo?> CheckForUpdatesAsync()
+    {
+        return _checkForUpdates ? _updateService.CheckAsync() : Task.FromResult<UpdateInfo?>(null);
+    }
 
     /// <summary>Maps stored settings onto the bound properties; shared by the constructor and the reset.</summary>
     private void Apply(AppSettings settings)
@@ -70,7 +72,7 @@ public sealed partial class MainViewModel : ObservableObject
             (128, 115) => (true, false, false),
             (168, 130) => (false, true, false),
             (208, 143) => (false, false, true),
-            _ => (false, false, false),
+            _ => (false, false, false)
         };
         IsSizeCustom = !(IsSizeClassic || IsSizeLarge || IsSizeXl);
 
@@ -109,7 +111,8 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    [ObservableProperty] private string _backendUrl = "";
+    [ObservableProperty]
+    private string _backendUrl = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsOversizeForTwilight))]
@@ -125,43 +128,98 @@ public sealed partial class MainViewModel : ObservableObject
     /// </summary>
     public bool IsOversizeForTwilight =>
         Width > RenderOptions.TwilightMaxWidth || Height > RenderOptions.TwilightMaxHeight;
-    [ObservableProperty] private bool _keepAspectRatio;
-    [ObservableProperty] private bool _overwrite;
-    [ObservableProperty] private int _concurrency;
+
+    [ObservableProperty]
+    private bool _keepAspectRatio;
+
+    [ObservableProperty]
+    private bool _overwrite;
+
+    [ObservableProperty]
+    private int _concurrency;
 
     // The size presets of the classic app. Selecting one stamps the numbers; Custom frees them.
-    [ObservableProperty] private bool _isSizeClassic;
-    [ObservableProperty] private bool _isSizeLarge;
-    [ObservableProperty] private bool _isSizeXl;
-    [ObservableProperty] private bool _isSizeCustom;
+    [ObservableProperty]
+    private bool _isSizeClassic;
 
-    partial void OnIsSizeClassicChanged(bool value) { if (value) { Width = 128; Height = 115; } }
-    partial void OnIsSizeLargeChanged(bool value) { if (value) { Width = 168; Height = 130; } }
-    partial void OnIsSizeXlChanged(bool value) { if (value) { Width = 208; Height = 143; } }
+    [ObservableProperty]
+    private bool _isSizeLarge;
+
+    [ObservableProperty]
+    private bool _isSizeXl;
+
+    [ObservableProperty]
+    private bool _isSizeCustom;
+
+    partial void OnIsSizeClassicChanged(bool value)
+    {
+        if (value)
+        {
+            Width = 128;
+            Height = 115;
+        }
+    }
+
+    partial void OnIsSizeLargeChanged(bool value)
+    {
+        if (value)
+        {
+            Width = 168;
+            Height = 130;
+        }
+    }
+
+    partial void OnIsSizeXlChanged(bool value)
+    {
+        if (value)
+        {
+            Width = 208;
+            Height = 143;
+        }
+    }
 
     // The launcher the covers are for. Pico's format is fixed, so the view hides the size and
     // border panels entirely when it is selected: the clearest statement that nothing applies.
-    [ObservableProperty] private bool _isLauncherTwilight = true;
-    [ObservableProperty] private bool _isLauncherPico;
+    [ObservableProperty]
+    private bool _isLauncherTwilight = true;
+
+    [ObservableProperty]
+    private bool _isLauncherPico;
 
     /// <summary>
     /// Switching launcher always rewrites the destination, manual override or not: a folder chosen
     /// for one launcher's layout is the wrong place for the other's covers, and leaving it behind
     /// quietly fills a Pico card with PNGs TWiLightMenu++ was meant to read.
     /// </summary>
-    partial void OnIsLauncherPicoChanged(bool value) => BoxartFolder = DerivedBoxartFolder;
+    partial void OnIsLauncherPicoChanged(bool value)
+    {
+        BoxartFolder = DerivedBoxartFolder;
+    }
 
-    [ObservableProperty] private bool _addBorder;
-    [ObservableProperty] private bool _isBorderDsi;
-    [ObservableProperty] private bool _isBorder3ds;
-    [ObservableProperty] private bool _isBorderBlack;
-    [ObservableProperty] private bool _isBorderWhite;
-    [ObservableProperty] private bool _thickBorder;
+    [ObservableProperty]
+    private bool _addBorder;
+
+    [ObservableProperty]
+    private bool _isBorderDsi;
+
+    [ObservableProperty]
+    private bool _isBorder3ds;
+
+    [ObservableProperty]
+    private bool _isBorderBlack;
+
+    [ObservableProperty]
+    private bool _isBorderWhite;
+
+    [ObservableProperty]
+    private bool _thickBorder;
 
     /// <summary>Where the art will go. Derived from the root unless the user sets it manually.</summary>
-    [ObservableProperty] private string _boxartFolder = "";
+    [ObservableProperty]
+    private string _boxartFolder = "";
 
-    [ObservableProperty] private bool _boxartManual;
+    [ObservableProperty]
+    private bool _boxartManual;
 
     partial void OnBoxartManualChanged(bool value)
     {
@@ -177,14 +235,26 @@ public sealed partial class MainViewModel : ObservableObject
     private string EffectiveBoxartFolder =>
         BoxartManual && !string.IsNullOrWhiteSpace(BoxartFolder) ? BoxartFolder : DerivedBoxartFolder;
 
-    [ObservableProperty] private int _found;
-    [ObservableProperty] private int _written;
-    [ObservableProperty] private int _skipped;
-    [ObservableProperty] private int _missed;
-    [ObservableProperty] private double _progressValue;
+    [ObservableProperty]
+    private int _found;
 
-    [ObservableProperty] private string _statusText = "Choose your SD card folder to begin.";
-    [ObservableProperty] private string _logText = "";
+    [ObservableProperty]
+    private int _written;
+
+    [ObservableProperty]
+    private int _skipped;
+
+    [ObservableProperty]
+    private int _missed;
+
+    [ObservableProperty]
+    private double _progressValue;
+
+    [ObservableProperty]
+    private string _statusText = "Choose your SD card folder to begin.";
+
+    [ObservableProperty]
+    private string _logText = "";
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(StartScanCommand))]
@@ -324,7 +394,10 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    public void Save() => ToSettings().Save();
+    public void Save()
+    {
+        ToSettings().Save();
+    }
 
     /// <summary>Cancels any scan or index refresh still running; called when the app shuts down.</summary>
     public void Shutdown()
@@ -383,22 +456,28 @@ public sealed partial class MainViewModel : ObservableObject
     private RenderTarget SelectedTarget =>
         IsLauncherPico ? RenderTarget.Pico : RenderTarget.TwilightMenu;
 
-    private AppSettings ToSettings() => new()
+    private AppSettings ToSettings()
     {
-        BackendUrl = BackendUrl,
-        RootFolder = RootFolder,
-        BoxartFolder = BoxartManual && !string.IsNullOrWhiteSpace(BoxartFolder) ? BoxartFolder : null,
-        Target = SelectedTarget,
-        Width = Width,
-        Height = Height,
-        KeepAspectRatio = KeepAspectRatio,
-        BorderStyle = SelectedBorderStyle,
-        BorderThickness = ThickBorder ? 2 : 1,
-        BorderColor = IsBorderWhite ? "#FFFFFF" : "#000000",
-        Overwrite = Overwrite,
-        Concurrency = Concurrency,
-        CheckForUpdates = _checkForUpdates,
-    };
+        return new AppSettings
+        {
+            BackendUrl = BackendUrl,
+            RootFolder = RootFolder,
+            BoxartFolder = BoxartManual && !string.IsNullOrWhiteSpace(BoxartFolder) ? BoxartFolder : null,
+            Target = SelectedTarget,
+            Width = Width,
+            Height = Height,
+            KeepAspectRatio = KeepAspectRatio,
+            BorderStyle = SelectedBorderStyle,
+            BorderThickness = ThickBorder ? 2 : 1,
+            BorderColor = IsBorderWhite ? "#FFFFFF" : "#000000",
+            Overwrite = Overwrite,
+            Concurrency = Concurrency,
+            CheckForUpdates = _checkForUpdates
+        };
+    }
 
-    private RenderOptions BuildRenderOptions() => ToSettings().ToRenderOptions();
+    private RenderOptions BuildRenderOptions()
+    {
+        return ToSettings().ToRenderOptions();
+    }
 }

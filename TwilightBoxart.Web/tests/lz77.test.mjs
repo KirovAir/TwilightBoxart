@@ -8,7 +8,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { lz77Decompress, crc32 } from '../wwwroot/romprobe.js';
+import {lz77Decompress, crc32} from '../wwwroot/romprobe.js';
 
 // scan.js reads the server-rendered formats out of the page at import time; stub the one element it
 // wants before importing it, so probeFile() can be exercised under Node.
@@ -24,7 +24,7 @@ globalThis.document = {
 const scan = await import('../wwwroot/scan.js');
 
 /** Wrap bytes in a valid LZ77 (type 0x10) stream using literal tokens only - the simplest stream the
-    decoder must accept, and enough to prove the round trip. Back-references are asserted separately. */
+ decoder must accept, and enough to prove the round trip. Back-references are asserted separately. */
 function packLiterals(data) {
     const out = [0x10, data.length & 0xFF, (data.length >> 8) & 0xFF, (data.length >> 16) & 0xFF];
     for (let i = 0; i < data.length; i += 8) {
@@ -36,7 +36,7 @@ function packLiterals(data) {
 
 test('round-trips a ROM and the CRC32 matches the plain (uncompressed) bytes', () => {
     // A non-multiple-of-8 length exercises the partial final flag group and the exact-length stop.
-    const rom = Uint8Array.from({ length: 5003 }, (_, i) => (i * 31 + 7) & 0xFF);
+    const rom = Uint8Array.from({length: 5003}, (_, i) => (i * 31 + 7) & 0xFF);
 
     const decoded = lz77Decompress(packLiterals(rom));
 
@@ -63,7 +63,7 @@ test('returns null on malformed streams', () => {
 });
 
 test('probeFile identifies an .lz77 ROM by the decompressed CRC and keeps the on-card name', async () => {
-    const rom = Uint8Array.from({ length: 4096 }, (_, i) => (i * 17 + 3) & 0xFF);
+    const rom = Uint8Array.from({length: 4096}, (_, i) => (i * 17 + 3) & 0xFF);
     const probe = await scan.probeFile(new Blob([packLiterals(rom)]), 'game.lz77.gen', false);
 
     assert.equal(probe.ok, true);
@@ -75,7 +75,7 @@ test('probeFile identifies an .lz77 ROM by the decompressed CRC and keeps the on
 });
 
 test('probeFile leaves a plain ROM on the loose path, untouched by the .lz77 branch', async () => {
-    const rom = Uint8Array.from({ length: 4096 }, (_, i) => (i * 17 + 3) & 0xFF);
+    const rom = Uint8Array.from({length: 4096}, (_, i) => (i * 17 + 3) & 0xFF);
     const probe = await scan.probeFile(new Blob([rom]), 'game.gen', false);
 
     assert.equal(probe.container, 'loose');

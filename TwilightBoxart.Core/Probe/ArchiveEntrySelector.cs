@@ -41,7 +41,7 @@ public static class ArchiveEntrySelector
         ".sav", ".srm", ".sram", ".state", ".cht", ".cheats",
         ".ips", ".bps", ".ups", ".xdelta", ".ppf", ".patch",
         ".dat", ".sfv", ".md5", ".sha1", ".cue", ".m3u",
-        ".exe", ".dll", ".bat", ".cmd", ".sh", ".url", ".lnk",
+        ".exe", ".dll", ".bat", ".cmd", ".sh", ".url", ".lnk"
     };
 
     /// <summary>
@@ -117,9 +117,13 @@ public static class ArchiveEntrySelector
     /// rather than the 7z "unknown" sentinel, so letting one through would send a genuine-looking
     /// 0x00000000 into the index lookup.
     /// </summary>
-    private static bool IsIgnorable(ArchiveEntryCandidate entry) =>
-        entry.UncompressedSize <= 0 || IsDirectory(entry.Name);
+    private static bool IsIgnorable(ArchiveEntryCandidate entry)
+    {
+        return entry.UncompressedSize <= 0 || IsDirectory(entry.Name);
+    }
 
-    private static bool IsDirectory(string entryName) =>
-        entryName.Length == 0 || entryName[^1] is '/' or '\\';
+    private static bool IsDirectory(string entryName)
+    {
+        return entryName.Length == 0 || entryName[^1] is '/' or '\\';
+    }
 }

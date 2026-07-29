@@ -101,7 +101,7 @@ public class ApiTests
         var items = new[]
         {
             new RomFingerprint { FileName = "a.nds", Tag = "first" },
-            new RomFingerprint { FileName = "b.nds", Tag = "second" },
+            new RomFingerprint { FileName = "b.nds", Tag = "second" }
         };
 
         var response = await _client.PostAsJsonAsync("/v2/identify", new { items });
@@ -195,7 +195,7 @@ public class ApiTests
             "with.dot",
             "with%20space",
             "sub%2fdir",
-            new string('a', 65),
+            new('a', 65)
         ];
 
         foreach (var key in keys)
@@ -323,21 +323,21 @@ public class ApiTests
         // name says nothing. This is the DS/DSi client's contract: send the file's first bytes and
         // parse nothing on-device.
         using var factory = new TwilightWebFactory(
-            identifier: new FakeIdentifier(fingerprint => fingerprint.Header is { Length: > 0 }
+            new FakeIdentifier(fingerprint => fingerprint.Header is { Length: > 0 }
                 ? new RomIdentity
                 {
                     ConsoleType = ConsoleType.NintendoDs,
                     Key = "ASME",
                     Serial = "ASME",
                     MatchMethod = MatchMethod.HeaderSerial,
-                    Tag = fingerprint.Tag,
+                    Tag = fingerprint.Tag
                 }
                 : new RomIdentity
                 {
                     ConsoleType = ConsoleType.Unknown,
                     Key = "",
                     MatchMethod = MatchMethod.None,
-                    Tag = fingerprint.Tag,
+                    Tag = fingerprint.Tag
                 }));
         using var client = factory.CreateClient();
 
@@ -395,15 +395,15 @@ public class ApiTests
         // resolved and hand the pipeline console+key alone, so a cold name-keyed title 404'd and
         // was negative-cached as a miss.
         using var factory = new TwilightWebFactory(
-            identifier: new FakeIdentifier(fingerprint => new RomIdentity
+            new FakeIdentifier(fingerprint => new RomIdentity
             {
                 ConsoleType = ConsoleType.GameBoy,
                 Key = "52394050d042fd6b",
                 CanonicalName = Path.GetFileNameWithoutExtension(fingerprint.FileName),
                 MatchMethod = MatchMethod.Filename,
-                Tag = fingerprint.Tag,
+                Tag = fingerprint.Tag
             }),
-            artSource: new FakeArtSource(requireCanonicalName: true));
+            new FakeArtSource(true));
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/v2/art.png?name=Super%20Mario%20Land%20(World).gb");
@@ -417,7 +417,7 @@ public class ApiTests
     {
         RomFingerprint? seen = null;
         using var factory = new TwilightWebFactory(
-            identifier: new FakeIdentifier(fingerprint =>
+            new FakeIdentifier(fingerprint =>
             {
                 seen = fingerprint;
                 return new RomIdentity
@@ -426,7 +426,7 @@ public class ApiTests
                     Key = "ASME",
                     Serial = "ASME",
                     MatchMethod = MatchMethod.Crc32,
-                    Tag = fingerprint.Tag,
+                    Tag = fingerprint.Tag
                 };
             }));
         using var client = factory.CreateClient();
@@ -447,7 +447,7 @@ public class ApiTests
         // identifies the ROM exactly as it did before the field existed.
         RomFingerprint? seen = null;
         using var factory = new TwilightWebFactory(
-            identifier: new FakeIdentifier(fingerprint =>
+            new FakeIdentifier(fingerprint =>
             {
                 seen = fingerprint;
                 return new RomIdentity
@@ -456,19 +456,19 @@ public class ApiTests
                     Key = "ASME",
                     Serial = "ASME",
                     MatchMethod = MatchMethod.Filename,
-                    Tag = fingerprint.Tag,
+                    Tag = fingerprint.Tag
                 };
             }));
         using var client = factory.CreateClient();
 
         foreach (var query in new[]
-        {
-            "crc32=&size=",
-            "crc32=0&size=0",
-            "crc32=zz&size=abc",
-            "crc32=123456789AB&size=-5",
-            "crc32=FFFFFFFFF&size=99999999999999999999",
-        })
+                 {
+                     "crc32=&size=",
+                     "crc32=0&size=0",
+                     "crc32=zz&size=abc",
+                     "crc32=123456789AB&size=-5",
+                     "crc32=FFFFFFFFF&size=99999999999999999999"
+                 })
         {
             seen = null;
             var response = await client.GetAsync($"/v2/art.png?name=game.nes&{query}");
@@ -498,7 +498,7 @@ public class ApiTests
             new IndexRow(ConsoleType.Nes, "Metroid (USA)", Crc32: Crc32.HashToUInt32(rom.AsSpan(16))));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
         using var factory = new TwilightWebFactory(
-            identifier: new IdentificationLadder(index, NullLogger<IdentificationLadder>.Instance));
+            new IdentificationLadder(index, NullLogger<IdentificationLadder>.Instance));
         using var client = factory.CreateClient();
 
         var fingerprint =
@@ -585,7 +585,7 @@ public class ApiTests
             ["KeepAspectRatio"] = "True",
             ["BoxartBorderStyle"] = "NintendoDSi",
             ["BoxartBorderColor"] = "0xFF336699",
-            ["BoxartBorderThickness"] = "2",
+            ["BoxartBorderThickness"] = "2"
         };
 
         foreach (var (key, value) in overrides)
@@ -629,12 +629,12 @@ public class ApiTests
     public async Task LegacyApi_MissIsABare404()
     {
         using var factory = new TwilightWebFactory(
-            identifier: new FakeIdentifier(fingerprint => new RomIdentity
+            new FakeIdentifier(fingerprint => new RomIdentity
             {
                 ConsoleType = ConsoleType.Unknown,
                 Key = "",
                 MatchMethod = MatchMethod.None,
-                Tag = fingerprint.Tag,
+                Tag = fingerprint.Tag
             }));
         using var client = factory.CreateClient();
 
@@ -686,7 +686,7 @@ public class ApiTests
         // scraper that found the endpoint without reading the client.
         using var form = new FormUrlEncodedContent([
             new KeyValuePair<string, string>("Filename", "Pokemon.zip"),
-            new KeyValuePair<string, string>("Sha1", "6b47bb75d16514b6a476aa0c73a683a2a4c18765"),
+            new KeyValuePair<string, string>("Sha1", "6b47bb75d16514b6a476aa0c73a683a2a4c18765")
         ]);
 
         var response = await _client.PostAsync("/api", form);
@@ -725,7 +725,7 @@ public class ApiTests
                  {
                      "/v2/art/nds/ASME.png",
                      "/v2/art.png?name=Mario.nds",
-                     "/v2/index/nointro.db",
+                     "/v2/index/nointro.db"
                  })
         {
             var response = await client.GetAsync(url);
@@ -784,7 +784,7 @@ public class ApiTests
         Assert.AreEqual(HttpStatusCode.Unauthorized, stats.StatusCode,
             "a 401 as a status code, never a redirect to a login page");
 
-        var rebuild = await client.PostAsync("/v2/admin/index/rebuild", content: null);
+        var rebuild = await client.PostAsync("/v2/admin/index/rebuild", null);
         Assert.AreEqual(HttpStatusCode.Unauthorized, rebuild.StatusCode);
     }
 
@@ -801,7 +801,7 @@ public class ApiTests
         Assert.IsNotNull(before);
         Assert.IsFalse(before.Index.Available, "the test host starts with no index file");
 
-        var kicked = await client.PostAsync("/v2/admin/index/rebuild", content: null);
+        var kicked = await client.PostAsync("/v2/admin/index/rebuild", null);
         Assert.AreEqual(HttpStatusCode.Accepted, kicked.StatusCode);
 
         // The build is deliberately in the background; poll like the panel does.
@@ -881,8 +881,13 @@ public class ApiTests
     private sealed record AdminStatsDto(IndexDto Index, BuildDto Build, int Titles, List<ActivityDto> Clients);
 
     private sealed record ActivityDto(
-        string Client, long Requests, long Rejected, long ArtHits, long ArtMisses,
-        long Lookups, long Matched);
+        string Client,
+        long Requests,
+        long Rejected,
+        long ArtHits,
+        long ArtMisses,
+        long Lookups,
+        long Matched);
 
     private sealed record BuildDto(string State, string? Version, int? Rows, string? Error);
 }
@@ -952,7 +957,7 @@ public sealed class TwilightWebFactory(
 
         try
         {
-            Directory.Delete(_dataPath, recursive: true);
+            Directory.Delete(_dataPath, true);
         }
         catch (IOException)
         {
@@ -974,11 +979,13 @@ public sealed class FakeIdentifier(Func<RomFingerprint, RomIdentity>? identify =
         Serial = "ASME",
         CanonicalName = Path.GetFileNameWithoutExtension(fingerprint.FileName),
         MatchMethod = MatchMethod.Filename,
-        Tag = fingerprint.Tag,
+        Tag = fingerprint.Tag
     });
 
-    public Task<RomIdentity> IdentifyAsync(RomFingerprint fingerprint, CancellationToken ct = default) =>
-        Task.FromResult(_identify(fingerprint));
+    public Task<RomIdentity> IdentifyAsync(RomFingerprint fingerprint, CancellationToken ct = default)
+    {
+        return Task.FromResult(_identify(fingerprint));
+    }
 
     public async Task<IReadOnlyList<RomIdentity>> IdentifyBatchAsync(
         IReadOnlyList<RomFingerprint> fingerprints, CancellationToken ct = default)
@@ -1013,7 +1020,10 @@ public sealed class FakeMetadataIndex : IMetadataIndex
         return true;
     }
 
-    public IndexEntry? SearchByName(ConsoleType console, string name) => null;
+    public IndexEntry? SearchByName(ConsoleType console, string name)
+    {
+        return null;
+    }
 
     public string Version => "test-index";
 
@@ -1031,13 +1041,17 @@ public sealed class FakeArtSource(bool requireCanonicalName = false) : IArtSourc
 
     public int Order => 0;
 
-    public bool CanHandle(RomIdentity identity) =>
-        !requireCanonicalName || !string.IsNullOrEmpty(identity.CanonicalName);
+    public bool CanHandle(RomIdentity identity)
+    {
+        return !requireCanonicalName || !string.IsNullOrEmpty(identity.CanonicalName);
+    }
 
-    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default) =>
-        Task.FromResult<ArtBlob?>(CanHandle(identity)
+    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default)
+    {
+        return Task.FromResult<ArtBlob?>(CanHandle(identity)
             ? new ArtBlob(Png, $"https://example.invalid/{identity.Key}.png", "image/png")
             : null);
+    }
 }
 
 /// <summary>Records the options it was handed, which is how the clamping tests observe the boundary.</summary>
@@ -1065,7 +1079,7 @@ public sealed class FakeIndexSource : IIndexSource
         [
             new DatEntry { Console = ConsoleType.NintendoDs, Name = "Super Mario 64 DS (USA)", Serial = "ASME" },
             new DatEntry { Console = ConsoleType.GameBoy, Name = "Super Mario Land (World)" },
-            new DatEntry { Console = ConsoleType.GameBoyAdvance, Name = "Metroid Fusion (USA)", Serial = "AMTE" },
+            new DatEntry { Console = ConsoleType.GameBoyAdvance, Name = "Metroid Fusion (USA)", Serial = "AMTE" }
         ], "fake-index-1");
         return Task.FromResult(new BuiltIndex("fake-index-1", rows));
     }

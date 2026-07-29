@@ -47,8 +47,10 @@ public class DataTests
     }
 
     /// <summary>A fresh context per unit of work, exactly as the app's DbContextFactory hands them out.</summary>
-    private AppDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={_dbPath}").Options);
+    private AppDbContext NewContext()
+    {
+        return new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={_dbPath}").Options);
+    }
 
     // The migration itself
 
@@ -139,7 +141,7 @@ public class DataTests
                 SizeBytes = 12_345,
                 LastAccessUtc = lastAccess,
                 HitCount = 7,
-                SourceSha256 = "a1b2c3",
+                SourceSha256 = "a1b2c3"
             });
             await db.SaveChangesAsync();
         }
@@ -178,7 +180,7 @@ public class DataTests
         {
             db.CacheEntries.Add(new CacheEntry
             {
-                CacheKey = "hot", Kind = CacheKind.Render, LastAccessUtc = created, HitCount = 2,
+                CacheKey = "hot", Kind = CacheKind.Render, LastAccessUtc = created, HitCount = 2
             });
             await db.SaveChangesAsync();
         }
@@ -196,7 +198,7 @@ public class DataTests
             {
                 ["hot"] = new(40, newAccess),
                 // An entry evicted between being served and being flushed is expected, not an error.
-                ["evicted-since"] = new(5, newAccess),
+                ["evicted-since"] = new(5, newAccess)
             });
             Assert.AreEqual(1, flushed);
         }
@@ -228,7 +230,7 @@ public class DataTests
             // the LRU sweep could evict something that is actually hot.
             await db.FlushHitsAsync(new Dictionary<string, BufferedHits>
             {
-                ["hot"] = new(3, now.AddMinutes(-30)),
+                ["hot"] = new(3, now.AddMinutes(-30))
             });
         }
 
@@ -322,7 +324,7 @@ public class DataTests
         var normalized = new RenderOptions
         {
             Width = RenderOptions.TwilightMaxWidth,
-            Height = RenderOptions.TwilightMaxHeight,
+            Height = RenderOptions.TwilightMaxHeight
         }.Normalized();
 
         Assert.AreEqual(RenderOptions.TwilightMaxPngBytes, normalized.MaxPngBytes);
@@ -336,7 +338,7 @@ public class DataTests
         var normalized = new RenderOptions
         {
             Width = RenderOptions.TwilightMaxWidth + 1,
-            Height = RenderOptions.TwilightMaxHeight,
+            Height = RenderOptions.TwilightMaxHeight
         }.Normalized();
 
         Assert.AreEqual(RenderOptions.OversizeMaxPngBytes, normalized.MaxPngBytes);
@@ -349,7 +351,7 @@ public class DataTests
         {
             Width = RenderOptions.MaxWidth,
             Height = RenderOptions.MaxHeight,
-            MaxPngBytes = 100_000,
+            MaxPngBytes = 100_000
         }.Normalized();
 
         Assert.AreEqual(100_000, normalized.MaxPngBytes, "a deliberate budget must never be widened");
@@ -373,7 +375,7 @@ public class DataTests
         var normalized = new CacheSettings
         {
             OriginalsBudgetBytes = 1,
-            RendersBudgetBytes = long.MaxValue,
+            RendersBudgetBytes = long.MaxValue
         }.Normalized();
 
         Assert.AreEqual(16L * 1024 * 1024, normalized.OriginalsBudgetBytes);

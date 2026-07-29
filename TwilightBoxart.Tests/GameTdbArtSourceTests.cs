@@ -21,7 +21,7 @@ public class GameTdbArtSourceTests
                 // Plain "cover", not "coverS" - the 2020 client's third URL was a path GameTDB never
                 // served. It is a .jpg like the other two: /ds/cover/US/ASME.jpg answers 200 and the
                 // .png form answers 404, so asking for .png makes this rung unreachable.
-                "https://art.gametdb.com/ds/cover/US/ASME.jpg",
+                "https://art.gametdb.com/ds/cover/US/ASME.jpg"
             },
             urls);
     }

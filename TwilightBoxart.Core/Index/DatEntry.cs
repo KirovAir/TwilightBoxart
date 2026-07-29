@@ -39,19 +39,25 @@ public sealed record DatEntry
 public static class DatEntryQuality
 {
     /// <summary>Sort rank. Dump quality dominates; release kind breaks ties.</summary>
-    public static int Rank(DatEntry entry) => (DumpRank(entry.Status) * 10) + ReleaseRank(entry.Name);
+    public static int Rank(DatEntry entry)
+    {
+        return DumpRank(entry.Status) * 10 + ReleaseRank(entry.Name);
+    }
 
     /// <summary>
     /// Dump status rank. An unrecognised status sorts *between* good and baddump: we do not know what it
     /// means, so it should not beat a known-good dump and should not be discarded like a known-bad one.
     /// </summary>
-    public static int DumpRank(string? status) => Normalize(status) switch
+    public static int DumpRank(string? status)
     {
-        null or "good" or "verified" => 0,
-        "baddump" => 2,
-        "nodump" => 3,
-        _ => 1,
-    };
+        return Normalize(status) switch
+        {
+            null or "good" or "verified" => 0,
+            "baddump" => 2,
+            "nodump" => 3,
+            _ => 1
+        };
+    }
 
     /// <summary>
     /// A shipped release describes a title better than a prototype of it. Only consulted when dump
@@ -79,8 +85,10 @@ public static class DatEntryQuality
         return string.IsNullOrEmpty(trimmed) ? null : trimmed.ToLowerInvariant();
     }
 
-    private static bool Contains(string haystack, string needle) =>
-        haystack.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    private static bool Contains(string haystack, string needle)
+    {
+        return haystack.Contains(needle, StringComparison.OrdinalIgnoreCase);
+    }
 }
 
 /// <summary>Field-level normalisation shared by both DAT parsers. All of it is culture-invariant.</summary>

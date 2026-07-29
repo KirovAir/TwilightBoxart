@@ -32,7 +32,7 @@ public class RomProbeTests
         var path = await WriteTempAsync("fake.nds", rom);
 
         await using var stream = File.OpenRead(path);
-        var result = await new LooseRomProbe().ProbeAsync(stream, path, wantHeader: true);
+        var result = await new LooseRomProbe().ProbeAsync(stream, path, true);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("fake.nds", result.InnerName);
@@ -47,11 +47,11 @@ public class RomProbeTests
     [TestMethod]
     public async Task LooseRomProbe_OverCrcBudget_SkipsHashAndReadsOnly512Bytes()
     {
-        var rom = MakeNdsRom(size: 64 * 1024, seed: 7);
+        var rom = MakeNdsRom(64 * 1024, 7);
         var path = await WriteTempAsync("big.nds", rom);
 
         await using var stream = File.OpenRead(path);
-        var result = await new LooseRomProbe(crcByteBudget: 0).ProbeAsync(stream, path, wantHeader: true);
+        var result = await new LooseRomProbe(0).ProbeAsync(stream, path, true);
 
         Assert.IsNotNull(result);
         Assert.IsNull(result.Crc32);
@@ -66,10 +66,10 @@ public class RomProbeTests
     {
         // 64 KiB of incompressible data, so the archive is comfortably larger than the 4 KiB tail
         // window and the byte count below actually proves something.
-        var rom = MakeNdsRom(size: 64 * 1024, seed: 1);
+        var rom = MakeNdsRom(64 * 1024, 1);
         var zip = BuildZip(("fake.nds", rom, CompressionLevel.Optimal));
 
-        var result = await ProbeZipAsync(zip, "Some Game (USA).zip", wantHeader: false);
+        var result = await ProbeZipAsync(zip, "Some Game (USA).zip", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("fake.nds", result.InnerName);
@@ -83,10 +83,10 @@ public class RomProbeTests
     [TestMethod]
     public async Task ZipRomProbe_Deflated_WantHeader_InflatesFirst512Bytes()
     {
-        var rom = MakeNdsRom(size: 64 * 1024, seed: 1);
+        var rom = MakeNdsRom(64 * 1024, 1);
         var zip = BuildZip(("fake.nds", rom, CompressionLevel.Optimal));
 
-        var result = await ProbeZipAsync(zip, "game.zip", wantHeader: true);
+        var result = await ProbeZipAsync(zip, "game.zip", true);
 
         Assert.IsNotNull(result);
         AssertNdsHeader(result.Header);
@@ -99,10 +99,10 @@ public class RomProbeTests
     [TestMethod]
     public async Task ZipRomProbe_StoredEntry_ReadsHeaderDirectly()
     {
-        var rom = MakeNdsRom(size: 64 * 1024, seed: 2);
+        var rom = MakeNdsRom(64 * 1024, 2);
         var zip = BuildZip(("fake.nds", rom, CompressionLevel.NoCompression));
 
-        var result = await ProbeZipAsync(zip, "game.zip", wantHeader: true);
+        var result = await ProbeZipAsync(zip, "game.zip", true);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(Crc32.HashToUInt32(rom), result.Crc32);
@@ -112,14 +112,14 @@ public class RomProbeTests
     [TestMethod]
     public async Task ZipRomProbe_MultipleEntries_PicksFirstRomExtension()
     {
-        var rom = MakeNdsRom(size: 8192, seed: 3);
+        var rom = MakeNdsRom(8192, 3);
         var zip = BuildZip(
             ("readme.txt", Encoding.UTF8.GetBytes("scene notes"), CompressionLevel.Optimal),
             ("cover.png", new byte[4096], CompressionLevel.Optimal),
             ("fake.nds", rom, CompressionLevel.Optimal),
             ("second.gba", new byte[2048], CompressionLevel.Optimal));
 
-        var result = await ProbeZipAsync(zip, "game.zip", wantHeader: false);
+        var result = await ProbeZipAsync(zip, "game.zip", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("fake.nds", result.InnerName);
@@ -129,10 +129,10 @@ public class RomProbeTests
     [TestMethod]
     public async Task ZipRomProbe_NestedEntry_ReportsLeafNameNotArchiveName()
     {
-        var rom = MakeNdsRom(size: 4096, seed: 4);
+        var rom = MakeNdsRom(4096, 4);
         var zip = BuildZip(("Nintendo DS/roms/Deep Game (Europe).nds", rom, CompressionLevel.Optimal));
 
-        var result = await ProbeZipAsync(zip, "Totally Different Archive Name.zip", wantHeader: false);
+        var result = await ProbeZipAsync(zip, "Totally Different Archive Name.zip", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("Deep Game (Europe).nds", result.InnerName);
@@ -143,8 +143,8 @@ public class RomProbeTests
     {
         var zip = BuildZip(("readme.txt", Encoding.UTF8.GetBytes("nothing to see"), CompressionLevel.Optimal));
 
-        await using var stream = new MemoryStream(zip, writable: false);
-        var result = await new ZipRomProbe().ProbeAsync(stream, "empty.zip", wantHeader: true);
+        await using var stream = new MemoryStream(zip, false);
+        var result = await new ZipRomProbe().ProbeAsync(stream, "empty.zip", true);
 
         Assert.IsNull(result);
 
@@ -160,13 +160,13 @@ public class RomProbeTests
     {
         // A No-Intro "Nintendo DSi (Digital)" zip: extension-less CDN content next to a ticket and a
         // title-metadata file. 945 of 1,069 files look like this.
-        var content = MakeNdsRom(size: 256 * 1024, seed: 5);
+        var content = MakeNdsRom(256 * 1024, 5);
         var zip = BuildZip(
             ("tik", new byte[2472], CompressionLevel.Optimal),
             ("tmd.0", new byte[1024], CompressionLevel.Optimal),
             ("00000000", content, CompressionLevel.Optimal));
 
-        var result = await ProbeZipAsync(zip, "Flipnote Studio (Europe, Australia).zip", wantHeader: false);
+        var result = await ProbeZipAsync(zip, "Flipnote Studio (Europe, Australia).zip", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("00000000", result.InnerName);
@@ -178,10 +178,10 @@ public class RomProbeTests
     {
         // No dominance means no guess: two similar blobs are not a CDN drop.
         var zip = BuildZip(
-            ("blobA", MakeNdsRom(size: 128 * 1024, seed: 8), CompressionLevel.Optimal),
-            ("blobB", MakeNdsRom(size: 100 * 1024, seed: 9), CompressionLevel.Optimal));
+            ("blobA", MakeNdsRom(128 * 1024, 8), CompressionLevel.Optimal),
+            ("blobB", MakeNdsRom(100 * 1024, 9), CompressionLevel.Optimal));
 
-        Assert.IsNull(await ProbeZipAsync(zip, "ambiguous.zip", wantHeader: false));
+        Assert.IsNull(await ProbeZipAsync(zip, "ambiguous.zip", false));
     }
 
     [TestMethod]
@@ -195,12 +195,12 @@ public class RomProbeTests
         {
             CultureInfo.CurrentCulture = new CultureInfo("tr-TR");
 
-            var rom = MakeNdsRom(size: 4096, seed: 6);
+            var rom = MakeNdsRom(4096, 6);
             var zip = BuildZip(("GAME.DSI", rom, CompressionLevel.Optimal));
 
             Assert.IsTrue(SupportedFiles.IsArchive("Some Game.ZIP"));
 
-            var result = await ProbeZipAsync(zip, "Some Game.ZIP", wantHeader: false);
+            var result = await ProbeZipAsync(zip, "Some Game.ZIP", false);
 
             Assert.IsNotNull(result);
             Assert.AreEqual("GAME.DSI", result.InnerName);
@@ -215,10 +215,10 @@ public class RomProbeTests
     [TestMethod]
     public async Task ZipRomProbe_CommentLongerThanTailWindow_StillFindsEndOfCentralDirectory()
     {
-        var rom = MakeNdsRom(size: 4096, seed: 10);
-        var zip = WithZipComment(BuildZip(("fake.nds", rom, CompressionLevel.Optimal)), commentLength: 5000);
+        var rom = MakeNdsRom(4096, 10);
+        var zip = WithZipComment(BuildZip(("fake.nds", rom, CompressionLevel.Optimal)), 5000);
 
-        var result = await ProbeZipAsync(zip, "commented.zip", wantHeader: false);
+        var result = await ProbeZipAsync(zip, "commented.zip", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("fake.nds", result.InnerName);
@@ -232,8 +232,8 @@ public class RomProbeTests
     {
         var archive = Convert.FromBase64String(SevenZipFixtureBase64);
 
-        await using var stream = new MemoryStream(archive, writable: false);
-        var result = await new SevenZipRomProbe().ProbeAsync(stream, "Some Game (USA).7z", wantHeader: false);
+        await using var stream = new MemoryStream(archive, false);
+        var result = await new SevenZipRomProbe().ProbeAsync(stream, "Some Game (USA).7z", false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual("fake.nds", result.InnerName);
@@ -249,8 +249,8 @@ public class RomProbeTests
     {
         var archive = Convert.FromBase64String(SevenZipFixtureBase64);
 
-        await using var stream = new MemoryStream(archive, writable: false);
-        var result = await new SevenZipRomProbe().ProbeAsync(stream, "game.7z", wantHeader: true);
+        await using var stream = new MemoryStream(archive, false);
+        var result = await new SevenZipRomProbe().ProbeAsync(stream, "game.7z", true);
 
         Assert.IsNotNull(result);
         AssertNdsHeader(result.Header);
@@ -273,13 +273,13 @@ public class RomProbeTests
     [TestMethod]
     public async Task RomProbeService_MislabelledArchive_DispatchesOnMagicNotExtension()
     {
-        var rom = MakeNdsRom(size: 4096, seed: 11);
+        var rom = MakeNdsRom(4096, 11);
         var zip = BuildZip(("fake.nds", rom, CompressionLevel.Optimal));
 
         // A zip wearing a bare-ROM extension. Extension-first dispatch would read it as a loose ROM
         // and hash the container instead of the game.
         var path = await WriteTempAsync("liar.nds", zip);
-        var result = await new RomProbeService().ProbeFileAsync(path, wantHeader: false);
+        var result = await new RomProbeService().ProbeFileAsync(path, false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(ContainerKind.Zip, result.Container);
@@ -291,7 +291,7 @@ public class RomProbeTests
     public async Task RomProbeService_SevenZipUnderZipExtension_IsStillRead()
     {
         var path = await WriteTempAsync("liar.zip", Convert.FromBase64String(SevenZipFixtureBase64));
-        var result = await new RomProbeService().ProbeFileAsync(path, wantHeader: false);
+        var result = await new RomProbeService().ProbeFileAsync(path, false);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(ContainerKind.SevenZip, result.Container);
@@ -303,7 +303,7 @@ public class RomProbeTests
     {
         var rom = MakeNdsRom();
         var path = await WriteTempAsync("fake.nds", rom);
-        var result = await new RomProbeService().ProbeFileAsync(path, wantHeader: true);
+        var result = await new RomProbeService().ProbeFileAsync(path, true);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(ContainerKind.Loose, result.Container);
@@ -324,7 +324,7 @@ public class RomProbeTests
         junk[3] = 0x04;
 
         var path = await WriteTempAsync("truncated.zip", junk);
-        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, wantHeader: true));
+        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, true));
     }
 
     [TestMethod]
@@ -332,7 +332,7 @@ public class RomProbeTests
     {
         var path = Path.Combine(Path.GetTempPath(), $"absent-{Guid.NewGuid():N}.zip");
 
-        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, wantHeader: false));
+        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, false));
     }
 
     // lz77 (Nintendo-LZ77-wrapped SNES/Mega Drive/etc., the ".lz77.<ext>" convention nds-bootstrap loads)
@@ -341,11 +341,11 @@ public class RomProbeTests
     public async Task Lz77RomProbe_DecompressesAndIdentifiesAsThePlainRom()
     {
         // A non-multiple-of-8 length exercises the partial final flag group and the exact-length stop.
-        var rom = MakeRawRom(size: 5003, seed: 21);
+        var rom = MakeRawRom(5003, 21);
         var packed = Lz77PackLiterals(rom);
 
-        await using var stream = new MemoryStream(packed, writable: false);
-        var result = await new Lz77RomProbe().ProbeAsync(stream, "game.lz77.sfc", wantHeader: true);
+        await using var stream = new MemoryStream(packed, false);
+        var result = await new Lz77RomProbe().ProbeAsync(stream, "game.lz77.sfc", true);
 
         Assert.IsNotNull(result);
         Assert.AreEqual(ContainerKind.Lz77, result.Container);
@@ -367,11 +367,11 @@ public class RomProbeTests
     [TestMethod]
     public async Task RomProbeService_RoutesLz77Files_AndLeavesPlainRomsAlone()
     {
-        var rom = MakeRawRom(size: 4096, seed: 22);
+        var rom = MakeRawRom(4096, 22);
 
         // A compressed Mega Drive ROM routes to the LZ77 probe and identifies off the inflated bytes.
         var lz77Path = await WriteTempAsync("game.lz77.gen", Lz77PackLiterals(rom));
-        var compressed = await new RomProbeService().ProbeFileAsync(lz77Path, wantHeader: false);
+        var compressed = await new RomProbeService().ProbeFileAsync(lz77Path, false);
 
         Assert.IsNotNull(compressed);
         Assert.AreEqual(ContainerKind.Lz77, compressed.Container);
@@ -381,7 +381,7 @@ public class RomProbeTests
         // The SAME bytes as a plain .gen still route to the loose probe, untouched by the new branch:
         // the two produce the same CRC, so the compressed cart resolves to the same game as the plain one.
         var plainPath = await WriteTempAsync("game.gen", rom);
-        var plain = await new RomProbeService().ProbeFileAsync(plainPath, wantHeader: false);
+        var plain = await new RomProbeService().ProbeFileAsync(plainPath, false);
 
         Assert.IsNotNull(plain);
         Assert.AreEqual(ContainerKind.Loose, plain.Container);
@@ -423,7 +423,7 @@ public class RomProbeTests
         junk[0] = 0xFF;
         var path = await WriteTempAsync("broken.lz77.sfc", junk);
 
-        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, wantHeader: true));
+        Assert.IsNull(await new RomProbeService().ProbeFileAsync(path, true));
     }
 
     // entry selection
@@ -434,7 +434,7 @@ public class RomProbeTests
         var pick = ArchiveEntrySelector.Select(
         [
             new ArchiveEntryCandidate(0, "huge_blob", 100 * 1024 * 1024),
-            new ArchiveEntryCandidate(1, "game.gba", 4096),
+            new ArchiveEntryCandidate(1, "game.gba", 4096)
         ]);
 
         Assert.AreEqual("game.gba", pick?.Name);
@@ -460,7 +460,7 @@ public class RomProbeTests
         var pick = ArchiveEntrySelector.Select(
         [
             new ArchiveEntryCandidate(0, "roms/", 0),
-            new ArchiveEntryCandidate(1, "roms/game.NES", 40960),
+            new ArchiveEntryCandidate(1, "roms/game.NES", 40960)
         ]);
 
         Assert.AreEqual("roms/game.NES", pick?.Name);
@@ -476,7 +476,7 @@ public class RomProbeTests
         var pick = ArchiveEntrySelector.Select(
         [
             new ArchiveEntryCandidate(0, "empty.nds", 0),
-            new ArchiveEntryCandidate(1, "real.nds", 4096),
+            new ArchiveEntryCandidate(1, "real.nds", 4096)
         ]);
 
         Assert.AreEqual("real.nds", pick?.Name);
@@ -533,12 +533,12 @@ public class RomProbeTests
     /// </summary>
     private static byte[] Lz77PackLiterals(byte[] data)
     {
-        var output = new List<byte>(data.Length + (data.Length / 8) + 4)
+        var output = new List<byte>(data.Length + data.Length / 8 + 4)
         {
             0x10,
             (byte)data.Length,
             (byte)(data.Length >> 8),
-            (byte)(data.Length >> 16),
+            (byte)(data.Length >> 16)
         };
 
         for (var i = 0; i < data.Length; i += 8)
@@ -556,7 +556,7 @@ public class RomProbeTests
     private static byte[] BuildZip(params (string Name, byte[] Data, CompressionLevel Level)[] entries)
     {
         using var buffer = new MemoryStream();
-        using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+        using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, true))
         {
             foreach (var (name, data, level) in entries)
             {
@@ -583,7 +583,7 @@ public class RomProbeTests
 
     private static async Task<ProbeResult?> ProbeZipAsync(byte[] zip, string path, bool wantHeader)
     {
-        await using var stream = new MemoryStream(zip, writable: false);
+        await using var stream = new MemoryStream(zip, false);
         return await new ZipRomProbe().ProbeAsync(stream, path, wantHeader);
     }
 
@@ -603,7 +603,7 @@ public class RomProbeTests
         {
             try
             {
-                Directory.Delete(directory, recursive: true);
+                Directory.Delete(directory, true);
             }
             catch (IOException)
             {

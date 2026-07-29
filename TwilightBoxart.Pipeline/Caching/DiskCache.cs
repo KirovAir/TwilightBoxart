@@ -43,7 +43,10 @@ public sealed class DiskCache
 
     public long BudgetBytes { get; }
 
-    private string FullPath(string relativePath) => Path.Combine(Root, relativePath);
+    private string FullPath(string relativePath)
+    {
+        return Path.Combine(Root, relativePath);
+    }
 
     /// <summary>Returns null when the entry cannot be read - a miss, never an exception.</summary>
     public async Task<byte[]?> TryReadAsync(string relativePath, CancellationToken ct = default)
@@ -64,10 +67,15 @@ public sealed class DiskCache
         }
     }
 
-    public Task WriteAsync(string relativePath, ReadOnlyMemory<byte> data, CancellationToken ct = default) =>
-        AtomicFile.WriteAsync(FullPath(relativePath), data, ct);
+    public Task WriteAsync(string relativePath, ReadOnlyMemory<byte> data, CancellationToken ct = default)
+    {
+        return AtomicFile.WriteAsync(FullPath(relativePath), data, ct);
+    }
 
-    public void Delete(string relativePath) => AtomicFile.TryDelete(FullPath(relativePath));
+    public void Delete(string relativePath)
+    {
+        AtomicFile.TryDelete(FullPath(relativePath));
+    }
 
     /// <summary>
     /// Every blob currently on disk, with its size. Used once at startup to reconcile the entry
@@ -111,8 +119,10 @@ public sealed class DiskCache
     /// and the relative path, always forward-slashed so a key written on Windows and one written on
     /// Linux for the same file on the same volume are the same string.
     /// </summary>
-    public string CacheKeyFor(string relativePath) =>
-        $"{Name}/{relativePath.Replace('\\', '/')}";
+    public string CacheKeyFor(string relativePath)
+    {
+        return $"{Name}/{relativePath.Replace('\\', '/')}";
+    }
 
     /// <summary>The inverse of <see cref="CacheKeyFor"/>, so the sweep can delete straight from a row.</summary>
     public string RelativePathFor(string cacheKey)

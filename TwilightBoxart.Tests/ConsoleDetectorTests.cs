@@ -10,13 +10,20 @@ public class ConsoleDetectorTests
     // Header synthesis. Real ROMs are not committed - every buffer below is built from the documented
     // offsets, so a test failure points at the offset table rather than at a missing fixture file.
 
-    private static byte[] Buffer(int length) => new byte[length];
+    private static byte[] Buffer(int length)
+    {
+        return new byte[length];
+    }
 
-    private static void Write(byte[] buffer, int offset, params byte[] bytes) =>
+    private static void Write(byte[] buffer, int offset, params byte[] bytes)
+    {
         bytes.CopyTo(buffer, offset);
+    }
 
-    private static void WriteAscii(byte[] buffer, int offset, string text) =>
+    private static void WriteAscii(byte[] buffer, int offset, string text)
+    {
         Encoding.ASCII.GetBytes(text).CopyTo(buffer, offset);
+    }
 
     /// <param name="title">The title field written at 0x134.</param>
     /// <param name="cgbFlag">The byte at 0x143: 0x80 dual, 0xC0 CGB-only, anything else DMG.</param>
@@ -66,12 +73,12 @@ public class ConsoleDetectorTests
         var header = baseOffset + smcHeader;
         WriteAscii(buffer, header, title.PadRight(21));
         buffer[header + 0x15] = mapMode;
-        buffer[header + 0x17] = 0x0A;               // 1 MiB
-        buffer[header + 0x1A] = 0x33;               // extended header present
-        WriteAscii(buffer, header - 0x0E, "ABCD");  // game code, in the extended header
-        Write(buffer, header + 0x1C, 0x34, 0x12);   // complement
-        Write(buffer, header + 0x1E, 0xCB, 0xED);   // checksum: 0x1234 ^ 0xEDCB == 0xFFFF
-        Write(buffer, header + 0x3C, 0x00, 0x80);   // reset vector 0x8000
+        buffer[header + 0x17] = 0x0A; // 1 MiB
+        buffer[header + 0x1A] = 0x33; // extended header present
+        WriteAscii(buffer, header - 0x0E, "ABCD"); // game code, in the extended header
+        Write(buffer, header + 0x1C, 0x34, 0x12); // complement
+        Write(buffer, header + 0x1E, 0xCB, 0xED); // checksum: 0x1234 ^ 0xEDCB == 0xFFFF
+        Write(buffer, header + 0x3C, 0x00, 0x80); // reset vector 0x8000
         return buffer;
     }
 
@@ -79,9 +86,9 @@ public class ConsoleDetectorTests
     {
         var buffer = Buffer(headerOffset + 0x10);
         WriteAscii(buffer, headerOffset, "TMR SEGA");
-        buffer[headerOffset + 0x0C] = 0x34;                     // BCD digits 3,4
-        buffer[headerOffset + 0x0D] = 0x12;                     // BCD digits 1,2
-        buffer[headerOffset + 0x0E] = 0x50;                     // top BCD digit 5, version 0
+        buffer[headerOffset + 0x0C] = 0x34; // BCD digits 3,4
+        buffer[headerOffset + 0x0D] = 0x12; // BCD digits 1,2
+        buffer[headerOffset + 0x0E] = 0x50; // top BCD digit 5, version 0
         buffer[headerOffset + 0x0F] = (byte)(regionNibble << 4);
         return buffer;
     }
@@ -147,7 +154,7 @@ public class ConsoleDetectorTests
     [TestMethod]
     public void Detect_NintendoDs_ReadsTitleGameCodeAndRegion()
     {
-        var result = ConsoleDetector.Detect(NdsHeader("NEWSUPERMARI", "A2DE", unitCode: 0x00));
+        var result = ConsoleDetector.Detect(NdsHeader("NEWSUPERMARI", "A2DE", 0x00));
 
         Assert.AreEqual(ConsoleType.NintendoDs, result.ConsoleType);
         Assert.AreEqual("NEWSUPERMARI", result.Title);
@@ -219,7 +226,7 @@ public class ConsoleDetectorTests
                  {
                      (z64, N64ByteOrder.BigEndian),
                      (v64, N64ByteOrder.ByteSwapped),
-                     (n64, N64ByteOrder.LittleEndian),
+                     (n64, N64ByteOrder.LittleEndian)
                  })
         {
             var result = ConsoleDetector.Detect(buffer);
@@ -319,7 +326,7 @@ public class ConsoleDetectorTests
     [TestMethod]
     public void Detect_Snes_ReportsAnSmcCopierHeader()
     {
-        var result = ConsoleDetector.Detect(SnesHeader("SUPER METROID", 0x7FC0, 0x20, smcHeader: 512));
+        var result = ConsoleDetector.Detect(SnesHeader("SUPER METROID", 0x7FC0, 0x20, 512));
 
         Assert.AreEqual(ConsoleType.Snes, result.ConsoleType);
         Assert.AreEqual(512, result.LeadingHeaderBytes,
@@ -347,7 +354,7 @@ public class ConsoleDetectorTests
         // THE bug. Byte 0x12 is unitcode: 0x00 NDS, 0x02 DSi-enhanced hybrid, 0x03 DSi-only. The 2020
         // code tested `== 0x03`, so every 0x02 hybrid was routed to NintendoDs and lost both the right
         // art partition and the DSiWare placeholder. Real examples: KADJ, KTRT, KTPK.
-        var result = ConsoleDetector.Detect(NdsHeader("DECODE", "KADJ", unitCode: 0x02));
+        var result = ConsoleDetector.Detect(NdsHeader("DECODE", "KADJ", 0x02));
 
         Assert.AreEqual(ConsoleType.NintendoDsi, result.ConsoleType);
         Assert.AreEqual(ConsoleType.NintendoDs, result.AlternateConsoleType,
@@ -357,7 +364,7 @@ public class ConsoleDetectorTests
     [TestMethod]
     public void Detect_UnitCodeThree_IsDsiOnly()
     {
-        var result = ConsoleDetector.Detect(NdsHeader("FLIPNOTE", "KGUV", unitCode: 0x03));
+        var result = ConsoleDetector.Detect(NdsHeader("FLIPNOTE", "KGUV", 0x03));
 
         Assert.AreEqual(ConsoleType.NintendoDsi, result.ConsoleType);
         Assert.AreEqual(ConsoleType.Unknown, result.AlternateConsoleType);
@@ -366,7 +373,7 @@ public class ConsoleDetectorTests
     [TestMethod]
     public void Detect_UnitCodeZero_StaysNds()
     {
-        var result = ConsoleDetector.Detect(NdsHeader("PICTOCHAT", "HNEA", unitCode: 0x00));
+        var result = ConsoleDetector.Detect(NdsHeader("PICTOCHAT", "HNEA", 0x00));
 
         Assert.AreEqual(ConsoleType.NintendoDs, result.ConsoleType);
         Assert.AreEqual(ConsoleType.Unknown, result.AlternateConsoleType);
@@ -459,7 +466,7 @@ public class ConsoleDetectorTests
     public void Detect_GameBoyColor_ClaimsAManufacturerCodeOnlyWhenTheTitleProvablyEndedFirst()
     {
         // Unambiguous: the title is NUL-terminated inside 0x134-0x13E, so 0x13F-0x142 cannot be title.
-        var terminated = ConsoleDetector.Detect(GameBoyHeader("POKEMON", 0xC0, manufacturer: "AXQE"));
+        var terminated = ConsoleDetector.Detect(GameBoyHeader("POKEMON", 0xC0, "AXQE"));
         Assert.AreEqual("POKEMON", terminated.Title);
         Assert.AreEqual("AXQE", terminated.Serial);
 
@@ -528,7 +535,7 @@ public class ConsoleDetectorTests
             GbaHeader("POKEMON EMER", "BPEE"),
             NdsHeader("NEWSUPERMARI", "A2DE", 0x02),
             SnesHeader("SUPER METROID", 0x7FC0, 0x20),
-            SegaEightBitHeader(0x7FF0, 0x6),
+            SegaEightBitHeader(0x7FF0, 0x6)
         ];
 
         foreach (var source in sources)

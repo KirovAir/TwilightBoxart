@@ -77,11 +77,14 @@ public class CacheSettings
     public static readonly TimeSpan TransientFailureBackoff = TimeSpan.FromMinutes(5);
 
     /// <summary>Clamps both budgets into a range that cannot fill the disk or starve the cache.</summary>
-    public CacheSettings Normalized() => new()
+    public CacheSettings Normalized()
     {
-        // 16 MiB floor: below roughly this the sweep evicts art faster than it can be used, and the
-        // cache becomes pure overhead. 1 TiB ceiling is a typo guard, not a real limit.
-        OriginalsBudgetBytes = Math.Clamp(OriginalsBudgetBytes, 16L * 1024 * 1024, 1024L * 1024 * 1024 * 1024),
-        RendersBudgetBytes = Math.Clamp(RendersBudgetBytes, 16L * 1024 * 1024, 1024L * 1024 * 1024 * 1024),
-    };
+        return new CacheSettings
+        {
+            // 16 MiB floor: below roughly this the sweep evicts art faster than it can be used, and the
+            // cache becomes pure overhead. 1 TiB ceiling is a typo guard, not a real limit.
+            OriginalsBudgetBytes = Math.Clamp(OriginalsBudgetBytes, 16L * 1024 * 1024, 1024L * 1024 * 1024 * 1024),
+            RendersBudgetBytes = Math.Clamp(RendersBudgetBytes, 16L * 1024 * 1024, 1024L * 1024 * 1024 * 1024)
+        };
+    }
 }

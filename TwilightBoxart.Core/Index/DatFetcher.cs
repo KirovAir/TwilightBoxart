@@ -26,7 +26,7 @@ public sealed class DatFetcher : IDisposable
     {
         _cacheDirectory = cacheDirectory;
         _retryDelayUnit = retryDelayUnit ?? TimeSpan.FromSeconds(2);
-        _http = handler is null ? new HttpClient() : new HttpClient(handler, disposeHandler: true);
+        _http = handler is null ? new HttpClient() : new HttpClient(handler, true);
         _http.Timeout = TimeSpan.FromMinutes(2);
         _http.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
 
@@ -112,9 +112,11 @@ public sealed class DatFetcher : IDisposable
         }
     }
 
-    private static async Task<FetchedDat> FromCacheAsync(string cachePath, string why, CancellationToken ct) =>
-        new($"cache:{Path.GetFileName(cachePath)} ({why})",
+    private static async Task<FetchedDat> FromCacheAsync(string cachePath, string why, CancellationToken ct)
+    {
+        return new FetchedDat($"cache:{Path.GetFileName(cachePath)} ({why})",
             Decode(Unwrap(await File.ReadAllBytesAsync(cachePath, ct))));
+    }
 
     /// <summary>Enumerates DAT-shaped files in a directory, in a stable order.</summary>
     public static IEnumerable<string> EnumerateLocalDats(string directory)
@@ -128,14 +130,16 @@ public sealed class DatFetcher : IDisposable
     }
 
     /// <summary>Reads a local DAT, transparently unwrapping a zip or gzip container.</summary>
-    public static FetchedDat ReadLocal(string path) =>
-        new(path, Decode(Unwrap(File.ReadAllBytes(path))));
+    public static FetchedDat ReadLocal(string path)
+    {
+        return new FetchedDat(path, Decode(Unwrap(File.ReadAllBytes(path))));
+    }
 
     /// <summary>One GET with the conditional header, retried on transport errors and 5xx responses.</summary>
     private async Task<HttpResponseMessage> SendWithRetriesAsync(string url, string? etag, CancellationToken ct)
     {
         const int attempts = 3;
-        for (var attempt = 1; ; attempt++)
+        for (var attempt = 1;; attempt++)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, url);
             if (etag is not null)
@@ -202,7 +206,7 @@ public sealed class DatFetcher : IDisposable
     {
         try
         {
-            return new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)
+            return new UTF8Encoding(false, true)
                 .GetString(bytes).TrimStart('﻿');
         }
         catch (DecoderFallbackException)
@@ -226,5 +230,8 @@ public sealed class DatFetcher : IDisposable
         return new string(chars) + ".dat";
     }
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose()
+    {
+        _http.Dispose();
+    }
 }

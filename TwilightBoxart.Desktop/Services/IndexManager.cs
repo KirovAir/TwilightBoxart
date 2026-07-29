@@ -39,7 +39,7 @@ public sealed class IndexManager
             var options = new BuildOptions
             {
                 OutputPath = IndexPath,
-                CacheDirectory = Path.Combine(AppPaths.DataDirectory, "dat-cache"),
+                CacheDirectory = Path.Combine(AppPaths.DataDirectory, "dat-cache")
             };
 
             var result = await new IndexBuilder(options, log).RunAsync(ct);

@@ -29,7 +29,7 @@ export const IDENTIFY_CHUNK = 200;
 
 // The batch envelope lives in exactly these two functions. The server is pinned to
 // { items, matched } with camelCase fields and string enums.
-const identifyBody = (items) => ({ items });
+const identifyBody = (items) => ({items});
 const identifyResults = (json) => json?.items ?? [];
 
 /**
@@ -69,8 +69,8 @@ const base64 = (bytes) => {
  * Build one RomFingerprint. Field names match the C# record, which System.Text.Json camel-cases.
  * Everything except fileName is optional; send only what was cheap to obtain.
  */
-export function fingerprint({ innerName, crc32, header, size, tag }) {
-    const fp = { fileName: innerName, tag };
+export function fingerprint({innerName, crc32, header, size, tag}) {
+    const fp = {fileName: innerName, tag};
     if (crc32 != null) fp.crc32 = crc32 >>> 0;
     if (header?.length) fp.header = base64(header);   // byte[] serialises as base64
     if (size != null) fp.size = size;
@@ -89,9 +89,9 @@ async function fetchWithRetry(url, init = {}) {
     const attempts = 2;
     let last;
     // Applied here rather than at each call site so no future request can forget it.
-    const headers = { ...init.headers, [API_KEY_HEADER]: API_KEY, [CLIENT_HEADER]: CLIENT };
+    const headers = {...init.headers, [API_KEY_HEADER]: API_KEY, [CLIENT_HEADER]: CLIENT};
     for (let i = 0; i < attempts; i++) {
-        const res = await fetch(url, { ...init, headers });
+        const res = await fetch(url, {...init, headers});
         if (res.ok || res.status === 404) return res;
         last = new HttpError(res.status, url);
         if (res.status !== 429 && res.status < 500) throw last;
@@ -109,7 +109,7 @@ async function fetchWithRetry(url, init = {}) {
 export async function identifyBatch(fingerprints, signal) {
     const res = await fetchWithRetry(`${BASE}/identify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(identifyBody(fingerprints)),
         signal,
     });
@@ -150,7 +150,7 @@ function artUrl(identity, o) {
 export async function fetchArt(identity, options, signal) {
     const url = artUrl(identity, options);
     if (!url) return null;
-    const res = await fetchWithRetry(url, { signal });
+    const res = await fetchWithRetry(url, {signal});
     if (res.status === 404) return null;
     if (!res.ok) throw new HttpError(res.status, url);
     return new Uint8Array(await res.arrayBuffer());

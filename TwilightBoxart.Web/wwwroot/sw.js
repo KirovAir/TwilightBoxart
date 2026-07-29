@@ -33,4 +33,5 @@ self.addEventListener('activate', (event) => {
 // A fetch handler has historically been part of Chrome's installability criteria. This one is
 // intentionally empty: not calling respondWith() leaves the request completely untouched, so it
 // goes to the network exactly as it would with no service worker at all.
-self.addEventListener('fetch', () => { });
+self.addEventListener('fetch', () => {
+});

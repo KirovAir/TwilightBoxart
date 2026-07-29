@@ -35,14 +35,18 @@ public sealed class ArtCaches
     /// directory well under the point where enumeration on ext4/NTFS gets slow, at ~65k blobs
     /// per leaf before it matters.
     /// </summary>
-    public static string OriginalPath(string sha256) =>
-        Path.Combine(sha256[..2], sha256[2..4], sha256 + ".bin");
+    public static string OriginalPath(string sha256)
+    {
+        return Path.Combine(sha256[..2], sha256[2..4], sha256 + ".bin");
+    }
 
     /// <summary>
     /// Render layout: <c>{platform}/{key}/{sourceSha}/{discriminator}.png|.bmp</c>. The key is the
     /// TITLE, never the fingerprint - that is what structurally kills the cache-key-explosion DoS the
     /// old BoxartRequest.FilenameHash had, where every distinct 512-byte header minted a new cache file.
     /// </summary>
-    public static string RenderPath(ConsoleType console, string key, string sourceSha, RenderOptions options) =>
-        Path.Combine(console.Slug(), key, sourceSha[..16], options.CacheDiscriminator() + options.FileExtension);
+    public static string RenderPath(ConsoleType console, string key, string sourceSha, RenderOptions options)
+    {
+        return Path.Combine(console.Slug(), key, sourceSha[..16], options.CacheDiscriminator() + options.FileExtension);
+    }
 }

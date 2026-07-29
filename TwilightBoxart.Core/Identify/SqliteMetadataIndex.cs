@@ -65,18 +65,19 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
 
     private const string CrcSql = $"SELECT {Projection} FROM entry WHERE crc32 = $crc LIMIT 1;";
     private const string Sha1Sql = $"SELECT {Projection} FROM entry WHERE sha1 = $sha1 LIMIT 1;";
+
     private const string SerialSql =
         $"SELECT {Projection} FROM entry WHERE console = $console AND serial = $serial LIMIT 1;";
 
     // $console = 0 (ConsoleType.Unknown) means "every partition"; see the remarks on SearchByName.
     private static readonly string NameSql = $"""
-        SELECT e.console, e.name, e.serial, e.crc32, e.sha1
-        FROM entry_fts
-        JOIN entry e ON e.id = entry_fts.rowid
-        WHERE entry_fts MATCH $q AND ($console = 0 OR e.console = $console)
-        ORDER BY bm25(entry_fts)
-        LIMIT {CandidateLimit};
-        """;
+                                              SELECT e.console, e.name, e.serial, e.crc32, e.sha1
+                                              FROM entry_fts
+                                              JOIN entry e ON e.id = entry_fts.rowid
+                                              WHERE entry_fts MATCH $q AND ($console = 0 OR e.console = $console)
+                                              ORDER BY bm25(entry_fts)
+                                              LIMIT {CandidateLimit};
+                                              """;
 
     private readonly string _connectionString;
     private readonly ILogger _logger;
@@ -114,7 +115,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
             // We pool connections ourselves and hold them for the index's lifetime, so ADO.NET pooling
             // would add nothing except keeping the file handle alive past Dispose, which on Windows
             // blocks the deployment that swaps the file.
-            Pooling = false,
+            Pooling = false
         }.ConnectionString;
 
         // Two per core: lookups are microseconds and never block on I/O once the pages are cached, so
@@ -295,7 +296,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
             // will not have, but the reverse (a scene tag like "goodnes" in the filename that appears
             // nowhere in the DAT) would veto an otherwise perfect AND match, so fall back to ANY.
             return Best(reader, query, BuildMatch(terms, " AND "))
-                ?? Best(reader, query, BuildMatch(terms, " OR "));
+                   ?? Best(reader, query, BuildMatch(terms, " OR "));
         }
         catch (SqliteException e)
         {
@@ -365,8 +366,10 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
     /// A trailing number present on one side and absent on the other counts as a mismatch, because that
     /// is the same situation seen from the other end.
     /// </summary>
-    private static bool SequelMismatch(string stemA, string stemB) =>
-        !string.Equals(TrailingOrdinal(stemA), TrailingOrdinal(stemB), StringComparison.Ordinal);
+    private static bool SequelMismatch(string stemA, string stemB)
+    {
+        return !string.Equals(TrailingOrdinal(stemA), TrailingOrdinal(stemB), StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// Rewrites a trailing roman numeral as arabic, so "Final Fantasy VI" and "Final Fantasy 6" score as
@@ -416,7 +419,7 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
     private static readonly Dictionary<string, string> RomanNumerals = new(StringComparer.Ordinal)
     {
         ["i"] = "1", ["ii"] = "2", ["iii"] = "3", ["iv"] = "4", ["v"] = "5",
-        ["vi"] = "6", ["vii"] = "7", ["viii"] = "8", ["ix"] = "9", ["x"] = "10",
+        ["vi"] = "6", ["vii"] = "7", ["viii"] = "8", ["ix"] = "9", ["x"] = "10"
     };
 
     /// <summary>
@@ -449,8 +452,10 @@ public sealed class SqliteMetadataIndex : IMetadataIndex, IDisposable
         return 2d * shared / (a.Count + b.Count);
     }
 
-    private static HashSet<string> Tokens(string normalized) =>
-        new(normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
+    private static HashSet<string> Tokens(string normalized)
+    {
+        return new HashSet<string>(normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
+    }
 
     private static HashSet<string> Trigrams(string normalized)
     {
@@ -781,7 +786,10 @@ public sealed class NullMetadataIndex(string reason) : IMetadataIndex
         return false;
     }
 
-    public IndexEntry? SearchByName(ConsoleType console, string name) => null;
+    public IndexEntry? SearchByName(ConsoleType console, string name)
+    {
+        return null;
+    }
 
     public string Version => "absent";
 

@@ -36,7 +36,7 @@ public sealed class NesHeaderParser : IConsoleHeaderParser
         return new HeaderDetection
         {
             ConsoleType = ConsoleType.Nes,
-            LeadingHeaderBytes = InesHeaderLength,
+            LeadingHeaderBytes = InesHeaderLength
         };
     }
 }

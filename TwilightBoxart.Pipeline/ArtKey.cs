@@ -80,5 +80,4 @@ public static class ArtKey
 
         return true;
     }
-
 }

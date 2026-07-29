@@ -26,7 +26,7 @@ public class ArtPipelineTests
         ConsoleType = ConsoleType.NintendoDs,
         Key = "ASME",
         Serial = "ASME",
-        MatchMethod = MatchMethod.HeaderSerial,
+        MatchMethod = MatchMethod.HeaderSerial
     };
 
     private string _dir = "";
@@ -54,14 +54,21 @@ public class ArtPipelineTests
     [TestCleanup]
     public void Cleanup()
     {
-        try { Directory.Delete(_dir, true); } catch { /* best effort */ }
+        try
+        {
+            Directory.Delete(_dir, true);
+        }
+        catch
+        {
+            /* best effort */
+        }
     }
 
     [TestMethod]
     public async Task UpstreamOutage_BacksOffForMinutes_NotTheFullMissDuration()
     {
         var before = DateTime.UtcNow;
-        var pipeline = Build(StubArtSource.Unavailable(order: 0));
+        var pipeline = Build(StubArtSource.Unavailable(0));
 
         var art = await pipeline.TryGetAsync(DsTitle, RenderOptions.Default);
 
@@ -84,7 +91,7 @@ public class ArtPipelineTests
     public async Task GenuineMiss_BacksOffForTheFullNegativeCacheDuration()
     {
         var before = DateTime.UtcNow;
-        var pipeline = Build(StubArtSource.Miss(order: 0));
+        var pipeline = Build(StubArtSource.Miss(0));
 
         var art = await pipeline.TryGetAsync(DsTitle, RenderOptions.Default);
 
@@ -102,7 +109,7 @@ public class ArtPipelineTests
     [TestMethod]
     public async Task Hit_StoresTheOriginalAndClearsAnyBackoff()
     {
-        var pipeline = Build(StubArtSource.Hit(order: 0));
+        var pipeline = Build(StubArtSource.Hit(0));
 
         var art = await pipeline.TryGetAsync(DsTitle, RenderOptions.Default);
 
@@ -136,6 +143,9 @@ public class ArtPipelineTests
     /// <summary>Hands out short-lived contexts over this test's database, the way the app's factory does.</summary>
     private sealed class PooledFactory(DbContextOptions<AppDbContext> options) : IDbContextFactory<AppDbContext>
     {
-        public AppDbContext CreateDbContext() => new(options);
+        public AppDbContext CreateDbContext()
+        {
+            return new AppDbContext(options);
+        }
     }
 }

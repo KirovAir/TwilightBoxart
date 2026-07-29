@@ -91,7 +91,7 @@ public static class CacheEntryExtensions
                 // Insert time, not default(DateTime): an entry that is written and never hit again
                 // must still be evictable, and a zero timestamp would make it eternally the coldest.
                 LastAccessUtc = now,
-                SourceSha256 = sourceSha256,
+                SourceSha256 = sourceSha256
             });
         }
         else

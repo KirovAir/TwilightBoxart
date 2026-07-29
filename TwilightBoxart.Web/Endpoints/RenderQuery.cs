@@ -40,14 +40,16 @@ public static class RenderQuery
             // Not settable from the query: for DS-displayable sizes it is TWiLightMenu++'s hard
             // constraint, not a preference, and a client raising it produces art the DS silently
             // refuses to display. Oversize renders get their wider budget from Normalized() below.
-            MaxPngBytes = defaults.MaxPngBytes,
+            MaxPngBytes = defaults.MaxPngBytes
         }.Normalized();
     }
 
-    private static int? Int(IQueryCollection query, string name) =>
-        int.TryParse(query[name], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+    private static int? Int(IQueryCollection query, string name)
+    {
+        return int.TryParse(query[name], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
             ? value
             : null;
+    }
 
     private static bool? Bool(IQueryCollection query, string name)
     {
@@ -62,7 +64,7 @@ public static class RenderQuery
         {
             "1" => true,
             "0" => false,
-            _ => bool.TryParse(raw, out var parsed) ? parsed : null,
+            _ => bool.TryParse(raw, out var parsed) ? parsed : null
         };
     }
 
@@ -98,7 +100,7 @@ public static class RenderQuery
             return (BoxartBorderStyle)numeric;
         }
 
-        return Enum.TryParse<BoxartBorderStyle>(raw, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed)
+        return Enum.TryParse<BoxartBorderStyle>(raw, true, out var parsed) && Enum.IsDefined(parsed)
             ? parsed
             : null;
     }

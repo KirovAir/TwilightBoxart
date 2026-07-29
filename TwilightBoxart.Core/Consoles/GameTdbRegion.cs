@@ -33,7 +33,7 @@ public static class GameTdbRegion
         ['J'] = "JA", // Japan
         ['K'] = "KO", // Korea
         ['C'] = "ZH", // China (iQue DS). Missing in 2020; 2 files. GameTDB stocks few ZH covers, but a
-                      // 404 here falls back to EN anyway, so mapping it can only ever win.
+        // 404 here falls back to EN anyway, so mapping it can only ever win.
 
         // Europe / multi-region. All of these resolve to GameTDB's English cover set.
         ['O'] = "EN", // USA + Europe
@@ -52,7 +52,7 @@ public static class GameTdbRegion
         ['S'] = "ES", // Spanish
 
         // Homebrew, conventionally game code "####".
-        ['#'] = "HB",
+        ['#'] = "HB"
     };
 
     /// <summary>
@@ -70,7 +70,8 @@ public static class GameTdbRegion
     }
 
     /// <summary>The GameTDB region directory for a region character, or <see cref="Default"/>.</summary>
-    public static string From(char? regionId) =>
-        regionId is { } c && TryMap(c, out var region) ? region : Default;
-
+    public static string From(char? regionId)
+    {
+        return regionId is { } c && TryMap(c, out var region) ? region : Default;
+    }
 }

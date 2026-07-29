@@ -117,14 +117,16 @@ public static class AdminEndpoints
             Caches = [.. usage.Select(u => new CacheHealth(u.Name, u.Files, u.Bytes, u.BudgetBytes, caches.Scanned))],
             Upstreams = upstream.Snapshot(),
             Clients = clients.Snapshot(),
-            Titles = titles,
+            Titles = titles
         });
     }
 
-    private static IResult RebuildIndex([FromServices] IndexBuildService builds) =>
-        builds.TryStartRebuild()
+    private static IResult RebuildIndex([FromServices] IndexBuildService builds)
+    {
+        return builds.TryStartRebuild()
             ? Results.Accepted(value: builds.Status)
             : Results.Conflict(builds.Status);
+    }
 
     /// <summary>
     /// Empties the render cache, and the originals as well when <c>?originals=1</c>.

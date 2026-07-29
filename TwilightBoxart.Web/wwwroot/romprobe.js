@@ -11,7 +11,7 @@ const TAIL = 4096;          // one tail slice covers 100.00% of the measured 18,
 const HDR_WANT = 512;       // bytes of ROM header the identifier needs
 const PREFIX = 4096;        // compressed prefix to inflate when we need HDR_WANT bytes
 
-export const CONST = { TAIL, HDR_WANT, PREFIX };
+export const CONST = {TAIL, HDR_WANT, PREFIX};
 
 const dec = new TextDecoder();
 const u8 = (b) => new Uint8Array(b);
@@ -52,12 +52,13 @@ export async function crc32File(file, signal) {
     try {
         for (; ;) {
             if (signal?.aborted) throw new DOMException('aborted', 'AbortError');
-            const { value, done: end } = await reader.read();
+            const {value, done: end} = await reader.read();
             if (end) break;
             crc = crc32(value, crc);
         }
     } finally {
-        reader.cancel().catch(() => { });
+        reader.cancel().catch(() => {
+        });
     }
     return crc;
 }
@@ -117,7 +118,7 @@ export function lz77Decompress(bytes) {
  * the archive itself recorded, plus enough to inflate a header later.
  */
 export async function probeZip(file) {
-    if (file.size < 22) return { ok: false, reason: 'too small to be a zip' };
+    if (file.size < 22) return {ok: false, reason: 'too small to be a zip'};
 
     const tailLen = Math.min(TAIL, file.size);
     let buf = await slice(file, file.size - tailLen, file.size);
@@ -126,15 +127,21 @@ export async function probeZip(file) {
     // locate EOCD (PK\5\6), scanning backwards
     let eo = -1;
     for (let i = buf.length - 22; i >= 0; i--) {
-        if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) { eo = i; break; }
+        if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) {
+            eo = i;
+            break;
+        }
     }
     if (eo < 0) {                      // ZIP comment > TAIL-22; rescan the largest legal window
         const big = Math.min(65557 + 22, file.size);
         buf = await slice(file, file.size - big, file.size);
         base = file.size - big;
         for (let i = buf.length - 22; i >= 0; i--)
-            if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) { eo = i; break; }
-        if (eo < 0) return { ok: false, reason: 'no end-of-central-directory record' };
+            if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x05 && buf[i + 3] === 0x06) {
+                eo = i;
+                break;
+            }
+        if (eo < 0) return {ok: false, reason: 'no end-of-central-directory record'};
     }
     const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
     let nEnt = dv.getUint16(eo + 10, true);
@@ -145,8 +152,11 @@ export async function probeZip(file) {
     if (cdOff === 0xFFFFFFFF || nEnt === 0xFFFF || cdSize === 0xFFFFFFFF) {
         let lo = -1;
         for (let i = eo - 20; i >= 0; i--)
-            if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x06 && buf[i + 3] === 0x07) { lo = i; break; }
-        if (lo < 0) return { ok: false, reason: 'zip64 locator missing' };
+            if (buf[i] === 0x50 && buf[i + 1] === 0x4b && buf[i + 2] === 0x06 && buf[i + 3] === 0x07) {
+                lo = i;
+                break;
+            }
+        if (lo < 0) return {ok: false, reason: 'zip64 locator missing'};
         const z64at = Number(dv.getBigUint64(lo + 8, true));
         const z = await slice(file, z64at, z64at + 56);
         const zv = new DataView(z.buffer, z.byteOffset, z.byteLength);
@@ -161,7 +171,8 @@ export async function probeZip(file) {
     else cd = await slice(file, cdOff, cdOff + cdSize);
 
     const cv = new DataView(cd.buffer, cd.byteOffset, cd.byteLength);
-    const entries = []; let p = 0;
+    const entries = [];
+    let p = 0;
     for (let i = 0; i < nEnt && p + 46 <= cd.length; i++) {
         if (cv.getUint32(p, true) !== 0x02014b50) break;
         const flag = cv.getUint16(p + 8, true);
@@ -180,20 +191,30 @@ export async function probeZip(file) {
         if (usize === 0xFFFFFFFF || csize === 0xFFFFFFFF || lho === 0xFFFFFFFF) {
             const ev = new DataView(ex.buffer, ex.byteOffset, ex.byteLength);
             for (let q = 0; q + 4 <= ex.length;) {
-                const id = ev.getUint16(q, true), sz = ev.getUint16(q + 2, true); let r = q + 4;
+                const id = ev.getUint16(q, true), sz = ev.getUint16(q + 2, true);
+                let r = q + 4;
                 if (id === 0x0001) {
-                    if (usize === 0xFFFFFFFF) { usize = Number(ev.getBigUint64(r, true)); r += 8; }
-                    if (csize === 0xFFFFFFFF) { csize = Number(ev.getBigUint64(r, true)); r += 8; }
-                    if (lho === 0xFFFFFFFF) { lho = Number(ev.getBigUint64(r, true)); r += 8; }
+                    if (usize === 0xFFFFFFFF) {
+                        usize = Number(ev.getBigUint64(r, true));
+                        r += 8;
+                    }
+                    if (csize === 0xFFFFFFFF) {
+                        csize = Number(ev.getBigUint64(r, true));
+                        r += 8;
+                    }
+                    if (lho === 0xFFFFFFFF) {
+                        lho = Number(ev.getBigUint64(r, true));
+                        r += 8;
+                    }
                     break;
                 }
                 q += 4 + sz;
             }
         }
-        entries.push({ name, crc32: entryCrc, csize, usize, method, flag, lho, encrypted: (flag & 1) === 1 });
+        entries.push({name, crc32: entryCrc, csize, usize, method, flag, lho, encrypted: (flag & 1) === 1});
         p += 46 + nl + el + cl;
     }
-    return { ok: true, format: 'zip', entries };
+    return {ok: true, format: 'zip', entries};
 }
 
 /**
@@ -201,54 +222,86 @@ export async function probeZip(file) {
  * DecompressionStream. Measured at 0.2 ms for a deflate entry, 0.004 ms for a stored one.
  */
 export async function zipEntryHeader(file, e, want = HDR_WANT) {
-    if (e.encrypted) return { ok: false, reason: 'entry is encrypted' };
+    if (e.encrypted) return {ok: false, reason: 'entry is encrypted'};
 
     const lh = await slice(file, e.lho, e.lho + 30);
     const lv = new DataView(lh.buffer, lh.byteOffset, lh.byteLength);
-    if (lv.getUint32(0, true) !== 0x04034b50) return { ok: false, reason: 'bad local header' };
+    if (lv.getUint32(0, true) !== 0x04034b50) return {ok: false, reason: 'bad local header'};
     // The local header's name/extra lengths can differ from the central directory's, so they
     // must be read here rather than reused.
     const dataAt = e.lho + 30 + lv.getUint16(26, true) + lv.getUint16(28, true);
 
     if (e.method === 0) {                                   // stored: direct read, no inflate
-        return { ok: true, via: 'stored', bytes: await slice(file, dataAt, dataAt + want) };
+        return {ok: true, via: 'stored', bytes: await slice(file, dataAt, dataAt + want)};
     }
-    if (e.method !== 8) return { ok: false, reason: `compression method ${e.method} unsupported` };
+    if (e.method !== 8) return {ok: false, reason: `compression method ${e.method} unsupported`};
 
     const prefix = await slice(file, dataAt, dataAt + Math.min(PREFIX, e.csize));
     const ds = new DecompressionStream('deflate-raw');
     const wtr = ds.writable.getWriter();
     const collect = (async () => {
-        const rd = ds.readable.getReader(); const parts = []; let n = 0;
+        const rd = ds.readable.getReader();
+        const parts = [];
+        let n = 0;
         try {
             for (; ;) {
-                const { value, done } = await rd.read();
+                const {value, done} = await rd.read();
                 if (done) break;
-                parts.push(value); n += value.length;
-                if (n >= want) { rd.cancel().catch(() => { }); break; }
+                parts.push(value);
+                n += value.length;
+                if (n >= want) {
+                    rd.cancel().catch(() => {
+                    });
+                    break;
+                }
             }
-        } catch { /* the truncated deflate tail always throws; we already have what we need */ }
-        const out = new Uint8Array(n); let o = 0; for (const x of parts) { out.set(x, o); o += x.length; }
+        } catch { /* the truncated deflate tail always throws; we already have what we need */
+        }
+        const out = new Uint8Array(n);
+        let o = 0;
+        for (const x of parts) {
+            out.set(x, o);
+            o += x.length;
+        }
         return out;
     })();
-    wtr.write(prefix).catch(() => { });
-    wtr.close().catch(() => { });
+    wtr.write(prefix).catch(() => {
+    });
+    wtr.close().catch(() => {
+    });
     const out = await collect;
     return out.length >= Math.min(want, e.usize)
-        ? { ok: true, via: 'deflate-raw', bytes: out.subarray(0, want) }
-        : { ok: false, reason: `only ${out.length} of ${want} header bytes recovered` };
+        ? {ok: true, via: 'deflate-raw', bytes: out.subarray(0, want)}
+        : {ok: false, reason: `only ${out.length} of ${want} header bytes recovered`};
 }
 
 /* 7z */
 
 class Rd {
-    constructor(b) { this.b = b; this.p = 0; }
-    u8() { return this.b[this.p++]; }
-    take(n) { const v = this.b.subarray(this.p, this.p + n); this.p += n; return v; }
+    constructor(b) {
+        this.b = b;
+        this.p = 0;
+    }
+
+    u8() {
+        return this.b[this.p++];
+    }
+
+    take(n) {
+        const v = this.b.subarray(this.p, this.p + n);
+        this.p += n;
+        return v;
+    }
+
     /** Little-endian uint32 out of the next 4 bytes. */
-    u32() { const q = this.take(4); return (q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24)) >>> 0; }
+    u32() {
+        const q = this.take(4);
+        return (q[0] | (q[1] << 8) | (q[2] << 16) | (q[3] << 24)) >>> 0;
+    }
+
     num() { // 7z variable-length NUMBER
-        const first = this.u8(); let mask = 0x80, value = 0;
+        const first = this.u8();
+        let mask = 0x80, value = 0;
         for (let i = 0; i < 8; i++) {
             if (!(first & mask)) return value + ((first & (mask - 1)) * 2 ** (8 * i));
             value += this.b[this.p++] * 2 ** (8 * i);
@@ -256,64 +309,113 @@ class Rd {
         }
         return value;
     }
-    bits(n) { const o = []; let b = 0, m = 0; for (let i = 0; i < n; i++) { if (m === 0) { b = this.u8(); m = 0x80; } o.push(!!(b & m)); m >>= 1; } return o; }
-    boolvec(n) { return this.u8() ? new Array(n).fill(true) : this.bits(n); }
+
+    bits(n) {
+        const o = [];
+        let b = 0, m = 0;
+        for (let i = 0; i < n; i++) {
+            if (m === 0) {
+                b = this.u8();
+                m = 0x80;
+            }
+            o.push(!!(b & m));
+            m >>= 1;
+        }
+        return o;
+    }
+
+    boolvec(n) {
+        return this.u8() ? new Array(n).fill(true) : this.bits(n);
+    }
 }
 
 function parseStreams(r) {
-    const info = { packPos: 0, packSizes: [], folders: [], unpackSizes: [], folderCrcs: [], subSizes: [], subCrcs: [] };
+    const info = {packPos: 0, packSizes: [], folders: [], unpackSizes: [], folderCrcs: [], subSizes: [], subCrcs: []};
     for (; ;) {
-        const t = r.num(); if (t === 0x00) break;
+        const t = r.num();
+        if (t === 0x00) break;
         if (t === 0x06) {
-            info.packPos = r.num(); const n = r.num();
+            info.packPos = r.num();
+            const n = r.num();
             for (; ;) {
-                const tt = r.num(); if (tt === 0x00) break;
-                if (tt === 0x09) { for (let i = 0; i < n; i++) info.packSizes.push(r.num()); }
-                else if (tt === 0x0A) { const d = r.boolvec(n); for (const x of d) if (x) r.take(4); }
-                else throw Error('packinfo ' + tt);
+                const tt = r.num();
+                if (tt === 0x00) break;
+                if (tt === 0x09) {
+                    for (let i = 0; i < n; i++) info.packSizes.push(r.num());
+                } else if (tt === 0x0A) {
+                    const d = r.boolvec(n);
+                    for (const x of d) if (x) r.take(4);
+                } else throw Error('packinfo ' + tt);
             }
-        }
-        else if (t === 0x07) {
+        } else if (t === 0x07) {
             for (; ;) {
-                const tt = r.num(); if (tt === 0x00) break;
+                const tt = r.num();
+                if (tt === 0x00) break;
                 if (tt === 0x0B) {
-                    const nf = r.num(); r.u8();
+                    const nf = r.num();
+                    r.u8();
                     for (let i = 0; i < nf; i++) {
-                        const nc = r.num(); const f = { coders: [], numIn: 0, numOut: 0, props: [] };
+                        const nc = r.num();
+                        const f = {coders: [], numIn: 0, numOut: 0, props: []};
                         for (let c = 0; c < nc; c++) {
-                            const fl = r.u8(); const id = r.take(fl & 0x0F);
-                            let nin = 1, nout = 1; if (fl & 0x10) { nin = r.num(); nout = r.num(); }
-                            if (fl & 0x20) { f.props.push(r.take(r.num())); } else f.props.push(null);
-                            f.coders.push({ id: [...id].map(x => x.toString(16).padStart(2, '0')).join(''), nin, nout });
-                            f.numIn += nin; f.numOut += nout;
+                            const fl = r.u8();
+                            const id = r.take(fl & 0x0F);
+                            let nin = 1, nout = 1;
+                            if (fl & 0x10) {
+                                nin = r.num();
+                                nout = r.num();
+                            }
+                            if (fl & 0x20) {
+                                f.props.push(r.take(r.num()));
+                            } else f.props.push(null);
+                            f.coders.push({id: [...id].map(x => x.toString(16).padStart(2, '0')).join(''), nin, nout});
+                            f.numIn += nin;
+                            f.numOut += nout;
                         }
-                        for (let k = 0; k < f.numOut - 1; k++) { r.num(); r.num(); }
-                        const nps = f.numIn - (f.numOut - 1); if (nps > 1) for (let k = 0; k < nps; k++) r.num();
+                        for (let k = 0; k < f.numOut - 1; k++) {
+                            r.num();
+                            r.num();
+                        }
+                        const nps = f.numIn - (f.numOut - 1);
+                        if (nps > 1) for (let k = 0; k < nps; k++) r.num();
                         info.folders.push(f);
                     }
+                } else if (tt === 0x0C) {
+                    for (const f of info.folders) {
+                        f.unpackSizes = [];
+                        for (let k = 0; k < f.numOut; k++) f.unpackSizes.push(r.num());
+                        info.unpackSizes.push(f.unpackSizes[f.unpackSizes.length - 1]);
+                    }
                 }
-                else if (tt === 0x0C) { for (const f of info.folders) { f.unpackSizes = []; for (let k = 0; k < f.numOut; k++) f.unpackSizes.push(r.num()); info.unpackSizes.push(f.unpackSizes[f.unpackSizes.length - 1]); } }
-                // Folder CRCs. The prototype read these through `new DataView(take(4).buffer.slice(0))`,
-                // which resolves to offset 0 of the *whole* backing buffer rather than the 4 bytes it
-                // just took: garbage whenever the header is a subarray of the tail read, which is the
+                    // Folder CRCs. The prototype read these through `new DataView(take(4).buffer.slice(0))`,
+                    // which resolves to offset 0 of the *whole* backing buffer rather than the 4 bytes it
+                    // just took: garbage whenever the header is a subarray of the tail read, which is the
                 // normal case. Read the four bytes directly instead.
-                else if (tt === 0x0A) { const d = r.boolvec(info.folders.length); for (const x of d) info.folderCrcs.push(x ? r.u32() : null); }
-                else throw Error('unpackinfo ' + tt);
+                else if (tt === 0x0A) {
+                    const d = r.boolvec(info.folders.length);
+                    for (const x of d) info.folderCrcs.push(x ? r.u32() : null);
+                } else throw Error('unpackinfo ' + tt);
             }
-        }
-        else if (t === 0x08) {
-            let nun = info.folders.map(() => 1); const sizes = [], crcs = [];
+        } else if (t === 0x08) {
+            let nun = info.folders.map(() => 1);
+            const sizes = [], crcs = [];
             for (; ;) {
-                const tt = r.num(); if (tt === 0x00) break;
-                if (tt === 0x0D) { nun = info.folders.map(() => r.num()); }
-                else if (tt === 0x09) {
+                const tt = r.num();
+                if (tt === 0x00) break;
+                if (tt === 0x0D) {
+                    nun = info.folders.map(() => r.num());
+                } else if (tt === 0x09) {
                     info.folders.forEach((f, fi) => {
-                        if (!nun[fi]) return; let tot = 0;
-                        for (let k = 0; k < nun[fi] - 1; k++) { const s = r.num(); sizes.push(s); tot += s; }
+                        if (!nun[fi]) return;
+                        let tot = 0;
+                        for (let k = 0; k < nun[fi] - 1; k++) {
+                            const s = r.num();
+                            sizes.push(s);
+                            tot += s;
+                        }
                         sizes.push(info.unpackSizes[fi] - tot);
                     });
-                }
-                else if (tt === 0x0A) {
+                } else if (tt === 0x0A) {
                     // Per the 7z spec a digest is only stored for substreams whose CRC is not
                     // already known, and it *is* known when a folder holds exactly one stream and
                     // that folder carried a CRC in kUnPackInfo. Counting every substream (as the
@@ -321,21 +423,25 @@ function parseStreams(r) {
                     const folderOf = [], unknown = [];
                     info.folders.forEach((f, fi) => {
                         const known = nun[fi] === 1 && info.folderCrcs[fi] != null;
-                        for (let k = 0; k < nun[fi]; k++) { folderOf.push(fi); unknown.push(!known); }
+                        for (let k = 0; k < nun[fi]; k++) {
+                            folderOf.push(fi);
+                            unknown.push(!known);
+                        }
                     });
                     const d = r.boolvec(unknown.filter(Boolean).length);
                     let di = 0;
                     for (let i = 0; i < unknown.length; i++) {
-                        if (!unknown[i]) { crcs.push(info.folderCrcs[folderOf[i]]); continue; }
+                        if (!unknown[i]) {
+                            crcs.push(info.folderCrcs[folderOf[i]]);
+                            continue;
+                        }
                         crcs.push(d[di++] ? r.u32() : null);
                     }
-                }
-                else throw Error('substreams ' + tt);
+                } else throw Error('substreams ' + tt);
             }
             info.subSizes = sizes.length ? sizes : info.unpackSizes.slice();
             info.subCrcs = crcs.length ? crcs : info.folderCrcs.slice();
-        }
-        else throw Error('streamsinfo ' + t);
+        } else throw Error('streamsinfo ' + t);
     }
     if (!info.subSizes.length) info.subSizes = info.unpackSizes.slice();
     if (!info.subCrcs.length) info.subCrcs = info.folderCrcs.length ? info.folderCrcs.slice() : info.subSizes.map(() => null);
@@ -343,24 +449,33 @@ function parseStreams(r) {
 }
 
 function parseHeader(buf) {
-    const r = new Rd(buf); const t = r.num();
-    if (t === 0x17) return { kind: 'encoded', encoded: parseStreams(r) };
+    const r = new Rd(buf);
+    const t = r.num();
+    if (t === 0x17) return {kind: 'encoded', encoded: parseStreams(r)};
     if (t !== 0x01) throw Error('unexpected header kind ' + t);
-    const out = { kind: 'header' };
+    const out = {kind: 'header'};
     for (; ;) {
-        const tt = r.num(); if (tt === 0x00) break;
+        const tt = r.num();
+        if (tt === 0x00) break;
         if (tt === 0x04) out.streams = parseStreams(r);
         else if (tt === 0x05) {
-            const nf = r.num(); let names = [];
+            const nf = r.num();
+            let names = [];
             let emptyStream = new Array(nf).fill(false), emptyFile = [];
             for (; ;) {
-                const pt = r.num(); if (pt === 0x00) break; const sz = r.num(); const end = r.p + sz;
+                const pt = r.num();
+                if (pt === 0x00) break;
+                const sz = r.num();
+                const end = r.p + sz;
                 if (pt === 0x11) {
-                    r.u8(); const raw = r.take(end - r.p);
+                    r.u8();
+                    const raw = r.take(end - r.p);
                     names = new TextDecoder('utf-16le').decode(raw).split('\u0000').filter(Boolean);
+                } else if (pt === 0x0E) {
+                    emptyStream = r.bits(nf);
+                } else if (pt === 0x0F) {
+                    emptyFile = r.bits(emptyStream.filter(Boolean).length);
                 }
-                else if (pt === 0x0E) { emptyStream = r.bits(nf); }
-                else if (pt === 0x0F) { emptyFile = r.bits(emptyStream.filter(Boolean).length); }
                 r.p = end;
             }
             // Only !emptyStream files own an unpacked substream, in order. Directories and
@@ -373,8 +488,7 @@ function parseHeader(buf) {
                 isDir: emptyStream[i] && !emptyFile[emptyStream.slice(0, i).filter(Boolean).length],
             }));
             out.nFiles = nf;
-        }
-        else throw Error('header ' + tt);
+        } else throw Error('header ' + tt);
     }
     return out;
 }
@@ -387,11 +501,11 @@ function parseHeader(buf) {
  * that honestly rather than shipping a 1.6 MB WASM blob to every visitor.
  */
 export async function probe7z(file) {
-    if (file.size < 32) return { ok: false, reason: 'too small to be a 7z' };
+    if (file.size < 32) return {ok: false, reason: 'too small to be a 7z'};
 
     const head = await slice(file, 0, 32);
     if (!(head[0] === 0x37 && head[1] === 0x7A && head[2] === 0xBC && head[3] === 0xAF && head[4] === 0x27 && head[5] === 0x1C))
-        return { ok: false, reason: 'bad 7z signature' };
+        return {ok: false, reason: 'bad 7z signature'};
     const hv = new DataView(head.buffer, head.byteOffset, head.byteLength);
     const nhOff = Number(hv.getBigUint64(12, true)), nhSize = Number(hv.getBigUint64(20, true));
     const nhAt = 32 + nhOff;
@@ -405,8 +519,11 @@ export async function probe7z(file) {
         : await slice(file, nhAt, nhAt + nhSize);
 
     let h;
-    try { h = parseHeader(nh); }
-    catch (e) { return { ok: false, reason: '7z header: ' + e.message }; }
+    try {
+        h = parseHeader(nh);
+    } catch (e) {
+        return {ok: false, reason: '7z header: ' + e.message};
+    }
 
     if (h.kind === 'encoded') {
         return {

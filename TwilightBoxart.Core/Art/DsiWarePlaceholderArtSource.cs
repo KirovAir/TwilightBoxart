@@ -16,15 +16,19 @@ public sealed class DsiWarePlaceholderArtSource : IArtSource
     /// <summary>After GameTDB and libretro: a real cover, when one exists, always wins.</summary>
     public int Order => 100;
 
-    public bool CanHandle(RomIdentity identity) =>
-        identity.ConsoleType is ConsoleType.NintendoDs or ConsoleType.NintendoDsi
-        && identity.Serial is { Length: 4 } serial
-        && serial[0] is 'K' or 'H' or 'Z';
+    public bool CanHandle(RomIdentity identity)
+    {
+        return identity.ConsoleType is ConsoleType.NintendoDs or ConsoleType.NintendoDsi
+               && identity.Serial is { Length: 4 } serial
+               && serial[0] is 'K' or 'H' or 'Z';
+    }
 
-    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default) =>
-        Task.FromResult<ArtBlob?>(CanHandle(identity)
+    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default)
+    {
+        return Task.FromResult<ArtBlob?>(CanHandle(identity)
             ? new ArtBlob(Image, "embedded:dsiware", "image/jpeg")
             : null);
+    }
 
     private static byte[] LoadEmbedded()
     {

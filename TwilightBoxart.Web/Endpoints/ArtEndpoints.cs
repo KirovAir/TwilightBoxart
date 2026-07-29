@@ -75,7 +75,7 @@ public static class ArtEndpoints
         // the bytes do.
         var etag = new EntityTagHeaderValue($"\"{art.Sha256[..32]}-{options.CacheDiscriminator()}\"");
         var typed = context.Request.GetTypedHeaders();
-        if (typed.IfNoneMatch.Any(t => t.Compare(etag, useStrongComparison: false)))
+        if (typed.IfNoneMatch.Any(t => t.Compare(etag, false)))
         {
             context.Response.Headers.ETag = etag.ToString();
             return Results.StatusCode(StatusCodes.Status304NotModified);
@@ -160,19 +160,23 @@ public static class ArtEndpoints
         return identity.IsMatched && ArtKey.IsValid(identity.Key) ? identity : null;
     }
 
-    private static uint? TryParseCrc32(string? value) =>
-        uint.TryParse(value, System.Globalization.NumberStyles.HexNumber, null, out var crc32) && crc32 != 0
+    private static uint? TryParseCrc32(string? value)
+    {
+        return uint.TryParse(value, System.Globalization.NumberStyles.HexNumber, null, out var crc32) && crc32 != 0
             ? crc32
             : null;
+    }
 
     /// <summary>
     /// The byte count that went into <c>crc32</c>, decimal digits only. The ladder needs it to derive
     /// header-stripped CRCs; anything unparsable is treated as absent, never as a reason to reject.
     /// </summary>
-    private static long? TryParseSize(string? value) =>
-        long.TryParse(value, System.Globalization.NumberStyles.None, null, out var size) && size > 0
+    private static long? TryParseSize(string? value)
+    {
+        return long.TryParse(value, System.Globalization.NumberStyles.None, null, out var size) && size > 0
             ? size
             : null;
+    }
 
     /// <summary>
     /// Decodes a base64 header sample (the ROM's leading bytes). Oversized input is rejected

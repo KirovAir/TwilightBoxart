@@ -1,7 +1,7 @@
 // zipwriter.js: minimal store-only ZIP writer for browsers without the File System Access API.
 // PNGs are already compressed, so entries are stored verbatim: no deflate, no dependency.
 
-import { crc32 } from './romprobe.js';
+import {crc32} from './romprobe.js';
 
 const enc = new TextEncoder();
 
@@ -9,11 +9,20 @@ const enc = new TextEncoder();
 function dosDateTime(d = new Date()) {
     const time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
     const date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
-    return { time, date };
+    return {time, date};
 }
 
-function u32(v) { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v >>> 0, true); return b; }
-function u16(v) { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, v & 0xFFFF, true); return b; }
+function u32(v) {
+    const b = new Uint8Array(4);
+    new DataView(b.buffer).setUint32(0, v >>> 0, true);
+    return b;
+}
+
+function u16(v) {
+    const b = new Uint8Array(2);
+    new DataView(b.buffer).setUint16(0, v & 0xFFFF, true);
+    return b;
+}
 
 /**
  * Build a zip from `[name, bytes]` pairs.
@@ -25,7 +34,7 @@ function u16(v) { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(
 export function buildZip(files) {
     if (files.length > 0xFFFE) throw new Error(`too many files for a plain zip (${files.length}); download in batches`);
 
-    const { time, date } = dosDateTime();
+    const {time, date} = dosDateTime();
     const parts = [];       // local headers + data, in order
     const central = [];     // central directory records
     let offset = 0;
@@ -53,12 +62,15 @@ export function buildZip(files) {
 
     const cdStart = offset;
     let cdSize = 0;
-    for (const rec of central) for (const p of rec) { parts.push(p); cdSize += p.length; }
+    for (const rec of central) for (const p of rec) {
+        parts.push(p);
+        cdSize += p.length;
+    }
 
     parts.push(u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
         u32(cdSize), u32(cdStart), u16(0));
 
-    return new Blob(parts, { type: 'application/zip' });
+    return new Blob(parts, {type: 'application/zip'});
 }
 
 /** Hand a Blob to the browser's downloader. */

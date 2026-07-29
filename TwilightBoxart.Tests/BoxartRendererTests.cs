@@ -28,7 +28,7 @@ public class BoxartRendererTests
                 Height = 115,
                 KeepAspectRatio = false,
                 BorderStyle = style,
-                BorderThickness = 2,
+                BorderThickness = 2
             };
 
             var png = new BoxartRenderer().Render(source, options);
@@ -50,14 +50,14 @@ public class BoxartRendererTests
     {
         // Noise that survives downscaling: 8px blocks shrink to 4px blocks at 256x192, so the output is
         // still full-colour and near-incompressible. A straight 24-bit encode of this is ~100 KB.
-        var source = NoiseBlocks(1024, 768, block: 8);
+        var source = NoiseBlocks(1024, 768, 8);
 
         // The largest DS-displayable size: the biggest render still held to the TWiLightMenu byte cap.
         var png = new BoxartRenderer().Render(source, new RenderOptions
         {
             Width = RenderOptions.TwilightMaxWidth,
             Height = RenderOptions.TwilightMaxHeight,
-            KeepAspectRatio = false,
+            KeepAspectRatio = false
         });
 
         var header = ReadPngHeader(png, "noise");
@@ -81,7 +81,7 @@ public class BoxartRendererTests
         {
             Width = 128,
             Height = 115,
-            KeepAspectRatio = true,
+            KeepAspectRatio = true
         });
 
         var header = ReadPngHeader(png, "square");
@@ -95,13 +95,13 @@ public class BoxartRendererTests
     {
         // The bound axis must land on the target, not a rounded-up pixel past it. The 2020 client scaled
         // both axes by a float ratio and took the ceiling, which turned 600x600 into 116x115.
-        Assert.AreEqual(new SixLabors.ImageSharp.Size(115, 115), BoxartRenderer.FitToAspectRatio(600, 600, 128, 115));
-        Assert.AreEqual(new SixLabors.ImageSharp.Size(128, 64), BoxartRenderer.FitToAspectRatio(1000, 500, 128, 115));
-        Assert.AreEqual(new SixLabors.ImageSharp.Size(102, 115), BoxartRenderer.FitToAspectRatio(1600, 1800, 128, 115));
+        Assert.AreEqual(new Size(115, 115), BoxartRenderer.FitToAspectRatio(600, 600, 128, 115));
+        Assert.AreEqual(new Size(128, 64), BoxartRenderer.FitToAspectRatio(1000, 500, 128, 115));
+        Assert.AreEqual(new Size(102, 115), BoxartRenderer.FitToAspectRatio(1600, 1800, 128, 115));
 
         // Absurd ratios still produce a drawable image rather than a zero dimension.
-        Assert.AreEqual(new SixLabors.ImageSharp.Size(128, 1), BoxartRenderer.FitToAspectRatio(10_000, 1, 128, 115));
-        Assert.AreEqual(new SixLabors.ImageSharp.Size(1, 115), BoxartRenderer.FitToAspectRatio(1, 10_000, 128, 115));
+        Assert.AreEqual(new Size(128, 1), BoxartRenderer.FitToAspectRatio(10_000, 1, 128, 115));
+        Assert.AreEqual(new Size(1, 115), BoxartRenderer.FitToAspectRatio(1, 10_000, 128, 115));
     }
 
     [TestMethod]
@@ -115,7 +115,7 @@ public class BoxartRendererTests
             Width = 128,
             Height = 115,
             KeepAspectRatio = true,
-            BorderStyle = BoxartBorderStyle.NintendoDsi,
+            BorderStyle = BoxartBorderStyle.NintendoDsi
         });
 
         var header = ReadPngHeader(png, "dsi-aspect");
@@ -138,7 +138,7 @@ public class BoxartRendererTests
                 KeepAspectRatio = false,
                 BorderStyle = style,
                 BorderThickness = 2,
-                BorderColor = 0xFFFF0000,
+                BorderColor = 0xFFFF0000
             };
 
             var renderer = new BoxartRenderer();
@@ -160,7 +160,7 @@ public class BoxartRendererTests
         {
             Width = 100_000,
             Height = 100_000,
-            KeepAspectRatio = false,
+            KeepAspectRatio = false
         });
 
         var header = ReadPngHeader(png, "clamped");
@@ -180,7 +180,7 @@ public class BoxartRendererTests
             Width = 999,
             Height = 999,
             BorderStyle = BoxartBorderStyle.Nintendo3Ds,
-            BorderThickness = 5,
+            BorderThickness = 5
         });
 
         // Pico Launcher's own parser (BmpHeader::Validate + BmpFileCover.cpp) is the contract
@@ -354,7 +354,10 @@ public class BoxartRendererTests
         return new ArtBlob(buffer.ToArray(), "test://synthetic", "image/png");
     }
 
-    private static Image<Rgba32> Decode(byte[] png) => Image.Load<Rgba32>(png);
+    private static Image<Rgba32> Decode(byte[] png)
+    {
+        return Image.Load<Rgba32>(png);
+    }
 
     /// <summary>Parses IHDR directly, so "is this a real PNG" is asserted rather than assumed.</summary>
     private static (int Width, int Height, int BitDepth, int ColorType) ReadPngHeader(byte[] png, string label)

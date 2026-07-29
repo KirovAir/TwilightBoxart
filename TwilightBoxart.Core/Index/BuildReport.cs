@@ -13,7 +13,10 @@ public sealed record ConsoleCoverage(ConsoleType Console, int Rows, int WithSeri
 
     public double Sha1Percent => Percentage(WithSha1, Rows);
 
-    internal static double Percentage(int part, int whole) => whole == 0 ? 0 : part * 100.0 / whole;
+    internal static double Percentage(int part, int whole)
+    {
+        return whole == 0 ? 0 : part * 100.0 / whole;
+    }
 }
 
 /// <summary>Serial coverage for one DAT, the granularity the coverage baseline was measured at.</summary>
@@ -77,14 +80,15 @@ public static class BuildReport
             ["Nintendo - Game Boy"] = 0.1,
             ["Nintendo - Nintendo Entertainment System"] = 0.0,
             ["Sega - Game Gear"] = 0.0,
-            ["Sega - Master System - Mark III"] = 0.0,
+            ["Sega - Master System - Mark III"] = 0.0
         };
 
     /// <summary>How far a source may drift from its baseline before the build says something.</summary>
     public const double DriftWarningPoints = 5.0;
 
-    public static IReadOnlyList<ConsoleCoverage> Measure(IReadOnlyList<DatEntry> entries) =>
-        entries
+    public static IReadOnlyList<ConsoleCoverage> Measure(IReadOnlyList<DatEntry> entries)
+    {
+        return entries
             .GroupBy(e => e.Console)
             .Select(g => new ConsoleCoverage(
                 g.Key,
@@ -94,14 +98,17 @@ public static class BuildReport
                 g.Count(e => e.Sha1 is not null)))
             .OrderBy(c => (int)c.Console)
             .ToList();
+    }
 
-    public static IReadOnlyList<SourceCoverage> MeasureBySource(IReadOnlyList<DatEntry> entries) =>
-        entries
+    public static IReadOnlyList<SourceCoverage> MeasureBySource(IReadOnlyList<DatEntry> entries)
+    {
+        return entries
             .GroupBy(e => (e.SourceName, e.Console))
             .Select(g => new SourceCoverage(g.Key.SourceName, g.Key.Console, g.Count(), g.Count(e => e.Serial is not null)))
             .OrderBy(c => (int)c.Console)
             .ThenBy(c => c.SourceName, StringComparer.Ordinal)
             .ToList();
+    }
 
     public static string Render(BuildResult result)
     {
@@ -183,6 +190,8 @@ public static class BuildReport
         return text.ToString();
     }
 
-    private static string Truncate(string value, int length) =>
-        value.Length <= length ? value : value[..(length - 1)] + "…";
+    private static string Truncate(string value, int length)
+    {
+        return value.Length <= length ? value : value[..(length - 1)] + "…";
+    }
 }

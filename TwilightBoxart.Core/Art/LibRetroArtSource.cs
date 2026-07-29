@@ -112,7 +112,10 @@ public sealed class LibRetroArtSource(
     /// file name. Resolving it against the same directory turns those covers into one extra request
     /// on the fast primary instead of a warning plus a mirror round trip.
     /// </summary>
-    protected override string? TryResolveSymlink(string url, byte[] body) => ResolveSymlinkTarget(url, body);
+    protected override string? TryResolveSymlink(string url, byte[] body)
+    {
+        return ResolveSymlinkTarget(url, body);
+    }
 
     /// <summary>Exposed so the accept/reject rules can be asserted without a network call.</summary>
     public static string? ResolveSymlinkTarget(string url, byte[] body)
@@ -146,14 +149,16 @@ public sealed class LibRetroArtSource(
     /// Applies libretro's own naming rule. Ordinal by construction: it compares individual characters,
     /// never case-folds, and so cannot repeat the 2020 client's culture-sensitive matching bugs.
     /// </summary>
-    public static string SanitizeName(string name) =>
-        string.Create(name.Length, name, static (destination, source) =>
+    public static string SanitizeName(string name)
+    {
+        return string.Create(name.Length, name, static (destination, source) =>
         {
             for (var i = 0; i < source.Length; i++)
             {
                 destination[i] = IllegalNameCharacters.Contains(source[i]) ? '_' : source[i];
             }
         });
+    }
 
     /// <summary>
     /// Builds the thumbnail URL, or null when the identity cannot address one. Exposed so the shape can

@@ -37,7 +37,7 @@ public sealed class GameBoyAdvanceHeaderParser : IConsoleHeaderParser
             // The 4th character is a region letter from the same alphabet as NDS, but RegionId is left
             // unset: it is documented as the NDS/DSi field and GBA art comes from libretro by name, not
             // from GameTDB by region. Callers that want it can read Serial[3].
-            Serial = header.ReadGameCode(GameCodeOffset, 4),
+            Serial = header.ReadGameCode(GameCodeOffset, 4)
         };
     }
 }

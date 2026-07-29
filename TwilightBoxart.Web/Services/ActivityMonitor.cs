@@ -36,19 +36,25 @@ public sealed class ActivityMonitor
         CountIdentify(Volatile.Read(ref state.Window), lookups, matched);
     }
 
-    public IReadOnlyList<ActivitySnapshot> Snapshot() =>
-    [
-        .. _clients.Select(kv => Read(kv.Key, kv.Value.Totals, kv.Value.LastSeen))
-            .OrderByDescending(u => u.LastSeen)
-    ];
+    public IReadOnlyList<ActivitySnapshot> Snapshot()
+    {
+        return
+        [
+            .. _clients.Select(kv => Read(kv.Key, kv.Value.Totals, kv.Value.LastSeen))
+                .OrderByDescending(u => u.LastSeen)
+        ];
+    }
 
-    public IReadOnlyList<ActivitySnapshot> DrainWindow() =>
-    [
-        .. _clients
-            .Select(kv => Read(kv.Key, Interlocked.Exchange(ref kv.Value.Window, new Counters()), kv.Value.LastSeen))
-            .Where(u => u.Requests > 0 || u.Lookups > 0)
-            .OrderByDescending(u => u.Requests)
-    ];
+    public IReadOnlyList<ActivitySnapshot> DrainWindow()
+    {
+        return
+        [
+            .. _clients
+                .Select(kv => Read(kv.Key, Interlocked.Exchange(ref kv.Value.Window, new Counters()), kv.Value.LastSeen))
+                .Where(u => u.Requests > 0 || u.Lookups > 0)
+                .OrderByDescending(u => u.Requests)
+        ];
+    }
 
     private State Get(string client)
     {
@@ -95,15 +101,18 @@ public sealed class ActivityMonitor
         Interlocked.Add(ref counters.Matched, matched);
     }
 
-    private static ActivitySnapshot Read(string client, Counters counters, DateTimeOffset lastSeen) => new(
-        client,
-        Interlocked.Read(ref counters.Requests),
-        Interlocked.Read(ref counters.Rejected),
-        Interlocked.Read(ref counters.ArtHits),
-        Interlocked.Read(ref counters.ArtMisses),
-        Interlocked.Read(ref counters.Lookups),
-        Interlocked.Read(ref counters.Matched),
-        lastSeen);
+    private static ActivitySnapshot Read(string client, Counters counters, DateTimeOffset lastSeen)
+    {
+        return new ActivitySnapshot(
+            client,
+            Interlocked.Read(ref counters.Requests),
+            Interlocked.Read(ref counters.Rejected),
+            Interlocked.Read(ref counters.ArtHits),
+            Interlocked.Read(ref counters.ArtMisses),
+            Interlocked.Read(ref counters.Lookups),
+            Interlocked.Read(ref counters.Matched),
+            lastSeen);
+    }
 
     private sealed class State
     {

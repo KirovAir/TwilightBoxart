@@ -25,21 +25,21 @@ internal sealed record IndexRow(
 internal sealed class NoIntroIndexFile : IDisposable
 {
     private const string Schema = """
-        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-        CREATE TABLE entry (
-            id        INTEGER PRIMARY KEY,
-            console   INTEGER NOT NULL,
-            name      TEXT    NOT NULL,
-            serial    TEXT    NULL,
-            crc32     INTEGER NULL,
-            sha1      TEXT    NULL,
-            status    TEXT    NULL
-        );
-        CREATE INDEX ix_entry_crc32   ON entry(crc32)   WHERE crc32 IS NOT NULL;
-        CREATE INDEX ix_entry_sha1    ON entry(sha1)    WHERE sha1  IS NOT NULL;
-        CREATE INDEX ix_entry_serial  ON entry(console, serial) WHERE serial IS NOT NULL;
-        CREATE VIRTUAL TABLE entry_fts USING fts5(name, content='entry', content_rowid='id', tokenize='trigram');
-        """;
+                                  CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                                  CREATE TABLE entry (
+                                      id        INTEGER PRIMARY KEY,
+                                      console   INTEGER NOT NULL,
+                                      name      TEXT    NOT NULL,
+                                      serial    TEXT    NULL,
+                                      crc32     INTEGER NULL,
+                                      sha1      TEXT    NULL,
+                                      status    TEXT    NULL
+                                  );
+                                  CREATE INDEX ix_entry_crc32   ON entry(crc32)   WHERE crc32 IS NOT NULL;
+                                  CREATE INDEX ix_entry_sha1    ON entry(sha1)    WHERE sha1  IS NOT NULL;
+                                  CREATE INDEX ix_entry_serial  ON entry(console, serial) WHERE serial IS NOT NULL;
+                                  CREATE VIRTUAL TABLE entry_fts USING fts5(name, content='entry', content_rowid='id', tokenize='trigram');
+                                  """;
 
     private readonly string _directory;
 
@@ -52,7 +52,10 @@ internal sealed class NoIntroIndexFile : IDisposable
         Path = path;
     }
 
-    public static NoIntroIndexFile Create(params IndexRow[] rows) => Create("2026-07-20T00:00:00Z", 1, rows);
+    public static NoIntroIndexFile Create(params IndexRow[] rows)
+    {
+        return Create("2026-07-20T00:00:00Z", 1, rows);
+    }
 
     public static NoIntroIndexFile Create(string version, int schemaVersion, params IndexRow[] rows)
     {
@@ -68,7 +71,7 @@ internal sealed class NoIntroIndexFile : IDisposable
         {
             DataSource = path,
             Mode = SqliteOpenMode.ReadWriteCreate,
-            Pooling = false,
+            Pooling = false
         }.ConnectionString;
 
         using var connection = new SqliteConnection(connectionString);
@@ -137,7 +140,7 @@ internal sealed class NoIntroIndexFile : IDisposable
     {
         try
         {
-            Directory.Delete(_directory, recursive: true);
+            Directory.Delete(_directory, true);
         }
         catch (IOException)
         {

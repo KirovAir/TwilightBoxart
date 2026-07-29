@@ -66,8 +66,8 @@ public sealed class TwilightSettings
             Security = new SecuritySettings
             {
                 AdminPassword = Trimmed(configuration["Twilight:Security:AdminPassword"]),
-                AllowedOrigins = LoadAllowedOrigins(configuration, environment),
-            },
+                AllowedOrigins = LoadAllowedOrigins(configuration, environment)
+            }
         };
     }
 
@@ -93,8 +93,10 @@ public sealed class TwilightSettings
             .ToArray();
     }
 
-    private static string? Trimmed(string? value) =>
-        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    private static string? Trimmed(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
 
     public string OriginalsPath => Path.Combine(DataPath, "cache", "originals");
 

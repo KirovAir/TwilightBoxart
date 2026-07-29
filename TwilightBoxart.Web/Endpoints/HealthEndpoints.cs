@@ -38,9 +38,11 @@ public static class HealthEndpoints
     /// </summary>
     private static IResult GetHealth(
         [FromServices] IMetadataIndex index,
-        [FromServices] TwilightSettings settings) =>
-        Results.Ok(new HealthResponse
+        [FromServices] TwilightSettings settings)
+    {
+        return Results.Ok(new HealthResponse
         {
-            Status = IndexHealth.From(index, settings).Available ? "ok" : "degraded",
+            Status = IndexHealth.From(index, settings).Available ? "ok" : "degraded"
         });
+    }
 }

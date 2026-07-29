@@ -59,7 +59,7 @@ public static class FormatsEndpoints
         context.Response.GetTypedHeaders().CacheControl = new CacheControlHeaderValue
         {
             Public = true,
-            MaxAge = TimeSpan.FromDays(1),
+            MaxAge = TimeSpan.FromDays(1)
         };
 
         return Results.Text(Body, "text/plain; charset=utf-8");

@@ -23,13 +23,16 @@ public static class RateLimitingExtensions
 {
     public const string IdentifyPolicy = "identify";
     public const string ArtPolicy = "art";
+
     /// <summary>Constrained clients that fetch one image per request rather than batching.</summary>
     public const string ResolvePolicy = "resolve";
+
     /// <summary>Tight, because every request is a password guess.</summary>
     public const string LoginPolicy = "login";
 
-    public static IServiceCollection AddTwilightRateLimiting(this IServiceCollection services) =>
-        services.AddRateLimiter(options =>
+    public static IServiceCollection AddTwilightRateLimiting(this IServiceCollection services)
+    {
+        return services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             options.OnRejected = (context, _) =>
@@ -45,17 +48,19 @@ public static class RateLimitingExtensions
 
             // Backstop for anything not carrying an explicit policy, including the legacy /api route.
             // Leases chain, so this must exceed every per-endpoint policy or it becomes the real limit.
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(
-                context => Partition(context, "global", permitLimit: 2000));
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context => Partition(context, "global", 2000));
 
-            Add(options, IdentifyPolicy, permitLimit: 60);
-            Add(options, ArtPolicy, permitLimit: 1800);
-            Add(options, ResolvePolicy, permitLimit: 1200);
-            Add(options, LoginPolicy, permitLimit: 10);
+            Add(options, IdentifyPolicy, 60);
+            Add(options, ArtPolicy, 1800);
+            Add(options, ResolvePolicy, 1200);
+            Add(options, LoginPolicy, 10);
         });
+    }
 
-    private static void Add(RateLimiterOptions options, string name, int permitLimit) =>
+    private static void Add(RateLimiterOptions options, string name, int permitLimit)
+    {
         options.AddPolicy(name, context => Partition(context, name, permitLimit));
+    }
 
     private static RateLimitPartition<string> Partition(HttpContext context, string name, int permitLimit)
     {
@@ -66,7 +71,7 @@ public static class RateLimitingExtensions
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-            AutoReplenishment = true,
+            AutoReplenishment = true
         });
     }
 }

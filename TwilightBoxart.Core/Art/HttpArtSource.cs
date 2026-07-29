@@ -53,7 +53,7 @@ public abstract class HttpArtSource(
     protected async Task<ArtBlob?> TryGetAsync(string url, CancellationToken ct)
     {
         var followed = false;
-        for (var attempt = 0; ; attempt++)
+        for (var attempt = 0;; attempt++)
         {
             // Every sleep happens outside the gate. Holding a slot through a cooldown or a
             // Retry-After backoff would let a single 429 pin one of the few politeness slots for
@@ -113,7 +113,10 @@ public abstract class HttpArtSource(
     /// Maps a 200 body that is not an image onto a follow-up URL, for upstreams that serve pointers
     /// in place of files. Null means "genuinely not art". Followed at most once per fetch.
     /// </summary>
-    protected virtual string? TryResolveSymlink(string url, byte[] body) => null;
+    protected virtual string? TryResolveSymlink(string url, byte[] body)
+    {
+        return null;
+    }
 
     /// <summary>
     /// One GET. A non-null <see cref="AttemptResult.Backoff"/> means "the upstream asked us to wait and
@@ -227,12 +230,18 @@ public abstract class HttpArtSource(
     }
 
     private readonly record struct AttemptResult(
-        ArtBlob? Blob, TimeSpan? Backoff, string? Follow = null, Exception? Failure = null)
+        ArtBlob? Blob,
+        TimeSpan? Backoff,
+        string? Follow = null,
+        Exception? Failure = null)
     {
         public static readonly AttemptResult Miss = new(null, null);
 
         /// <summary>A transport-level failure the caller should retry, then surface as an outage.</summary>
-        public static AttemptResult Failed(Exception failure) => new(null, null, null, failure);
+        public static AttemptResult Failed(Exception failure)
+        {
+            return new AttemptResult(null, null, null, failure);
+        }
     }
 
     /// <summary>Buffers the body, or returns null the moment it grows past <paramref name="maxBytes"/>.</summary>
@@ -262,7 +271,7 @@ public abstract class HttpArtSource(
         {
             { Delta: { } delta } => delta,
             { Date: { } date } => date - DateTimeOffset.UtcNow,
-            _ => TimeSpan.FromSeconds(1),
+            _ => TimeSpan.FromSeconds(1)
         };
 
         if (requested < TimeSpan.Zero)
@@ -284,8 +293,7 @@ public abstract class HttpArtSource(
             {
                 return;
             }
-        }
-        while (Interlocked.CompareExchange(ref _cooldownUntilTicks, until, current) != current);
+        } while (Interlocked.CompareExchange(ref _cooldownUntilTicks, until, current) != current);
     }
 
     private async Task WaitOutCooldownAsync(CancellationToken ct)

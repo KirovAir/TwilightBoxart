@@ -50,7 +50,7 @@ public sealed class IndexBuilder(BuildOptions options, Action<string> log)
         // "local" rather than the input path: a machine-specific directory has no business inside a
         // file that gets served and copied around.
         _provenance["attribution"] = "Identification data derived from No-Intro DAT files " +
-            "(https://no-intro.org), fetched via the libretro-database mirror.";
+                                     "(https://no-intro.org), fetched via the libretro-database mirror.";
         _provenance["source"] = options.InputDirectory is null ? options.BaseUrlTemplate : "local";
 
         log($"Writing {options.OutputPath} (version {options.Version})..");
@@ -69,7 +69,7 @@ public sealed class IndexBuilder(BuildOptions options, Action<string> log)
             // non-discriminating ones.
             Coverage = BuildReport.Measure(ordered),
             SourceCoverage = BuildReport.MeasureBySource(parsed),
-            MissingSources = missing,
+            MissingSources = missing
         };
     }
 

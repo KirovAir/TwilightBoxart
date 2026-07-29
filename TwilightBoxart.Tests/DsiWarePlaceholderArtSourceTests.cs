@@ -6,13 +6,16 @@ namespace TwilightBoxart.Tests;
 [TestClass]
 public class DsiWarePlaceholderArtSourceTests
 {
-    private static RomIdentity Identity(ConsoleType console, string serial) => new()
+    private static RomIdentity Identity(ConsoleType console, string serial)
     {
-        ConsoleType = console,
-        Key = serial,
-        Serial = serial,
-        MatchMethod = MatchMethod.HeaderSerial,
-    };
+        return new RomIdentity
+        {
+            ConsoleType = console,
+            Key = serial,
+            Serial = serial,
+            MatchMethod = MatchMethod.HeaderSerial
+        };
+    }
 
     [TestMethod]
     public void CanHandle_AcceptsDsiWarePrefixesAndNothingElse()
@@ -31,7 +34,7 @@ public class DsiWarePlaceholderArtSourceTests
         {
             ConsoleType = ConsoleType.NintendoDsi,
             Key = "name-keyed",
-            MatchMethod = MatchMethod.Filename,
+            MatchMethod = MatchMethod.Filename
         }), "no serial, no placeholder");
     }
 

@@ -39,7 +39,7 @@ public enum ContainerKind
     SevenZip,
 
     /// <summary>A bare ROM under a Nintendo-LZ77 wrapper (<c>Game.lz77.sfc</c>); see <see cref="Lz77RomProbe"/>.</summary>
-    Lz77,
+    Lz77
 }
 
 /// <summary>Reads identification data out of a ROM container as cheaply as possible.</summary>
@@ -140,7 +140,7 @@ public static class SupportedFiles
 
             // Both MSX generations share this extension; see ConsoleType.Msx2 for why they are still
             // two consoles.
-            [".msx"] = ConsoleType.Msx,
+            [".msx"] = ConsoleType.Msx
         };
 
     /// <summary>Bare ROM extensions the scanner looks for. The key set of <see cref="RomExtensions"/>.</summary>
@@ -153,7 +153,7 @@ public static class SupportedFiles
     /// </summary>
     public static readonly IReadOnlySet<string> Archive = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        ".zip", ".7z",
+        ".zip", ".7z"
     };
 
     /// <summary>
@@ -190,11 +190,20 @@ public static class SupportedFiles
         ];
     }
 
-    public static bool IsRom(string path) => Rom.Contains(Path.GetExtension(path));
+    public static bool IsRom(string path)
+    {
+        return Rom.Contains(Path.GetExtension(path));
+    }
 
-    public static bool IsArchive(string path) => Archive.Contains(Path.GetExtension(path));
+    public static bool IsArchive(string path)
+    {
+        return Archive.Contains(Path.GetExtension(path));
+    }
 
-    public static bool IsScannable(string path) => Scannable.Contains(Path.GetExtension(path));
+    public static bool IsScannable(string path)
+    {
+        return Scannable.Contains(Path.GetExtension(path));
+    }
 
     /// <summary>
     /// Whether this file's header carries a title id good enough to identify it without a checksum.
@@ -207,7 +216,9 @@ public static class SupportedFiles
     /// checksum. Used by the probes to decide when a full read may be skipped; see
     /// <see cref="Probe.LooseRomProbe"/>.
     /// </remarks>
-    public static bool HasTitleId(string path) =>
-        RomExtensions.TryGetValue(Path.GetExtension(path), out var console)
-        && console is ConsoleType.NintendoDs or ConsoleType.NintendoDsi;
+    public static bool HasTitleId(string path)
+    {
+        return RomExtensions.TryGetValue(Path.GetExtension(path), out var console)
+               && console is ConsoleType.NintendoDs or ConsoleType.NintendoDsi;
+    }
 }

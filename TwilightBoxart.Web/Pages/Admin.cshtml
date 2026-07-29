@@ -14,69 +14,69 @@
 </head>
 
 <body>
-    <header class="topbar">
-        <div class="brand">
-            <img src="icon.png" alt="" width="58" height="58">
-            <div>
-                <h1>Twilight<span class="pop">Boxart</span></h1>
-                <p class="tag">Admin</p>
-            </div>
+<header class="topbar">
+    <div class="brand">
+        <img src="icon.png" alt="" width="58" height="58">
+        <div>
+            <h1>Twilight<span class="pop">Boxart</span></h1>
+            <p class="tag">Admin</p>
         </div>
-        <button id="logout" class="ghost" hidden>Log out</button>
-    </header>
+    </div>
+    <button id="logout" class="ghost" hidden>Log out</button>
+</header>
 
-    <main>
-        <!-- Login: shown until /v2/admin/stats answers 200. -->
-        <section class="panel" id="login-panel" hidden>
-            <h2>Owner login</h2>
-            <p id="login-note" class="admin-note">This panel is for whoever runs this instance.</p>
-            <form id="login-form" class="admin-login">
-                <input id="password" type="password" autocomplete="current-password" placeholder="Admin password">
-                <button type="submit" class="primary">Log in</button>
-            </form>
-            <p id="login-error" class="admin-error" hidden></p>
-        </section>
+<main>
+    <!-- Login: shown until /v2/admin/stats answers 200. -->
+    <section class="panel" id="login-panel" hidden>
+        <h2>Owner login</h2>
+        <p id="login-note" class="admin-note">This panel is for whoever runs this instance.</p>
+        <form id="login-form" class="admin-login">
+            <input id="password" type="password" autocomplete="current-password" placeholder="Admin password">
+            <button type="submit" class="primary">Log in</button>
+        </form>
+        <p id="login-error" class="admin-error" hidden></p>
+    </section>
 
-        <section class="panel" id="stats-panel" hidden>
-            <h2>Index</h2>
-            <p class="admin-note">
-                Built by this server from the public No-Intro DAT files. Update it when No-Intro
-                has moved on; everything keeps serving while the new one builds.
-            </p>
-            <div class="admin-grid" id="index-grid"></div>
-            <div class="admin-actions">
-                <button id="rebuild" class="primary">Update No-Intro index</button>
-                <span id="build-state" class="admin-note"></span>
-            </div>
-            <pre id="build-log" class="admin-log" hidden></pre>
-        </section>
+    <section class="panel" id="stats-panel" hidden>
+        <h2>Index</h2>
+        <p class="admin-note">
+            Built by this server from the public No-Intro DAT files. Update it when No-Intro
+            has moved on; everything keeps serving while the new one builds.
+        </p>
+        <div class="admin-grid" id="index-grid"></div>
+        <div class="admin-actions">
+            <button id="rebuild" class="primary">Update No-Intro index</button>
+            <span id="build-state" class="admin-note"></span>
+        </div>
+        <pre id="build-log" class="admin-log" hidden></pre>
+    </section>
 
-        <section class="panel" id="stats-extra" hidden>
-            <h2>Instance</h2>
-            <div class="admin-grid" id="instance-grid"></div>
-            <p class="admin-note">
-                Rendered covers are rebuilt from the originals already on disk, so clearing them
-                costs nothing but a little CPU. Do it after a render change, when the covers on the
-                card no longer match what this server would produce now. Clearing the originals as
-                well means downloading every cover again from GameTDB and libretro.
-            </p>
-            <div class="admin-actions">
-                <button id="clear-renders">Clear rendered covers</button>
-                <button id="clear-all" class="ghost">Clear everything, originals too</button>
-                <span id="clear-state" class="admin-note"></span>
-            </div>
-            <h2>Activity</h2>
-            <div class="admin-grid" id="client-grid"></div>
-            <h2>Upstreams</h2>
-            <div class="admin-grid" id="upstream-grid"></div>
-        </section>
-    </main>
+    <section class="panel" id="stats-extra" hidden>
+        <h2>Instance</h2>
+        <div class="admin-grid" id="instance-grid"></div>
+        <p class="admin-note">
+            Rendered covers are rebuilt from the originals already on disk, so clearing them
+            costs nothing but a little CPU. Do it after a render change, when the covers on the
+            card no longer match what this server would produce now. Clearing the originals as
+            well means downloading every cover again from GameTDB and libretro.
+        </p>
+        <div class="admin-actions">
+            <button id="clear-renders">Clear rendered covers</button>
+            <button id="clear-all" class="ghost">Clear everything, originals too</button>
+            <span id="clear-state" class="admin-note"></span>
+        </div>
+        <h2>Activity</h2>
+        <div class="admin-grid" id="client-grid"></div>
+        <h2>Upstreams</h2>
+        <div class="admin-grid" id="upstream-grid"></div>
+    </section>
+</main>
 
-    <footer>
-        <p><a href="./">Back to TwilightBoxart</a></p>
-    </footer>
+<footer>
+    <p><a href="./">Back to TwilightBoxart</a></p>
+</footer>
 
-    <script type="module" src="~/admin.js" asp-append-version="true"></script>
+<script type="module" src="~/admin.js" asp-append-version="true"></script>
 </body>
 
 </html>

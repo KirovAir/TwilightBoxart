@@ -166,7 +166,7 @@ await builder.RunWithLoggingAsync(async b =>
 
                 await context.RequestServices.GetRequiredService<IProblemDetailsService>()
                     .WriteAsync(new ProblemDetailsContext { HttpContext = context });
-            },
+            }
         });
     }
 

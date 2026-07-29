@@ -77,7 +77,9 @@ public static class LoggingConfiguration
     /// internal StopTheHostException that WebApplicationFactory throws out of <c>Build()</c> to grab
     /// the host for a test server. Swallowing either breaks the caller.
     /// </summary>
-    private static bool IsHostControlSignal(Exception exception) =>
-        exception is HostAbortedException
-        || string.Equals(exception.GetType().Name, "StopTheHostException", StringComparison.Ordinal);
+    private static bool IsHostControlSignal(Exception exception)
+    {
+        return exception is HostAbortedException
+               || string.Equals(exception.GetType().Name, "StopTheHostException", StringComparison.Ordinal);
+    }
 }

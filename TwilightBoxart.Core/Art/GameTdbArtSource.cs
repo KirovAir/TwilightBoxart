@@ -32,16 +32,18 @@ public sealed class GameTdbArtSource(
     [
         new("HQ", "jpg"),
         new("M", "jpg"),
-        new("", "jpg"),
+        new("", "jpg")
     ];
 
     public int Order => 0;
 
     protected override string SourceName => "gametdb";
 
-    public bool CanHandle(RomIdentity identity) =>
-        identity.ConsoleType is ConsoleType.NintendoDs or ConsoleType.NintendoDsi
-        && IsUsableTitleId(identity.Serial);
+    public bool CanHandle(RomIdentity identity)
+    {
+        return identity.ConsoleType is ConsoleType.NintendoDs or ConsoleType.NintendoDsi
+               && IsUsableTitleId(identity.Serial);
+    }
 
     public async Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default)
     {
@@ -90,12 +92,16 @@ public sealed class GameTdbArtSource(
     /// only ever saw the truncated path, so the homebrew region was never actually reachable. If GameTDB
     /// turns out to stock homebrew covers, escape the id rather than widening this test.
     /// </remarks>
-    public static bool IsUsableTitleId(string? serial) =>
-        serial is { Length: 4 } && serial.All(char.IsAsciiLetterOrDigit);
+    public static bool IsUsableTitleId(string? serial)
+    {
+        return serial is { Length: 4 } && serial.All(char.IsAsciiLetterOrDigit);
+    }
 
     /// <summary>Builds a GameTDB cover URL. Exposed so the shape can be asserted without a network call.</summary>
-    public static string BuildUrl(CoverVariant variant, string region, string titleId) =>
-        $"{BaseUrl}cover{variant.Quality}/{region}/{titleId}.{variant.Extension}";
+    public static string BuildUrl(CoverVariant variant, string region, string titleId)
+    {
+        return $"{BaseUrl}cover{variant.Quality}/{region}/{titleId}.{variant.Extension}";
+    }
 
     private async Task<ArtBlob?> TryRegionAsync(string region, string titleId, CancellationToken ct)
     {

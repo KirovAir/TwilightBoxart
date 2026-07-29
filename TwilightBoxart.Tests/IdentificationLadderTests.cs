@@ -15,11 +15,15 @@ namespace TwilightBoxart.Tests;
 [TestClass]
 public class IdentificationLadderTests
 {
-    private static IdentificationLadder Ladder(IMetadataIndex index) =>
-        new(index, NullLogger<IdentificationLadder>.Instance);
+    private static IdentificationLadder Ladder(IMetadataIndex index)
+    {
+        return new IdentificationLadder(index, NullLogger<IdentificationLadder>.Instance);
+    }
 
-    private static RomIdentity Identify(IMetadataIndex index, RomFingerprint fingerprint) =>
-        Ladder(index).IdentifyAsync(fingerprint).GetAwaiter().GetResult();
+    private static RomIdentity Identify(IMetadataIndex index, RomFingerprint fingerprint)
+    {
+        return Ladder(index).IdentifyAsync(fingerprint).GetAwaiter().GetResult();
+    }
 
     // Rung ordering
 
@@ -27,15 +31,15 @@ public class IdentificationLadderTests
     public void IdentificationLadder_HeaderSerial_ShortCircuitsCrc32()
     {
         using var file = NoIntroIndexFile.Create(
-            new IndexRow(ConsoleType.NintendoDs, "Mario Kart DS (USA)", Serial: "AMCE"),
+            new IndexRow(ConsoleType.NintendoDs, "Mario Kart DS (USA)", "AMCE"),
             new IndexRow(ConsoleType.NintendoDs, "A Different Game (Japan)", Crc32: 0xDEAD_BEEFu));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
 
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "0001 - Mario Kart DS.nds",
-            Header = DsHeader("MARIOKARTDS", "AMCE", unitCode: 0x00),
-            Crc32 = 0xDEAD_BEEFu,
+            Header = DsHeader("MARIOKARTDS", "AMCE", 0x00),
+            Crc32 = 0xDEAD_BEEFu
         });
 
         Assert.AreEqual(MatchMethod.HeaderSerial, identity.MatchMethod);
@@ -56,7 +60,7 @@ public class IdentificationLadderTests
         {
             FileName = "whatever.sfc",
             Crc32 = 0x1234_5678u,
-            Sha1 = sha1,
+            Sha1 = sha1
         });
 
         Assert.AreEqual(MatchMethod.Crc32, identity.MatchMethod);
@@ -75,7 +79,7 @@ public class IdentificationLadderTests
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "Sonic The Hedgehog (World).gg",
-            Sha1 = sha1,
+            Sha1 = sha1
         });
 
         Assert.AreEqual(MatchMethod.Sha1, identity.MatchMethod);
@@ -113,7 +117,7 @@ public class IdentificationLadderTests
         {
             FileName = "game.sfc",
             Crc32 = 0u,
-            Sha1 = sha1,
+            Sha1 = sha1
         });
 
         Assert.AreEqual(MatchMethod.Sha1, identity.MatchMethod);
@@ -131,7 +135,7 @@ public class IdentificationLadderTests
     [TestMethod]
     public void IdentificationLadder_NesDoubleLookup_MatchesTheHeaderlessCrc()
     {
-        var rom = NesFile(bodyLength: 40_960);
+        var rom = NesFile(40_960);
         var wholeFileCrc = Crc32.HashToUInt32(rom);
         var headerlessCrc = Crc32.HashToUInt32(rom.AsSpan(16));
 
@@ -147,7 +151,7 @@ public class IdentificationLadderTests
             FileName = "Metroid (USA).nes",
             Crc32 = wholeFileCrc,
             Size = rom.Length,
-            Header = rom[..512],
+            Header = rom[..512]
         });
 
         Assert.AreEqual(MatchMethod.Crc32, identity.MatchMethod);
@@ -158,7 +162,7 @@ public class IdentificationLadderTests
     [TestMethod]
     public void IdentificationLadder_NesDoubleLookup_StillMatchesTheHeaderedCrc()
     {
-        var rom = NesFile(bodyLength: 8_192);
+        var rom = NesFile(8_192);
         var wholeFileCrc = Crc32.HashToUInt32(rom);
 
         using var file = NoIntroIndexFile.Create(
@@ -170,7 +174,7 @@ public class IdentificationLadderTests
             FileName = "rom.nes",
             Crc32 = wholeFileCrc,
             Size = rom.Length,
-            Header = rom[..512],
+            Header = rom[..512]
         });
 
         Assert.AreEqual(MatchMethod.Crc32, identity.MatchMethod);
@@ -198,7 +202,7 @@ public class IdentificationLadderTests
     [TestMethod]
     public void IdentificationLadder_NesDoubleLookup_WithoutSize_DoesNotGuess()
     {
-        var rom = NesFile(bodyLength: 4_096);
+        var rom = NesFile(4_096);
 
         using var file = NoIntroIndexFile.Create(
             new IndexRow(ConsoleType.Nes, "Metroid (USA)", Crc32: Crc32.HashToUInt32(rom.AsSpan(16))));
@@ -209,7 +213,7 @@ public class IdentificationLadderTests
         {
             FileName = "unmatchable-name.nes",
             Crc32 = Crc32.HashToUInt32(rom),
-            Header = rom[..512],
+            Header = rom[..512]
         });
 
         Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
@@ -228,13 +232,13 @@ public class IdentificationLadderTests
             new IndexRow(
                 ConsoleType.NintendoDs,
                 "Clubhouse Games Express - Card Classics (USA, Australia) (Rev 1)",
-                Serial: "KTRT"));
+                "KTRT"));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
 
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "clubhouse.nds",
-            Header = DsHeader("CLUBHOUSE", "KTRT", unitCode: 0x02),
+            Header = DsHeader("CLUBHOUSE", "KTRT", 0x02)
         });
 
         Assert.AreEqual(MatchMethod.HeaderSerial, identity.MatchMethod);
@@ -257,7 +261,7 @@ public class IdentificationLadderTests
         var identity = Identify(new NullMetadataIndex("test"), new RomFingerprint
         {
             FileName = "flipnote.nds",
-            Header = DsHeader("FLIPNOTE", "KGUV", unitCode: 0x03),
+            Header = DsHeader("FLIPNOTE", "KGUV", 0x03)
         });
 
         Assert.AreEqual(MatchMethod.HeaderSerial, identity.MatchMethod);
@@ -302,7 +306,7 @@ public class IdentificationLadderTests
                      IdentificationLadder.DeriveKey("AMCE", null),
                      IdentificationLadder.DeriveKey(null, "Sonic & Knuckles + Sonic 3 (World)"),
                      IdentificationLadder.DeriveKey("GM 00001009-00", null),
-                     IdentificationLadder.DeriveKey("../../etc/passwd", "../../etc/passwd"),
+                     IdentificationLadder.DeriveKey("../../etc/passwd", "../../etc/passwd")
                  })
         {
             Assert.IsTrue(key.Length > 0);
@@ -350,7 +354,7 @@ public class IdentificationLadderTests
         {
             new RomFingerprint { FileName = "a.nes", Crc32 = 0xAAAA_AAAAu, Tag = "one" },
             new RomFingerprint { FileName = "a.nes", Crc32 = 0xAAAA_AAAAu, Tag = "two" },
-            new RomFingerprint { FileName = "a.nes", Crc32 = 0xAAAA_AAAAu, Tag = "three" },
+            new RomFingerprint { FileName = "a.nes", Crc32 = 0xAAAA_AAAAu, Tag = "three" }
         };
 
         var results = Ladder(counting).IdentifyBatchAsync(fingerprints).GetAwaiter().GetResult();
@@ -373,7 +377,7 @@ public class IdentificationLadderTests
         var results = Ladder(index).IdentifyBatchAsync(
         [
             new RomFingerprint { FileName = "a.nes", Crc32 = 1u },
-            new RomFingerprint { FileName = "b.nes", Crc32 = 2u },
+            new RomFingerprint { FileName = "b.nes", Crc32 = 2u }
         ]).GetAwaiter().GetResult();
 
         Assert.AreEqual("First (USA)", results[0].CanonicalName);
@@ -397,7 +401,7 @@ public class IdentificationLadderTests
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "homebrew.gba",
-            Tag = "t1",
+            Tag = "t1"
         });
 
         Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
@@ -429,8 +433,8 @@ public class IdentificationLadderTests
             .Select(crc => Identify(index, new RomFingerprint
             {
                 FileName = "rom.nds",
-                Header = DsHeader("SPOOFED", "ASME", unitCode: 0x00),
-                Crc32 = crc,
+                Header = DsHeader("SPOOFED", "ASME", 0x00),
+                Crc32 = crc
             }))
             .ToArray();
 
@@ -451,13 +455,13 @@ public class IdentificationLadderTests
     public void IdentificationLadder_UnambiguousSerial_StillYieldsTheTitleIdAsTheKey()
     {
         using var file = NoIntroIndexFile.Create(
-            new IndexRow(ConsoleType.NintendoDs, "New Super Mario Bros. (USA, Australia)", Serial: "A2DE"));
+            new IndexRow(ConsoleType.NintendoDs, "New Super Mario Bros. (USA, Australia)", "A2DE"));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
 
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "New Super Mario Bros..nds",
-            Header = DsHeader("NEWSUPERMARI", "A2DE", unitCode: 0x00),
+            Header = DsHeader("NEWSUPERMARI", "A2DE", 0x00)
         });
 
         Assert.AreEqual("A2DE", identity.Key);
@@ -473,14 +477,14 @@ public class IdentificationLadderTests
     public void IdentificationLadder_SerialUnknownToTheIndex_StillYieldsTheTitleIdAsTheKey()
     {
         using var file = NoIntroIndexFile.Create(
-            new IndexRow(ConsoleType.NintendoDs, "Some Other Game (USA)", Serial: "AAAA"));
+            new IndexRow(ConsoleType.NintendoDs, "Some Other Game (USA)", "AAAA"));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
 
         var identity = Identify(index, new RomFingerprint
         {
             FileName = "brand new release.nds",
-            Header = DsHeader("NEWTITLE", "BXYZ", unitCode: 0x00),
-            Crc32 = 0x1234_5678u,
+            Header = DsHeader("NEWTITLE", "BXYZ", 0x00),
+            Crc32 = 0x1234_5678u
         });
 
         Assert.AreEqual("BXYZ", identity.Key);
@@ -496,14 +500,14 @@ public class IdentificationLadderTests
     public void IdentificationLadder_Batch_DoesNotMergeSameNamedItemsWithDifferentHeaders()
     {
         using var file = NoIntroIndexFile.Create(
-            new IndexRow(ConsoleType.NintendoDs, "Game One (USA)", Serial: "AAAE"),
-            new IndexRow(ConsoleType.NintendoDs, "Game Two (USA)", Serial: "BBBE"));
+            new IndexRow(ConsoleType.NintendoDs, "Game One (USA)", "AAAE"),
+            new IndexRow(ConsoleType.NintendoDs, "Game Two (USA)", "BBBE"));
         using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
 
         var results = Ladder(index).IdentifyBatchAsync(
         [
-            new RomFingerprint { FileName = "rom.nds", Header = DsHeader("ONE", "AAAE", unitCode: 0x00) },
-            new RomFingerprint { FileName = "rom.nds", Header = DsHeader("TWO", "BBBE", unitCode: 0x00) },
+            new RomFingerprint { FileName = "rom.nds", Header = DsHeader("ONE", "AAAE", 0x00) },
+            new RomFingerprint { FileName = "rom.nds", Header = DsHeader("TWO", "BBBE", 0x00) }
         ]).GetAwaiter().GetResult();
 
         Assert.AreEqual("Game One (USA)", results[0].CanonicalName);
@@ -553,13 +557,20 @@ public class IdentificationLadderTests
             return inner.TryByCrc32(crc32, out entry);
         }
 
-        public bool TryBySha1(string sha1, out IndexEntry entry) => inner.TryBySha1(sha1, out entry);
+        public bool TryBySha1(string sha1, out IndexEntry entry)
+        {
+            return inner.TryBySha1(sha1, out entry);
+        }
 
-        public bool TryBySerial(ConsoleType console, string serial, out IndexEntry entry) =>
-            inner.TryBySerial(console, serial, out entry);
+        public bool TryBySerial(ConsoleType console, string serial, out IndexEntry entry)
+        {
+            return inner.TryBySerial(console, serial, out entry);
+        }
 
-        public IndexEntry? SearchByName(ConsoleType console, string name) =>
-            inner.SearchByName(console, name);
+        public IndexEntry? SearchByName(ConsoleType console, string name)
+        {
+            return inner.SearchByName(console, name);
+        }
 
         public string Version => inner.Version;
 

@@ -92,8 +92,7 @@ public static class Crc32Arithmetic
             }
 
             lengthBytes >>= 1;
-        }
-        while (lengthBytes != 0);
+        } while (lengthBytes != 0);
 
         return crc;
     }

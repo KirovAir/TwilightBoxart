@@ -4,8 +4,8 @@
 import * as api from './api.js';
 import * as scan from './scan.js';
 import * as store from './store.js';
-import { crc32File } from './romprobe.js';
-import { buildZip, downloadBlob } from './zipwriter.js';
+import {crc32File} from './romprobe.js';
+import {buildZip, downloadBlob} from './zipwriter.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -60,7 +60,7 @@ const state = {
     installPrompt: null,
 };
 
-const counters = { found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0 };
+const counters = {found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0};
 
 /**
  * The missed counter moves only through these two, and each item remembers whether it is counted:
@@ -83,7 +83,7 @@ function uncountMiss(item) {
 const SETTINGS_KEY = 'twilightboxart.settings';
 
 /** The size presets of the classic app. Custom frees the width/height fields. */
-const SIZE_PRESETS = { classic: [128, 115], large: [168, 130], xl: [208, 143] };
+const SIZE_PRESETS = {classic: [128, 115], large: [168, 130], xl: [208, 143]};
 
 function readSettings() {
     const addBorder = $('border').checked;
@@ -112,7 +112,7 @@ const renderKey = (s) => s.target === 'pico'
     : `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
 
 function saveSettings() {
-    const s = { ...readSettings(), destCustom: $('dest-custom').checked, dest: $('dest').value };
+    const s = {...readSettings(), destCustom: $('dest-custom').checked, dest: $('dest').value};
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
 }
 
@@ -137,7 +137,8 @@ function restoreSettings() {
         if (s.overwrite !== undefined) $('overwrite').checked = s.overwrite;
         if (s.destCustom !== undefined) $('dest-custom').checked = s.destCustom;
         if (s.dest) $('dest').value = s.dest;
-    } catch { /* corrupt settings are not worth a broken page */ }
+    } catch { /* corrupt settings are not worth a broken page */
+    }
 
     const preset = Object.entries(SIZE_PRESETS).find(([, [w, h]]) => +$('w').value === w && +$('h').value === h);
     $(preset ? 'size-' + preset[0] : 'size-custom').checked = true;
@@ -178,6 +179,7 @@ const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 /* UI plumbing */
 
 let paintQueued = false;
+
 /**
  * Throttled counter repaint. Deliberately setTimeout and not requestAnimationFrame: rAF stops
  * firing entirely in a background tab, which would freeze the progress display (including the
@@ -202,6 +204,7 @@ function paint() {
 }
 
 const MAX_LOG_LINES = 400;
+
 function log(message, kind = '') {
     const el = $('log');
     const line = document.createElement('div');
@@ -257,7 +260,7 @@ const supportsFileSystemAccess = 'showDirectoryPicker' in window;
 
 async function pickRoot() {
     try {
-        const root = await window.showDirectoryPicker({ id: 'twilightboxart-sd', mode: 'readwrite' });
+        const root = await window.showDirectoryPicker({id: 'twilightboxart-sd', mode: 'readwrite'});
         await store.saveRoot(root);
         await useRoot(root);
     } catch (e) {
@@ -287,14 +290,17 @@ async function useRoot(root) {
 async function restoreRoot() {
     const saved = await store.getSavedRoot().catch(() => null);
     if (!saved) return;
-    const permission = await saved.queryPermission({ mode: 'readwrite' });
-    if (permission === 'granted') { await useRoot(saved); return; }
+    const permission = await saved.queryPermission({mode: 'readwrite'});
+    if (permission === 'granted') {
+        await useRoot(saved);
+        return;
+    }
     // requestPermission() must run inside a user gesture, so offer a button rather than nagging.
     $('reconnect-name').textContent = saved.name;
     $('reconnect').hidden = false;
     setStatus('Your card from last time is remembered; the browser just needs you to reconnect it.', 'warn');
     $('reconnect').onclick = async () => {
-        const granted = await saved.requestPermission({ mode: 'readwrite' });
+        const granted = await saved.requestPermission({mode: 'readwrite'});
         if (granted === 'granted') await useRoot(saved);
         else setStatus('The browser said no. Pick your card again to continue.', 'bad');
     };
@@ -311,8 +317,8 @@ function useFileList(files) {
 
     const sentinel = hasTwilight || hasPico;
     setStatus(sentinel
-        ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ or Pico Launcher card.`
-        : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ or Pico Launcher card.`,
+            ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ or Pico Launcher card.`
+            : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ or Pico Launcher card.`,
         sentinel ? 'good' : 'warn');
     $('start').disabled = false;
     $('card-name').textContent = files[0]?.webkitRelativePath.split('/')[0] ?? '';
@@ -327,8 +333,9 @@ async function pool(items, limit, fn, signal) {
     const worker = async () => {
         while (next < items.length && !signal.aborted) {
             const item = items[next++];
-            try { await fn(item); }
-            catch (e) {
+            try {
+                await fn(item);
+            } catch (e) {
                 if (e.name === 'AbortError') return;
                 item.status = 'error';
                 item.reason = e.message;
@@ -338,7 +345,7 @@ async function pool(items, limit, fn, signal) {
             }
         }
     };
-    await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+    await Promise.all(Array.from({length: Math.min(limit, items.length)}, worker));
 }
 
 async function collectFiles(signal) {
@@ -350,7 +357,11 @@ async function collectFiles(signal) {
         for await (const f of scan.walkDirectory(state.root, '', onError)) {
             if (signal.aborted) break;
             found.push(f);
-            if (found.length % 250 === 0) { counters.found = found.length; paint(); await tick(); }
+            if (found.length % 250 === 0) {
+                counters.found = found.length;
+                paint();
+                await tick();
+            }
         }
     }
     counters.found = found.length;
@@ -391,8 +402,14 @@ async function reprobeAll(items, signal) {
     await pool(items, PROBE_CONCURRENCY, async (item) => {
         const file = await item.getFile();
         const probe = await scan.probeFile(file, item.fileName, false);
-        if (probe.ok) { item.probe = probe; item.contentKey = store.contentKey(probe); }
-        else { item.status = 'missed'; item.reason = probe.reason; countMiss(item); }
+        if (probe.ok) {
+            item.probe = probe;
+            item.contentKey = store.contentKey(probe);
+        } else {
+            item.status = 'missed';
+            item.reason = probe.reason;
+            countMiss(item);
+        }
     }, signal);
     paint();
 }
@@ -414,7 +431,10 @@ async function identifyAll(items, signal) {
         // entries are still in users' IndexedDB, so an entry carrying no identity is treated as a
         // cache miss rather than replayed. Without this an existing cache stays poisoned forever.
         const hit = cached.get(item.contentKey);
-        if (hit?.identity) { applyIdentity(item, hit.identity, hit.reason); continue; }
+        if (hit?.identity) {
+            applyIdentity(item, hit.identity, hit.reason);
+            continue;
+        }
         needed.push(item);
     }
     if (cached.size) log(`Remembered ${cached.size.toLocaleString()} games from last time.`);
@@ -453,21 +473,25 @@ async function identifyAll(items, signal) {
     // thing that ever worked.
     const toCache = needed
         .filter(i => i.status === 'identified' && i.identity)
-        .map(i => [i.contentKey, { identity: i.identity, reason: i.reason }]);
+        .map(i => [i.contentKey, {identity: i.identity, reason: i.reason}]);
     await store.saveIdentities(toCache).catch(e => log(`Could not write the cache: ${e.message}`, 'warn'));
 }
 
 async function identifyPass(items, signal) {
     for (let i = 0; i < items.length && !signal.aborted; i += api.IDENTIFY_CHUNK) {
         const chunk = items.slice(i, i + api.IDENTIFY_CHUNK);
-        const fingerprints = chunk.map(item => api.fingerprint({ ...item.probe, tag: item.tag }));
+        const fingerprints = chunk.map(item => api.fingerprint({...item.probe, tag: item.tag}));
         let results;
         try {
             results = await api.identifyBatch(fingerprints, signal);
         } catch (e) {
             if (e.name === 'AbortError') return;
             log(`Identify failed for ${chunk.length} games: ${e.message}`, 'bad');
-            for (const item of chunk) { item.status = 'error'; item.reason = `identify failed: ${e.message}`; countMiss(item); }
+            for (const item of chunk) {
+                item.status = 'error';
+                item.reason = `identify failed: ${e.message}`;
+                countMiss(item);
+            }
             paint();
             continue;
         }
@@ -525,7 +549,7 @@ async function deepen(items, signal) {
     for (const item of targets) {
         if (signal.aborted) break;
         const file = await item.getFile();
-        item.probe = { ...item.probe, crc32: await crc32File(file, null, signal) };
+        item.probe = {...item.probe, crc32: await crc32File(file, null, signal)};
         item.contentKey = store.contentKey(item.probe);
         if (++done % 10 === 0) log(`Checked ${done} of ${targets.length}…`);
     }
@@ -570,24 +594,39 @@ async function deliverArt(items, settings, signal) {
 
     await pool(matched, ART_CONCURRENCY, async (item) => {
         item.outName = outputName(item, extension);
-        const skip = () => { item.status = 'skipped'; counters.skipped++; paint(); };
+        const skip = () => {
+            item.status = 'skipped';
+            counters.skipped++;
+            paint();
+        };
 
         // Two ROMs in different folders can share a name; download the art once.
-        if (seen.has(item.outName)) { skip(); return; }
+        if (seen.has(item.outName)) {
+            skip();
+            return;
+        }
         seen.add(item.outName);
 
         // The "already downloaded" record only means anything when there was a card to write to.
         // In read-only mode skipping would quietly hand the user an empty .zip.
         if (boxart && !settings.overwrite) {
-            if (writtenCache.has(store.writtenKey(item.contentKey, writeKey))) { skip(); return; }
-            if (await scan.fileExists(boxart, item.outName)) { skip(); return; }
+            if (writtenCache.has(store.writtenKey(item.contentKey, writeKey))) {
+                skip();
+                return;
+            }
+            if (await scan.fileExists(boxart, item.outName)) {
+                skip();
+                return;
+            }
         }
 
         const art = await api.fetchArt(item.identity, settings, signal);
         if (!art) {
             item.status = 'missed';
             item.reason = `recognised as ${item.identity.canonicalName ?? item.identity.key} (${api.platformLabel(item.identity)}), but no cover exists for it yet`;
-            countMiss(item); paint(); return;
+            countMiss(item);
+            paint();
+            return;
         }
 
         // The backend is supposed to guarantee this ceiling. If it ever does not, TWiLightMenu
@@ -602,7 +641,7 @@ async function deliverArt(items, settings, signal) {
 
         item.status = 'written';
         counters.written++;
-        freshlyWritten.push([store.writtenKey(item.contentKey, writeKey), { name: item.outName }]);
+        freshlyWritten.push([store.writtenKey(item.contentKey, writeKey), {name: item.outName}]);
         paint();
     }, signal);
 
@@ -611,7 +650,7 @@ async function deliverArt(items, settings, signal) {
 
 /* run control */
 
-async function run({ retryOnly = false, deep = false } = {}) {
+async function run({retryOnly = false, deep = false} = {}) {
     if (state.running) return;
     state.running = true;
     state.abort = new AbortController();
@@ -628,7 +667,11 @@ async function run({ retryOnly = false, deep = false } = {}) {
         let items;
         if (retryOnly) {
             items = state.items.filter(i => i.status === 'missed' || i.status === 'error');
-            for (const i of items) { uncountMiss(i); i.status = 'pending'; i.reason = null; }
+            for (const i of items) {
+                uncountMiss(i);
+                i.status = 'pending';
+                i.reason = null;
+            }
             log(`Retrying ${plural(items.length, 'miss', 'misses')}.`);
             // Files we never managed to read get another look: a failed probe can be a
             // transient read error, and one that is not must reappear in the misses list rather
@@ -686,11 +729,12 @@ function formatBytes(n) {
 
 async function refreshCacheNote() {
     try {
-        const { identities, written } = await store.cacheStats();
+        const {identities, written} = await store.cacheStats();
         $('cache-note').textContent = identities || written
             ? `Remembering ${plural(identities, 'game')} from earlier scans.`
             : '';
-    } catch { /* private browsing can refuse IndexedDB; the app still works */ }
+    } catch { /* private browsing can refuse IndexedDB; the app still works */
+    }
 }
 
 /* startup */
@@ -698,25 +742,39 @@ async function refreshCacheNote() {
 function wireUp() {
     restoreSettings();
     for (const [name, [w, h]] of Object.entries(SIZE_PRESETS)) {
-        $('size-' + name).addEventListener('change', () => { $('w').value = w; $('h').value = h; });
+        $('size-' + name).addEventListener('change', () => {
+            $('w').value = w;
+            $('h').value = h;
+        });
     }
     for (const id of ['launcher-twilight', 'launcher-pico',
         'size-classic', 'size-large', 'size-xl', 'size-custom', 'w', 'h', 'ar',
         'border', 'border-dsi', 'border-3ds', 'border-black', 'border-white', 'thick', 'overwrite',
         'dest', 'dest-custom']) {
-        $(id).addEventListener('change', () => { syncSettingsUx(); saveSettings(); });
+        $(id).addEventListener('change', () => {
+            syncSettingsUx();
+            saveSettings();
+        });
     }
 
     // After the loop above, so it wins over syncSettingsUx's non-override preview.
     for (const id of ['launcher-twilight', 'launcher-pico']) {
-        $(id).addEventListener('change', () => { resetDestForLauncher(); saveSettings(); });
+        $(id).addEventListener('change', () => {
+            resetDestForLauncher();
+            saveSettings();
+        });
     }
 
     $('pick').onclick = pickRoot;
     $('start').onclick = () => run();
-    $('retry').onclick = () => run({ retryOnly: true, deep: true });
-    $('cancel').onclick = () => { state.abort?.abort(); log('Stopping…', 'warn'); };
-    $('dirinput').onchange = (e) => { if (e.target.files.length) useFileList(e.target.files); };
+    $('retry').onclick = () => run({retryOnly: true, deep: true});
+    $('cancel').onclick = () => {
+        state.abort?.abort();
+        log('Stopping…', 'warn');
+    };
+    $('dirinput').onchange = (e) => {
+        if (e.target.files.length) useFileList(e.target.files);
+    };
     $('zipbtn').onclick = () => downloadBlob(buildZip(state.zipEntries), 'twilightboxart.zip');
     $('clear-cache').onclick = async () => {
         await store.clearCache();
@@ -745,10 +803,13 @@ function wireUp() {
         await state.installPrompt?.prompt();
         state.installPrompt = null;
     };
-    window.addEventListener('appinstalled', () => { $('install').hidden = true; });
+    window.addEventListener('appinstalled', () => {
+        $('install').hidden = true;
+    });
 
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is a bonus */ });
+        navigator.serviceWorker.register('sw.js').catch(() => { /* offline support is a bonus */
+        });
     }
 
     refreshCacheNote();

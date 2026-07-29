@@ -123,8 +123,10 @@ public sealed class CacheIndex(
     /// is what makes the budget survive a restart - and what recovers from an operator deleting cache
     /// files by hand, or from a volume that came back empty.
     /// </summary>
-    public async Task ReconcileAsync(CancellationToken ct = default) =>
+    public async Task ReconcileAsync(CancellationToken ct = default)
+    {
         await UnderMaintenanceLock(ReconcileCoreAsync, ct);
+    }
 
     private async Task ReconcileCoreAsync(CancellationToken ct)
     {
@@ -162,7 +164,7 @@ public sealed class CacheIndex(
                     CacheKey = cacheKey,
                     Kind = cache.Kind,
                     SizeBytes = sizeBytes,
-                    LastAccessUtc = now,
+                    LastAccessUtc = now
                 });
             }
 
@@ -185,8 +187,10 @@ public sealed class CacheIndex(
     /// again. Recency, not hit count, picks the victim - a cover requested a thousand times last year
     /// is worth less than one requested once this morning.
     /// </remarks>
-    public async Task<IReadOnlyList<EvictionResult>> EvictAsync(CancellationToken ct = default) =>
-        await UnderMaintenanceLock(EvictCoreAsync, ct);
+    public async Task<IReadOnlyList<EvictionResult>> EvictAsync(CancellationToken ct = default)
+    {
+        return await UnderMaintenanceLock(EvictCoreAsync, ct);
+    }
 
     private async Task<IReadOnlyList<EvictionResult>> EvictCoreAsync(CancellationToken ct)
     {
@@ -311,8 +315,10 @@ public sealed class CacheIndex(
     /// separate decision rather than part of "clear the cache".
     /// </remarks>
     public async Task<IReadOnlyList<EvictionResult>> PurgeAsync(
-        IReadOnlyCollection<CacheKind> kinds, CancellationToken ct = default) =>
-        await UnderMaintenanceLock(token => PurgeCoreAsync(kinds, token), ct);
+        IReadOnlyCollection<CacheKind> kinds, CancellationToken ct = default)
+    {
+        return await UnderMaintenanceLock(token => PurgeCoreAsync(kinds, token), ct);
+    }
 
     private async Task<IReadOnlyList<EvictionResult>> PurgeCoreAsync(
         IReadOnlyCollection<CacheKind> kinds, CancellationToken ct)

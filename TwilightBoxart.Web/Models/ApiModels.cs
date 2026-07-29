@@ -56,8 +56,8 @@ public sealed record IndexHealth(string Version, int RowCount, bool Available, s
         var reason = index switch
         {
             Services.ReloadableMetadataIndex reloadable => reloadable.UnavailableReason,
-            TwilightBoxart.Core.Identify.NullMetadataIndex nullIndex => nullIndex.Reason,
-            _ => null,
+            Core.Identify.NullMetadataIndex nullIndex => nullIndex.Reason,
+            _ => null
         };
 
         string? version;
@@ -71,7 +71,7 @@ public sealed record IndexHealth(string Version, int RowCount, bool Available, s
         {
             // A file that exists but cannot be read is a different failure from a missing one, and
             // must not report the missing-index shape: say "corrupt" and mark the index unavailable.
-            return new IndexHealth("corrupt", 0, Available: false,
+            return new IndexHealth("corrupt", 0, false,
                 "the index file exists but could not be read");
         }
 

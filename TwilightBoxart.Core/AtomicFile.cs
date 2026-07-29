@@ -20,13 +20,16 @@ public static class AtomicFile
     /// <see cref="Commit"/>. For a single write prefer <see cref="WriteAsync"/>, which manages its own
     /// unique temp and is safe against concurrent writers.
     /// </summary>
-    public static string TempPathFor(string finalPath) => finalPath + ".tmp";
+    public static string TempPathFor(string finalPath)
+    {
+        return finalPath + ".tmp";
+    }
 
     /// <summary>Moves a completed temp file over the final path, replacing whatever was there.</summary>
     public static void Commit(string tempPath, string finalPath)
     {
         EnsureDirectory(finalPath);
-        File.Move(tempPath, finalPath, overwrite: true);
+        File.Move(tempPath, finalPath, true);
     }
 
     public static async Task WriteAsync(string path, ReadOnlyMemory<byte> data, CancellationToken ct = default)
@@ -37,7 +40,7 @@ public static class AtomicFile
         try
         {
             await File.WriteAllBytesAsync(temp, data, ct);
-            File.Move(temp, path, overwrite: true);
+            File.Move(temp, path, true);
         }
         catch
         {
@@ -98,7 +101,10 @@ public static class AtomicFile
         return removed;
     }
 
-    private static string UniqueTempFor(string path) => $"{path}.{Guid.NewGuid():N}.tmp";
+    private static string UniqueTempFor(string path)
+    {
+        return $"{path}.{Guid.NewGuid():N}.tmp";
+    }
 
     private static void EnsureDirectory(string path)
     {

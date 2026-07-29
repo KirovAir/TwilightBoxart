@@ -30,8 +30,10 @@ public sealed record DatSource
     /// datomatic requires a captcha, so CI pulls from a mirror, and which mirror must stay a setting
     /// rather than a constant compiled into the tool.
     /// </summary>
-    public string ResolveUrl(string baseUrlTemplate) =>
-        Url ?? baseUrlTemplate.Replace("{name}", Uri.EscapeDataString(Name), StringComparison.Ordinal);
+    public string ResolveUrl(string baseUrlTemplate)
+    {
+        return Url ?? baseUrlTemplate.Replace("{name}", Uri.EscapeDataString(Name), StringComparison.Ordinal);
+    }
 }
 
 /// <summary>
@@ -92,7 +94,7 @@ public sealed class DatCatalog
         {
             Name = "Nintendo - Nintendo DS (Download Play)",
             Console = ConsoleType.NintendoDs,
-            Optional = true,
+            Optional = true
         },
 
         // Spelled out rather than left to Primary() only because the "(Digital)" variant below has to
@@ -103,7 +105,7 @@ public sealed class DatCatalog
         new DatSource
         {
             Name = "Nintendo - Nintendo DSi",
-            Console = ConsoleType.NintendoDsi,
+            Console = ConsoleType.NintendoDsi
         },
 
         // Kept optional so a mirror that does use the No-Intro "(Digital)" spelling is picked up too.
@@ -111,7 +113,7 @@ public sealed class DatCatalog
         {
             Name = "Nintendo - Nintendo DSi (Digital)",
             Console = ConsoleType.NintendoDsi,
-            Optional = true,
+            Optional = true
         },
 
         Primary(ConsoleType.Nes),
@@ -144,7 +146,7 @@ public sealed class DatCatalog
         // 67-96% for everything else, including consoles already shipping). The No-Intro set is heavy
         // with Korean and Taiwanese releases libretro never carried art for. Kept because the menu does
         // emulate .sg/.sc and ~60 real covers beats none, but do not read a miss here as a defect.
-        Primary(ConsoleType.Sg1000),
+        Primary(ConsoleType.Sg1000)
     ]);
 
     /// <summary>
@@ -165,7 +167,7 @@ public sealed class DatCatalog
                 throw new InvalidDataException($"'{path}' contains a source with no name.");
             }
 
-            if (!Enum.TryParse<ConsoleType>(item.Console, ignoreCase: true, out var console) ||
+            if (!Enum.TryParse<ConsoleType>(item.Console, true, out var console) ||
                 console == ConsoleType.Unknown)
             {
                 throw new InvalidDataException(
@@ -178,24 +180,27 @@ public sealed class DatCatalog
                 Name = item.Name.Trim(),
                 Console = console,
                 Url = string.IsNullOrWhiteSpace(item.Url) ? null : item.Url.Trim(),
-                Optional = item.Optional,
+                Optional = item.Optional
             });
         }
 
         return new DatCatalog(sources);
     }
 
-    private static DatSource Primary(ConsoleType console) => new()
+    private static DatSource Primary(ConsoleType console)
     {
-        Name = console.Description(),
-        Console = console,
-    };
+        return new DatSource
+        {
+            Name = console.Description(),
+            Console = console
+        };
+    }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
+        AllowTrailingCommas = true
     };
 
     private sealed class SourceJson

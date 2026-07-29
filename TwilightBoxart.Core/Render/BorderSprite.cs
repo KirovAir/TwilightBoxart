@@ -51,17 +51,20 @@ internal sealed class BorderSprite
     public bool OpaqueBackground { get; }
 
     /// <summary>Sheet side length, in pixels.</summary>
-    public int AtlasSize => (CornerSize * 2) + 1;
+    public int AtlasSize => CornerSize * 2 + 1;
 
     /// <summary>Row-major RGBA pixels of the sheet. Decoded once, then read-only.</summary>
     public ReadOnlySpan<Rgba32> Pixels => _pixels.Value;
 
-    public static BorderSprite? For(BoxartBorderStyle style) => style switch
+    public static BorderSprite? For(BoxartBorderStyle style)
     {
-        BoxartBorderStyle.NintendoDsi => Dsi,
-        BoxartBorderStyle.Nintendo3Ds => Nintendo3Ds,
-        _ => null,
-    };
+        return style switch
+        {
+            BoxartBorderStyle.NintendoDsi => Dsi,
+            BoxartBorderStyle.Nintendo3Ds => Nintendo3Ds,
+            _ => null
+        };
+    }
 
     /// <summary>13x13 sheet: 6px corners, a 4px frame, artwork inset 4px all round.</summary>
     public static readonly BorderSprite Dsi = new(
@@ -71,10 +74,10 @@ internal sealed class BorderSprite
         uQG6rkvY2YzkB7vFG6g2jmPC63ZbYFiq0D+VlXgRX2IlGDy2bZuwJQXbECYCSvwTH+JFbLgN3ZbyZHKt7cWv+OaM/mCymRAZkhb9TJzRiU8z
         +e2Zkcq05A0P25u/kyXYO3nD/Z0umJbiakYL+pZmX8QO06c4IPz37d0NR7G4Af9+7GrVq3NWAAAAAElFTkSuQmCC
         """,
-        cornerSize: 6,
-        thickness: 4,
-        content: new BorderInset(4, 4, 4, 4),
-        opaqueBackground: false);
+        6,
+        4,
+        new BorderInset(4, 4, 4, 4),
+        false);
 
     /// <summary>
     /// 25x25 sheet: 12px corners and a 10px frame. The artwork inset is deliberately asymmetric
@@ -99,10 +102,10 @@ internal sealed class BorderSprite
         yom28DLbQrS8axmPoCdXwxfAYyGQvZRIllhoTqmCJfKbUHgfo5Asg3DBrhm7ama1Zbv23Kzo7P0jEXzP3yPZw34UbdhfovyKRicn6QSKP/Nk
         tWCwTidGJCnqRbM4X/KiOy11cJvevwBUhddluP9VFgAAAABJRU5ErkJggg==
         """,
-        cornerSize: 12,
-        thickness: 10,
-        content: new BorderInset(6, 4, 6, 7),
-        opaqueBackground: true);
+        12,
+        10,
+        new BorderInset(6, 4, 6, 7),
+        true);
 
     // Convert.FromBase64String ignores the newlines the raw string literal introduces, so the payload
     // can be wrapped for readability without a runtime cost or a build-time transform.

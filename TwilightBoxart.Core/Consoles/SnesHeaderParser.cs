@@ -96,7 +96,7 @@ public sealed class SnesHeaderParser : IConsoleHeaderParser
             ConsoleType = ConsoleType.Snes,
             Title = bestTitle,
             Serial = serial,
-            LeadingHeaderBytes = bestSmc,
+            LeadingHeaderBytes = bestSmc
         };
     }
 
@@ -106,9 +106,9 @@ public sealed class SnesHeaderParser : IConsoleHeaderParser
     /// </summary>
     private static readonly Candidate[] Candidates =
     [
-        new(0x7FC0, [0x0, 0x2, 0x3]),   // LoROM, ExLoROM/SDD-1, SA-1
-        new(0xFFC0, [0x1]),             // HiROM
-        new(0x40FFC0, [0x5]),           // ExHiROM
+        new(0x7FC0, [0x0, 0x2, 0x3]), // LoROM, ExLoROM/SDD-1, SA-1
+        new(0xFFC0, [0x1]), // HiROM
+        new(0x40FFC0, [0x5]) // ExHiROM
     ];
 
     private readonly record struct Candidate(int BaseOffset, byte[] MapModes);

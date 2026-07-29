@@ -40,7 +40,7 @@ public sealed class FamicomDiskSystemHeaderParser : IConsoleHeaderParser
         {
             ConsoleType = ConsoleType.FamicomDiskSystem,
             Serial = header.ReadGameCode(wrapper + GameNameOffset, 3),
-            LeadingHeaderBytes = wrapper,
+            LeadingHeaderBytes = wrapper
         };
     }
 }

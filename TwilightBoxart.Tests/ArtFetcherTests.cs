@@ -22,18 +22,20 @@ public class ArtFetcherTests
         ConsoleType = ConsoleType.NintendoDs,
         Key = "ASME",
         Serial = "ASME",
-        MatchMethod = MatchMethod.HeaderSerial,
+        MatchMethod = MatchMethod.HeaderSerial
     };
 
-    private static ArtFetcher Fetcher(params IArtSource[] sources) =>
-        new(sources, new UpstreamMonitor(), NullLogger<ArtFetcher>.Instance);
+    private static ArtFetcher Fetcher(params IArtSource[] sources)
+    {
+        return new ArtFetcher(sources, new UpstreamMonitor(), NullLogger<ArtFetcher>.Instance);
+    }
 
     [TestMethod]
     public async Task EverySourceMisses_IsAMiss()
     {
         var result = await Fetcher(
-            StubArtSource.Miss(order: 0),
-            StubArtSource.Miss(order: 10)).TryFetchAsync(Identity);
+            StubArtSource.Miss(0),
+            StubArtSource.Miss(10)).TryFetchAsync(Identity);
 
         Assert.AreEqual(FetchStatus.Miss, result.Status);
         Assert.IsNull(result.Art);
@@ -43,8 +45,8 @@ public class ArtFetcherTests
     public async Task ASourceThatCouldNotBeReached_WithNoOtherHit_IsAnOutage()
     {
         var result = await Fetcher(
-            StubArtSource.Unavailable(order: 0),
-            StubArtSource.Miss(order: 10)).TryFetchAsync(Identity);
+            StubArtSource.Unavailable(0),
+            StubArtSource.Miss(10)).TryFetchAsync(Identity);
 
         Assert.AreEqual(FetchStatus.Unavailable, result.Status,
             "a real outage among the sources must not read as a clean miss");
@@ -57,8 +59,8 @@ public class ArtFetcherTests
         // The DSi shape: GameTDB is the only source, and it timed out. This must NOT read as "no art"
         // (a 12-hour negative cache); it is a passing outage that the next scan retries.
         var result = await Fetcher(
-            StubArtSource.Unavailable(order: 0),
-            StubArtSource.Unavailable(order: 10)).TryFetchAsync(Identity);
+            StubArtSource.Unavailable(0),
+            StubArtSource.Unavailable(10)).TryFetchAsync(Identity);
 
         Assert.AreEqual(FetchStatus.Unavailable, result.Status);
         Assert.IsNull(result.Art);
@@ -71,7 +73,7 @@ public class ArtFetcherTests
         // stop the ladder AND must not be mistaken for "no art": an unexpected failure is no more
         // evidence the art is absent than a timeout is, so it earns the short back-off, never the 12-hour
         // one. The exception is still logged at Warning, which is where a real bug is meant to surface.
-        var source = new StubArtSource(order: 0, (_, _) => throw new InvalidOperationException("boom"));
+        var source = new StubArtSource(0, (_, _) => throw new InvalidOperationException("boom"));
 
         var result = await Fetcher(source).TryFetchAsync(Identity);
 
@@ -85,8 +87,8 @@ public class ArtFetcherTests
         // GameTDB being down must still let libretro answer for a GBA title: the outage is recorded but
         // a hit further down the ladder wins outright.
         var result = await Fetcher(
-            StubArtSource.Unavailable(order: 0),
-            StubArtSource.Hit(order: 10)).TryFetchAsync(Identity);
+            StubArtSource.Unavailable(0),
+            StubArtSource.Hit(10)).TryFetchAsync(Identity);
 
         Assert.AreEqual(FetchStatus.Hit, result.Status);
         Assert.IsNotNull(result.Art);
@@ -96,7 +98,7 @@ public class ArtFetcherTests
     [TestMethod]
     public async Task AHit_CarriesTheArtAndItsSourceName()
     {
-        var result = await Fetcher(StubArtSource.Hit(order: 0)).TryFetchAsync(Identity);
+        var result = await Fetcher(StubArtSource.Hit(0)).TryFetchAsync(Identity);
 
         Assert.AreEqual(FetchStatus.Hit, result.Status);
         Assert.IsNotNull(result.Art);
@@ -109,14 +111,13 @@ public class ArtFetcherTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        var source = new StubArtSource(order: 0, (_, ct) =>
+        var source = new StubArtSource(0, (_, ct) =>
         {
             ct.ThrowIfCancellationRequested();
             return Task.FromResult<ArtBlob?>(null);
         });
 
-        await Assert.ThrowsExactlyAsync<OperationCanceledException>(
-            () => Fetcher(source).TryFetchAsync(Identity, cts.Token));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => Fetcher(source).TryFetchAsync(Identity, cts.Token));
     }
 }
 
@@ -128,20 +129,32 @@ public sealed class StubArtSource(
 {
     public int Order => order;
 
-    public bool CanHandle(RomIdentity identity) => canHandle?.Invoke(identity) ?? true;
+    public bool CanHandle(RomIdentity identity)
+    {
+        return canHandle?.Invoke(identity) ?? true;
+    }
 
-    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default) => fetch(identity, ct);
+    public Task<ArtBlob?> TryFetchAsync(RomIdentity identity, CancellationToken ct = default)
+    {
+        return fetch(identity, ct);
+    }
 
     /// <summary>The source answers "no art".</summary>
-    public static StubArtSource Miss(int order) =>
-        new(order, (_, _) => Task.FromResult<ArtBlob?>(null));
+    public static StubArtSource Miss(int order)
+    {
+        return new StubArtSource(order, (_, _) => Task.FromResult<ArtBlob?>(null));
+    }
 
     /// <summary>The source cannot be reached, even after its own retries.</summary>
-    public static StubArtSource Unavailable(int order) =>
-        new(order, (_, _) => throw new ArtSourceUnavailableException("stub", "https://stub.invalid/cover", new TimeoutException()));
+    public static StubArtSource Unavailable(int order)
+    {
+        return new StubArtSource(order, (_, _) => throw new ArtSourceUnavailableException("stub", "https://stub.invalid/cover", new TimeoutException()));
+    }
 
     /// <summary>The source has art.</summary>
-    public static StubArtSource Hit(int order) =>
-        new(order, (id, _) => Task.FromResult<ArtBlob?>(
+    public static StubArtSource Hit(int order)
+    {
+        return new StubArtSource(order, (id, _) => Task.FromResult<ArtBlob?>(
             new ArtBlob(FakeArtSource.Png, $"https://stub.invalid/{id.Key}.png", "image/png")));
+    }
 }

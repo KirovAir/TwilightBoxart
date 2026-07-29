@@ -28,7 +28,7 @@ public sealed class ReloadableMetadataIndex(string path, ILogger<ReloadableMetad
 
         try
         {
-            File.Move(builtFile, path, overwrite: true);
+            File.Move(builtFile, path, true);
         }
         catch
         {

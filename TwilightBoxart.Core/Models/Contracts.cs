@@ -20,7 +20,7 @@ public enum MatchMethod
     Sha1,
 
     /// <summary>Fuzzy name match against the index (FTS5 trigram).</summary>
-    Filename,
+    Filename
 }
 
 public enum BoxartBorderStyle
@@ -28,7 +28,7 @@ public enum BoxartBorderStyle
     None = 0,
     Line,
     NintendoDsi,
-    Nintendo3Ds,
+    Nintendo3Ds
 }
 
 /// <summary>
@@ -39,7 +39,7 @@ public enum BoxartBorderStyle
 public enum RenderTarget
 {
     TwilightMenu = 0,
-    Pico,
+    Pico
 }
 
 /// <summary>
@@ -174,6 +174,7 @@ public sealed record RenderOptions
     /// the right 22 columns are padding the launcher ignores (pico-launcher docs/Covers.md).
     /// </summary>
     public const int PicoWidth = 128;
+
     public const int PicoHeight = 96;
     public const int PicoVisibleWidth = 106;
 
@@ -202,6 +203,7 @@ public sealed record RenderOptions
     /// why <see cref="Normalized"/> stops holding them to the DS cache's byte cap.
     /// </summary>
     public const int TwilightMaxWidth = 256;
+
     public const int TwilightMaxHeight = 192;
 
     /// <summary>
@@ -209,6 +211,7 @@ public sealed record RenderOptions
     /// constraint: the DS's own display limit is <see cref="TwilightMaxWidth"/>x<see cref="TwilightMaxHeight"/>.
     /// </summary>
     public const int MaxWidth = 1000;
+
     public const int MaxHeight = 1000;
 
     /// <summary>
@@ -274,7 +277,7 @@ public sealed record RenderOptions
                 BorderStyle = BoxartBorderStyle.None,
                 BorderThickness = 0,
                 BorderColor = 0,
-                MaxPngBytes = TwilightMaxPngBytes,
+                MaxPngBytes = TwilightMaxPngBytes
             };
         }
 
@@ -312,7 +315,7 @@ public sealed record RenderOptions
             BorderThickness = style == BoxartBorderStyle.Line ? Math.Clamp(BorderThickness, 0, 5) : 0,
             BorderColor = style == BoxartBorderStyle.Line ? BorderColor : 0,
 
-            MaxPngBytes = pngBudget,
+            MaxPngBytes = pngBudget
         };
     }
 
@@ -333,12 +336,14 @@ public sealed record RenderOptions
     /// <see cref="MaxPngBytes"/> participates: two requests identical but for the ceiling produce
     /// genuinely different bytes (different quantization), so they must not share a cache entry.
     /// </remarks>
-    public string CacheDiscriminator() =>
-        Target == RenderTarget.Pico
+    public string CacheDiscriminator()
+    {
+        return Target == RenderTarget.Pico
             // The folded knobs (see Normalized) would only repeat themselves here; the aspect ratio
             // is the one that survives, and it produces genuinely different bytes.
             ? $"pico{PicoRenderVersion}{(KeepAspectRatio ? "" : "_fill")}"
             : $"{Width}x{Height}_{(KeepAspectRatio ? "ar" : "fill")}_{BorderStyle}_{BorderThickness}_{BorderColor:X8}_{MaxPngBytes}";
+    }
 
     /// <summary>What the rendered bytes are: a PNG for TWiLightMenu++, an 8bpp BMP for Pico.</summary>
     public string ContentType => Target == RenderTarget.Pico ? "image/bmp" : "image/png";
@@ -356,12 +361,14 @@ public sealed record RenderOptions
     /// deliberately does not travel; it is TWiLightMenu++'s hard constraint, not a client
     /// preference.
     /// </summary>
-    public string ToQueryString() =>
-        Target == RenderTarget.Pico
+    public string ToQueryString()
+    {
+        return Target == RenderTarget.Pico
             // ar only travels when it is off: the default keeps the exact URL every Pico client
             // already mints, so the caches they have built up stay warm.
             ? (KeepAspectRatio ? "?t=pico" : "?t=pico&ar=0")
             : $"?w={Width}&h={Height}&ar={(KeepAspectRatio ? 1 : 0)}&b={BorderStyle}&bt={BorderThickness}&bc={BorderColor:X8}";
+    }
 }
 
 /// <summary>A fetched, unrendered piece of upstream art.</summary>

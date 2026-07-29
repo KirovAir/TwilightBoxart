@@ -1,7 +1,16 @@
 // scan.js: what counts as a ROM, walking the card (File System Access handles or a
 // webkitdirectory FileList, both normalised to { name, path, getFile() }), and probing each one.
 
-import { probeZip, probe7z, zipEntryHeader, sevenZipEntryHeader, crc32, crc32File, lz77Decompress, CONST } from './romprobe.js';
+import {
+    probeZip,
+    probe7z,
+    zipEntryHeader,
+    sevenZipEntryHeader,
+    crc32,
+    crc32File,
+    lz77Decompress,
+    CONST
+} from './romprobe.js';
 
 /**
  * What a scan opens, rendered into the page by Index.cshtml straight from SupportedFiles. Hand-copied
@@ -50,6 +59,7 @@ export const isScannable = (name) => isRom(name) || isArchive(name);
  */
 const LZ77_EXTENSIONS = new Set(['.sfc', '.smc', '.gen', '.md', '.sms', '.gg', '.pce']);
 const LZ77_MAX_COMPRESSED = 24 * 1024 * 1024;
+
 function isLz77(name) {
     const ext = extname(name);
     if (!LZ77_EXTENSIONS.has(ext)) return false;
@@ -65,8 +75,12 @@ function isLz77(name) {
  */
 export async function* walkDirectory(dir, path = '', onError) {
     let entries;
-    try { entries = dir.values(); }
-    catch (e) { onError?.(path || '/', e); return; }
+    try {
+        entries = dir.values();
+    } catch (e) {
+        onError?.(path || '/', e);
+        return;
+    }
 
     for await (const handle of entries) {
         const name = handle.name;
@@ -80,7 +94,7 @@ export async function* walkDirectory(dir, path = '', onError) {
             continue;
         }
         if (!isScannable(name)) continue;
-        yield { name, path: child, getFile: () => handle.getFile() };
+        yield {name, path: child, getFile: () => handle.getFile()};
     }
 }
 
@@ -93,7 +107,7 @@ export function* walkFileList(files) {
         if (file.name.startsWith('._') || file.name === '.DS_Store') continue;
         if (path.split('/').some(seg => SKIP_DIRS.has(seg.toLowerCase()))) continue;
         if (!isScannable(file.name)) continue;
-        yield { name: file.name, path, getFile: async () => file };
+        yield {name: file.name, path, getFile: async () => file};
     }
 }
 
@@ -106,7 +120,9 @@ export async function hasTwilightSentinel(root) {
         const nds = await root.getDirectoryHandle('_nds');
         await nds.getDirectoryHandle('TWiLightMenu');
         return true;
-    } catch { return false; }
+    } catch {
+        return false;
+    }
 }
 
 /** Same check for the read-only path, where we only have relative paths. */
@@ -123,7 +139,9 @@ export async function hasPicoSentinel(root) {
     try {
         await root.getDirectoryHandle('_pico');
         return true;
-    } catch { return false; }
+    } catch {
+        return false;
+    }
 }
 
 export function fileListHasPicoSentinel(files) {
@@ -138,7 +156,7 @@ export function fileListHasPicoSentinel(files) {
 export async function boxartDirectory(root, path) {
     let dir = root;
     for (const segment of path.split('/').filter(s => s && s !== '.' && s !== '..')) {
-        dir = await dir.getDirectoryHandle(segment, { create: true });
+        dir = await dir.getDirectoryHandle(segment, {create: true});
     }
     return dir;
 }
@@ -180,10 +198,10 @@ export async function probeFile(file, fileName, wantHeader = false) {
 
     if (ext === '.zip') {
         const r = await probeZip(file);
-        if (!r.ok) return { ok: false, container: 'zip', reason: r.reason };
+        if (!r.ok) return {ok: false, container: 'zip', reason: r.reason};
         const entry = chooseEntry(r.entries);
-        if (!entry) return { ok: false, container: 'zip', reason: 'archive contains no files' };
-        if (entry.encrypted) return { ok: false, container: 'zip', reason: 'archive is password protected' };
+        if (!entry) return {ok: false, container: 'zip', reason: 'archive contains no files'};
+        if (entry.encrypted) return {ok: false, container: 'zip', reason: 'archive is password protected'};
 
         let header = null;
         if (wantHeader) {
@@ -200,9 +218,9 @@ export async function probeFile(file, fileName, wantHeader = false) {
 
     if (ext === '.7z') {
         const r = await probe7z(file);
-        if (!r.ok) return { ok: false, container: '7z', reason: r.reason, encodedHeader: r.encodedHeader };
+        if (!r.ok) return {ok: false, container: '7z', reason: r.reason, encodedHeader: r.encodedHeader};
         const entry = chooseEntry(r.entries);
-        if (!entry) return { ok: false, container: '7z', reason: 'archive contains no files' };
+        if (!entry) return {ok: false, container: '7z', reason: 'archive contains no files'};
 
         let header = null;
         if (wantHeader) header = await sevenZipEntryHeader(file, r, r.entries.indexOf(entry), CONST.HDR_WANT);
@@ -218,10 +236,10 @@ export async function probeFile(file, fileName, wantHeader = false) {
         // ".lz77.sfc" resolves to the exact same game as its plain ".sfc" twin. The cover is keyed on
         // the on-card name (innerName = fileName), which is what the launcher looks the art up by.
         if (file.size > LZ77_MAX_COMPRESSED) {
-            return { ok: false, container: 'lz77', reason: 'file too large to be a compressed ROM' };
+            return {ok: false, container: 'lz77', reason: 'file too large to be a compressed ROM'};
         }
         const rom = lz77Decompress(new Uint8Array(await file.arrayBuffer()));
-        if (!rom) return { ok: false, container: 'lz77', reason: 'not a valid LZ77 stream' };
+        if (!rom) return {ok: false, container: 'lz77', reason: 'not a valid LZ77 stream'};
         return {
             ok: true, container: 'lz77', innerName: fileName, size: rom.length,
             crc32: crc32(rom), header: rom.slice(0, Math.min(CONST.HDR_WANT, rom.length)),
@@ -267,18 +285,23 @@ export function safeFileName(name) {
  * on close(), so a yanked card can never leave a half-written file behind.
  */
 export async function writeArt(dir, name, bytes) {
-    const handle = await dir.getFileHandle(name, { create: true });
+    const handle = await dir.getFileHandle(name, {create: true});
     const stream = await handle.createWritable();
     try {
         await stream.write(bytes);
         await stream.close();
     } catch (e) {
-        await stream.abort().catch(() => { });
+        await stream.abort().catch(() => {
+        });
         throw e;
     }
 }
 
 export async function fileExists(dir, name) {
-    try { await dir.getFileHandle(name); return true; }
-    catch { return false; }
+    try {
+        await dir.getFileHandle(name);
+        return true;
+    } catch {
+        return false;
+    }
 }

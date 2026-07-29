@@ -51,7 +51,7 @@ public sealed class NintendoDsHeaderParser : IConsoleHeaderParser
 
             // Read straight from 0x0F rather than from Serial[3], so a game code that failed validation
             // (homebrew with a partly-binary code) still yields a usable region for the art request.
-            RegionId = header.PrintableCharAt(RegionOffset),
+            RegionId = header.PrintableCharAt(RegionOffset)
         };
     }
 }

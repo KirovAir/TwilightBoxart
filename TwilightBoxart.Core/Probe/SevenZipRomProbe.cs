@@ -14,8 +14,10 @@ namespace TwilightBoxart.Core.Probe;
 /// </summary>
 public sealed class SevenZipRomProbe : IRomProbe
 {
-    public bool CanHandle(string path) =>
-        string.Equals(Path.GetExtension(path), ".7z", StringComparison.OrdinalIgnoreCase);
+    public bool CanHandle(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".7z", StringComparison.OrdinalIgnoreCase);
+    }
 
     public Task<ProbeResult?> ProbeAsync(
         Stream stream, string path, bool wantHeader, CancellationToken ct = default)
@@ -64,7 +66,7 @@ public sealed class SevenZipRomProbe : IRomProbe
             Crc32 = NormalizeCrc(entry.Crc),
             Header = header,
             Container = ContainerKind.SevenZip,
-            BytesRead = counter.BytesRead,
+            BytesRead = counter.BytesRead
         });
     }
 

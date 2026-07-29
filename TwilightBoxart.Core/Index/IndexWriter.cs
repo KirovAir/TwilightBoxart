@@ -35,25 +35,25 @@ public static class IndexWriter
     /// PostgreSQL's <c>pg_trgm</c>, which was the only real argument for a server.</para>
     /// </summary>
     public const string SchemaSql = """
-        CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                                    CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
 
-        CREATE TABLE entry (
-            id        INTEGER PRIMARY KEY,
-            console   INTEGER NOT NULL,
-            name      TEXT    NOT NULL,
-            serial    TEXT    NULL,
-            crc32     INTEGER NULL,
-            sha1      TEXT    NULL,
-            status    TEXT    NULL
-        );
-        """;
+                                    CREATE TABLE entry (
+                                        id        INTEGER PRIMARY KEY,
+                                        console   INTEGER NOT NULL,
+                                        name      TEXT    NOT NULL,
+                                        serial    TEXT    NULL,
+                                        crc32     INTEGER NULL,
+                                        sha1      TEXT    NULL,
+                                        status    TEXT    NULL
+                                    );
+                                    """;
 
     /// <summary>Created after the bulk insert: building them up-front costs several times the runtime.</summary>
     public const string IndexSql = """
-        CREATE INDEX ix_entry_crc32   ON entry(crc32)   WHERE crc32 IS NOT NULL;
-        CREATE INDEX ix_entry_sha1    ON entry(sha1)    WHERE sha1  IS NOT NULL;
-        CREATE INDEX ix_entry_serial  ON entry(console, serial) WHERE serial IS NOT NULL;
-        """;
+                                   CREATE INDEX ix_entry_crc32   ON entry(crc32)   WHERE crc32 IS NOT NULL;
+                                   CREATE INDEX ix_entry_sha1    ON entry(sha1)    WHERE sha1  IS NOT NULL;
+                                   CREATE INDEX ix_entry_serial  ON entry(console, serial) WHERE serial IS NOT NULL;
+                                   """;
 
     public const string FtsSql =
         "CREATE VIRTUAL TABLE entry_fts USING fts5(name, content='entry', content_rowid='id', tokenize='trigram');";
@@ -93,7 +93,7 @@ public static class IndexWriter
 
             // No pooling: a pooled handle keeps the file open after Dispose, and on Windows the
             // File.Move that publishes the build then fails with a sharing violation.
-            Pooling = false,
+            Pooling = false
         }.ToString();
 
         using (var connection = new SqliteConnection(connectionString))
@@ -179,7 +179,7 @@ public static class IndexWriter
         {
             ["rowCount"] = rowCount.ToString(CultureInfo.InvariantCulture),
             ["schema"] = SchemaVersion.ToString(CultureInfo.InvariantCulture),
-            ["version"] = version,
+            ["version"] = version
         };
 
         foreach (var (k, v) in provenance ?? new Dictionary<string, string>())

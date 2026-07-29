@@ -68,7 +68,7 @@ public static class DatParser
             XmlResolver = null,
             IgnoreComments = true,
             IgnoreWhitespace = true,
-            IgnoreProcessingInstructions = true,
+            IgnoreProcessingInstructions = true
         };
 
         return XmlReader.Create(new StringReader(text), settings);
@@ -119,7 +119,7 @@ public static class DatParser
             HeaderName = headerName,
             HeaderVersion = headerVersion,
             Entries = entries,
-            GameCount = gameCount,
+            GameCount = gameCount
         };
     }
 
@@ -260,7 +260,7 @@ public static class DatParser
             HeaderName = headerName,
             HeaderVersion = headerVersion,
             Entries = entries,
-            GameCount = gameCount,
+            GameCount = gameCount
         };
     }
 
@@ -273,7 +273,10 @@ public static class DatParser
 
         public List<Block> Children { get; } = [];
 
-        public string? Value(string key) => Values.TryGetValue(key, out var v) ? v : null;
+        public string? Value(string key)
+        {
+            return Values.TryGetValue(key, out var v) ? v : null;
+        }
     }
 
     private static bool TryReadBlock(List<string> tokens, ref int index, out Block? block)
@@ -440,7 +443,7 @@ public static class DatParser
                 Console = console,
                 Name = name,
                 Serial = fallbackSerial,
-                SourceName = sourceName,
+                SourceName = sourceName
             });
             return;
         }
@@ -455,7 +458,7 @@ public static class DatParser
                 Crc32 = DatFields.ParseCrc32(rom.Crc),
                 Sha1 = DatFields.ParseSha1(rom.Sha1),
                 Status = DatEntryQuality.Normalize(rom.Status),
-                SourceName = sourceName,
+                SourceName = sourceName
             });
         }
     }

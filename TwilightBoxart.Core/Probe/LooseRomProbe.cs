@@ -29,7 +29,10 @@ public sealed class LooseRomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcB
     /// <summary>Read buffer for the CRC pass. Large enough that the syscall count stays negligible.</summary>
     private const int HashBufferBytes = 128 * 1024;
 
-    public bool CanHandle(string path) => SupportedFiles.IsRom(path);
+    public bool CanHandle(string path)
+    {
+        return SupportedFiles.IsRom(path);
+    }
 
     public async Task<ProbeResult?> ProbeAsync(
         Stream stream, string path, bool wantHeader, CancellationToken ct = default)
@@ -51,7 +54,7 @@ public sealed class LooseRomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcB
         // it would save nothing measurable while costing every serial-based match.
         stream.Seek(0, SeekOrigin.Begin);
         var header = new byte[(int)Math.Min(IRomProbe.HeaderBytesWanted, size)];
-        var headerRead = await stream.ReadAtLeastAsync(header, header.Length, throwOnEndOfStream: false, ct);
+        var headerRead = await stream.ReadAtLeastAsync(header, header.Length, false, ct);
         if (headerRead < header.Length)
         {
             header = header[..headerRead];
@@ -79,7 +82,7 @@ public sealed class LooseRomProbe(long crcByteBudget = LooseRomProbe.DefaultCrcB
             Crc32 = crc32,
             Header = wantHeader ? header : null,
             Container = ContainerKind.Loose,
-            BytesRead = bytesRead,
+            BytesRead = bytesRead
         };
     }
 

@@ -8,8 +8,8 @@ namespace TwilightBoxart.Core.Consoles;
 /// </summary>
 public sealed class Nintendo64HeaderParser : IConsoleHeaderParser
 {
-    private static ReadOnlySpan<byte> BigEndianMagic => [0x80, 0x37, 0x12, 0x40];    // .z64
-    private static ReadOnlySpan<byte> ByteSwappedMagic => [0x37, 0x80, 0x40, 0x12];  // .v64
+    private static ReadOnlySpan<byte> BigEndianMagic => [0x80, 0x37, 0x12, 0x40]; // .z64
+    private static ReadOnlySpan<byte> ByteSwappedMagic => [0x37, 0x80, 0x40, 0x12]; // .v64
     private static ReadOnlySpan<byte> LittleEndianMagic => [0x40, 0x12, 0x37, 0x80]; // .n64
 
     /// <summary>Logical offset of the 20-byte internal name.</summary>
@@ -28,7 +28,7 @@ public sealed class Nintendo64HeaderParser : IConsoleHeaderParser
             _ when header.Match(0, BigEndianMagic) => N64ByteOrder.BigEndian,
             _ when header.Match(0, ByteSwappedMagic) => N64ByteOrder.ByteSwapped,
             _ when header.Match(0, LittleEndianMagic) => N64ByteOrder.LittleEndian,
-            _ => N64ByteOrder.None,
+            _ => N64ByteOrder.None
         };
 
         if (order == N64ByteOrder.None)
@@ -53,7 +53,7 @@ public sealed class Nintendo64HeaderParser : IConsoleHeaderParser
             ConsoleType = ConsoleType.Nintendo64,
             ByteOrder = order,
             Title = descrambled.ReadAscii(TitleOffset, 20),
-            Serial = descrambled.ReadGameCode(GameCodeOffset, 4),
+            Serial = descrambled.ReadGameCode(GameCodeOffset, 4)
         };
     }
 
@@ -73,7 +73,7 @@ public sealed class Nintendo64HeaderParser : IConsoleHeaderParser
             // 32-bit swap: each aligned group of 4 reversed.
             N64ByteOrder.LittleEndian => (logicalOffset & ~3) | (3 - (logicalOffset & 3)),
 
-            _ => -1,
+            _ => -1
         };
 
         return header.ByteAt(physical);

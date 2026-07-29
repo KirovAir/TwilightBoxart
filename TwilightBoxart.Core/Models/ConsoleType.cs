@@ -126,7 +126,7 @@ public enum ConsoleType
     // MSX2 are two separate ones, so a folded MSX2 title would 404 on every cover.
     [Display(Name = "MSX2")]
     [Description("Microsoft - MSX2")]
-    Msx2,
+    Msx2
 }
 
 public static class ConsoleTypeExtensions
@@ -160,7 +160,7 @@ public static class ConsoleTypeExtensions
         [ConsoleType.ColecoVision] = "col",
         [ConsoleType.Intellivision] = "int",
         [ConsoleType.Msx] = "msx",
-        [ConsoleType.Msx2] = "msx2",
+        [ConsoleType.Msx2] = "msx2"
     };
 
     // Every spelling a client could reasonably have learned from this API: the slug ("nds") and the
@@ -197,18 +197,32 @@ public static class ConsoleTypeExtensions
                 .GetCustomAttributes(typeof(DisplayAttribute), false)
                 .Cast<DisplayAttribute>().FirstOrDefault()?.Name ?? v.ToString());
 
-    public static string Slug(this ConsoleType type) => Slugs.GetValueOrDefault(type, "unknown");
+    public static string Slug(this ConsoleType type)
+    {
+        return Slugs.GetValueOrDefault(type, "unknown");
+    }
 
     /// <summary>Parses a platform route segment or query hint: slug or enum name, case-insensitive.</summary>
-    public static ConsoleType FromRouteValue(string? value) =>
-        value is not null && ByRouteValue.TryGetValue(value, out var t) ? t : ConsoleType.Unknown;
+    public static ConsoleType FromRouteValue(string? value)
+    {
+        return value is not null && ByRouteValue.TryGetValue(value, out var t) ? t : ConsoleType.Unknown;
+    }
 
     /// <summary>Short human label, e.g. "Nintendo DS".</summary>
-    public static string Name(this ConsoleType type) => Names[type];
+    public static string Name(this ConsoleType type)
+    {
+        return Names[type];
+    }
 
     /// <summary>No-Intro / libretro display name, e.g. "Nintendo - Game Boy".</summary>
-    public static string Description(this ConsoleType type) => Descriptions[type];
+    public static string Description(this ConsoleType type)
+    {
+        return Descriptions[type];
+    }
 
     /// <summary>libretro-thumbnails repository name, e.g. "Nintendo_-_Game_Boy".</summary>
-    public static string LibRetroRepository(this ConsoleType type) => type.Description().Replace(' ', '_');
+    public static string LibRetroRepository(this ConsoleType type)
+    {
+        return type.Description().Replace(' ', '_');
+    }
 }

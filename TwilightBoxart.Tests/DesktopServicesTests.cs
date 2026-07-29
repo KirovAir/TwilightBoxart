@@ -212,7 +212,7 @@ public class DesktopServicesTests
         Directory.CreateDirectory(Path.Combine(boxart, "first.nds.png"));
 
         var service = new ScanService(new RomProbeService(), NullLogger<ScanService>.Instance);
-        var request = new ScanRequest(root, boxart, RenderOptions.Default, Overwrite: true, Concurrency: 2);
+        var request = new ScanRequest(root, boxart, RenderOptions.Default, true, 2);
         var progress = new CapturingProgress();
         using var backend = new AlwaysMatchingBackend();
 
@@ -229,20 +229,28 @@ public class DesktopServicesTests
         public string Describe => "test backend";
 
         public Task<IReadOnlyList<RomIdentity>> IdentifyAsync(
-            IReadOnlyList<RomFingerprint> fingerprints, CancellationToken ct) =>
-            Task.FromResult<IReadOnlyList<RomIdentity>>([.. fingerprints.Select(f => new RomIdentity
-            {
-                ConsoleType = ConsoleType.NintendoDs,
-                Key = "AAAA",
-                MatchMethod = MatchMethod.Crc32,
-                Tag = f.Tag,
-            })]);
+            IReadOnlyList<RomFingerprint> fingerprints, CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlyList<RomIdentity>>([
+                .. fingerprints.Select(f => new RomIdentity
+                {
+                    ConsoleType = ConsoleType.NintendoDs,
+                    Key = "AAAA",
+                    MatchMethod = MatchMethod.Crc32,
+                    Tag = f.Tag
+                })
+            ]);
+        }
 
-        public Task<byte[]?> GetArtAsync(RomIdentity identity, RenderOptions options, CancellationToken ct) =>
-            Task.FromResult<byte[]?>([0x89, 0x50, 0x4E, 0x47]);
+        public Task<byte[]?> GetArtAsync(RomIdentity identity, RenderOptions options, CancellationToken ct)
+        {
+            return Task.FromResult<byte[]?>([0x89, 0x50, 0x4E, 0x47]);
+        }
 
-        public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct) =>
-            Task.FromResult<IReadOnlySet<string>>(SupportedFiles.Scannable);
+        public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct)
+        {
+            return Task.FromResult<IReadOnlySet<string>>(SupportedFiles.Scannable);
+        }
 
         public void Dispose()
         {
@@ -271,8 +279,10 @@ public class DesktopServicesTests
 
     // ── helpers ──────────────────────────────────────────────────────────────────────────────
 
-    private static List<string?> CollectNames(string root, string boxartDir) =>
-        [.. ScanService.CollectFiles(root, boxartDir).Select(Path.GetFileName)];
+    private static List<string?> CollectNames(string root, string boxartDir)
+    {
+        return [.. ScanService.CollectFiles(root, boxartDir).Select(Path.GetFileName)];
+    }
 
     private readonly List<string> _tempDirectories = [];
 
@@ -283,7 +293,7 @@ public class DesktopServicesTests
         {
             try
             {
-                Directory.Delete(directory, recursive: true);
+                Directory.Delete(directory, true);
             }
             catch (IOException)
             {

@@ -20,55 +20,55 @@ public class IndexBuilderTests
     /// <summary>A minimal but representative No-Intro XML datafile: a normal dump, a serial-bearing
     /// dump, a baddump colliding with a good dump, and a multi-rom game.</summary>
     private const string NoIntroXml = """
-        <?xml version="1.0"?>
-        <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
-        <datafile>
-          <header>
-            <name>Nintendo - Nintendo DS</name>
-            <description>Nintendo - Nintendo DS</description>
-            <version>20260701-000000</version>
-          </header>
-          <game name="Mario Kart DS (USA)">
-            <description>Mario Kart DS (USA)</description>
-            <rom name="Mario Kart DS (USA).nds" size="16777216" crc="AABBCCDD" md5="0123456789abcdef0123456789abcdef" sha1="1111111111111111111111111111111111111111" serial="NTR-AMCE-USA"/>
-          </game>
-          <game name="New Super Mario Bros. (Europe)">
-            <description>New Super Mario Bros. (Europe)</description>
-            <rom name="New Super Mario Bros. (Europe).nds" size="33554432" crc="11223344" sha1="2222222222222222222222222222222222222222" serial="NTR-A2DP-EUR"/>
-          </game>
-          <game name="Nintendogs - Lab &amp; Friends (USA)">
-            <rom name="Nintendogs - Lab &amp; Friends (USA).nds" size="16777216" crc="DEADBEEF" sha1="3333333333333333333333333333333333333333"/>
-          </game>
-          <game name="Multi Part Game (Japan)">
-            <rom name="Multi Part Game (Japan) (Disc 1).nds" size="1024" crc="0000000A" sha1="4444444444444444444444444444444444444444"/>
-            <rom name="Multi Part Game (Japan) (Disc 2).nds" size="1024" crc="0000000B" sha1="5555555555555555555555555555555555555555"/>
-          </game>
-          <game name="No Hash Game (World)">
-            <rom name="No Hash Game (World).nds" size="0" status="nodump" serial="NTR-XXXX-WLD"/>
-          </game>
-        </datafile>
-        """;
+                                      <?xml version="1.0"?>
+                                      <!DOCTYPE datafile PUBLIC "-//Logiqx//DTD ROM Management Datafile//EN" "http://www.logiqx.com/Dats/datafile.dtd">
+                                      <datafile>
+                                        <header>
+                                          <name>Nintendo - Nintendo DS</name>
+                                          <description>Nintendo - Nintendo DS</description>
+                                          <version>20260701-000000</version>
+                                        </header>
+                                        <game name="Mario Kart DS (USA)">
+                                          <description>Mario Kart DS (USA)</description>
+                                          <rom name="Mario Kart DS (USA).nds" size="16777216" crc="AABBCCDD" md5="0123456789abcdef0123456789abcdef" sha1="1111111111111111111111111111111111111111" serial="NTR-AMCE-USA"/>
+                                        </game>
+                                        <game name="New Super Mario Bros. (Europe)">
+                                          <description>New Super Mario Bros. (Europe)</description>
+                                          <rom name="New Super Mario Bros. (Europe).nds" size="33554432" crc="11223344" sha1="2222222222222222222222222222222222222222" serial="NTR-A2DP-EUR"/>
+                                        </game>
+                                        <game name="Nintendogs - Lab &amp; Friends (USA)">
+                                          <rom name="Nintendogs - Lab &amp; Friends (USA).nds" size="16777216" crc="DEADBEEF" sha1="3333333333333333333333333333333333333333"/>
+                                        </game>
+                                        <game name="Multi Part Game (Japan)">
+                                          <rom name="Multi Part Game (Japan) (Disc 1).nds" size="1024" crc="0000000A" sha1="4444444444444444444444444444444444444444"/>
+                                          <rom name="Multi Part Game (Japan) (Disc 2).nds" size="1024" crc="0000000B" sha1="5555555555555555555555555555555555555555"/>
+                                        </game>
+                                        <game name="No Hash Game (World)">
+                                          <rom name="No Hash Game (World).nds" size="0" status="nodump" serial="NTR-XXXX-WLD"/>
+                                        </game>
+                                      </datafile>
+                                      """;
 
     /// <summary>The ClrMamePro text dialect libretro-database mirrors No-Intro in.</summary>
     private const string ClrMameProDat = """
-        clrmamepro (
-        	name "Nintendo - Game Boy"
-        	description "Nintendo - Game Boy"
-        	version 20260701
-        )
+                                         clrmamepro (
+                                         	name "Nintendo - Game Boy"
+                                         	description "Nintendo - Game Boy"
+                                         	version 20260701
+                                         )
 
-        game (
-        	name "Tetris (World) (Rev 1)"
-        	description "Tetris (World) (Rev 1)"
-        	rom ( name "Tetris (World) (Rev 1).gb" size 32768 crc 1A2B3C4D md5 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa sha1 6666666666666666666666666666666666666666 )
-        )
+                                         game (
+                                         	name "Tetris (World) (Rev 1)"
+                                         	description "Tetris (World) (Rev 1)"
+                                         	rom ( name "Tetris (World) (Rev 1).gb" size 32768 crc 1A2B3C4D md5 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa sha1 6666666666666666666666666666666666666666 )
+                                         )
 
-        game (
-        	name "Super Mario Land (World)"
-        	serial "DMG-ML-USA"
-        	rom ( name "Super Mario Land (World).gb" size 65536 crc CAFEBABE sha1 7777777777777777777777777777777777777777 flags baddump )
-        )
-        """;
+                                         game (
+                                         	name "Super Mario Land (World)"
+                                         	serial "DMG-ML-USA"
+                                         	rom ( name "Super Mario Land (World).gb" size 65536 crc CAFEBABE sha1 7777777777777777777777777777777777777777 flags baddump )
+                                         )
+                                         """;
 
     [TestInitialize]
     public void SetUp()
@@ -82,7 +82,7 @@ public class IndexBuilderTests
     {
         try
         {
-            Directory.Delete(_workDirectory, recursive: true);
+            Directory.Delete(_workDirectory, true);
         }
         catch (IOException)
         {
@@ -158,15 +158,15 @@ public class IndexBuilderTests
         // only the middle code. The builder reduces them so the header-serial rung matches; every other
         // console keeps its serial exactly as No-Intro wrote it.
         const string fds = """
-            <datafile>
-              <game name="Zelda no Densetsu (Japan)">
-                <rom name="Zelda.fds" size="131000" crc="AAAAAAAA" serial="FMC-ZEL"/>
-              </game>
-              <game name="Metroid (Japan)">
-                <rom name="Metroid.fds" size="131000" crc="BBBBBBBB" serial="FMC-MET-JPN"/>
-              </game>
-            </datafile>
-            """;
+                           <datafile>
+                             <game name="Zelda no Densetsu (Japan)">
+                               <rom name="Zelda.fds" size="131000" crc="AAAAAAAA" serial="FMC-ZEL"/>
+                             </game>
+                             <game name="Metroid (Japan)">
+                               <rom name="Metroid.fds" size="131000" crc="BBBBBBBB" serial="FMC-MET-JPN"/>
+                             </game>
+                           </datafile>
+                           """;
 
         var fdsDoc = DatParser.Parse(fds, ConsoleType.FamicomDiskSystem, "test");
         CollectionAssert.AreEquivalent(
@@ -215,8 +215,8 @@ public class IndexBuilderTests
     [TestMethod]
     public void EntryDeduplicator_SameCrcWithBaddump_KeepsTheGoodDump()
     {
-        var good = Entry("Contra (USA)", crc: 0x1234, sha1: "a".PadRight(40, 'a'));
-        var bad = Entry("Contra (USA) [b]", crc: 0x1234, sha1: null, status: "baddump");
+        var good = Entry("Contra (USA)", 0x1234, "a".PadRight(40, 'a'));
+        var bad = Entry("Contra (USA) [b]", 0x1234, null, status: "baddump");
 
         // Order reversed on purpose: the winner must come from the rule, not from load order.
         var (entries, report) = EntryDeduplicator.Deduplicate([bad, good]);
@@ -233,8 +233,8 @@ public class IndexBuilderTests
     {
         // The good dump has no serial; the baddump it supersedes does. Same bytes, so the serial
         // describes the survivor just as well.
-        var good = Entry("Contra (USA)", crc: 0x1234);
-        var bad = Entry("Contra (USA) [b]", crc: 0x1234, serial: "NES-CT-USA", status: "baddump");
+        var good = Entry("Contra (USA)", 0x1234);
+        var bad = Entry("Contra (USA) [b]", 0x1234, serial: "NES-CT-USA", status: "baddump");
 
         var (entries, _) = EntryDeduplicator.Deduplicate([good, bad]);
 
@@ -246,8 +246,8 @@ public class IndexBuilderTests
     [TestMethod]
     public void EntryDeduplicator_IdenticalRowsFromTwoDats_CollapseToOne()
     {
-        var a = Entry("Tetris (World)", crc: 0x99, sha1: "b".PadRight(40, 'b'), source: "no-intro");
-        var b = Entry("Tetris (World)", crc: 0x99, sha1: "b".PadRight(40, 'b'), source: "libretro");
+        var a = Entry("Tetris (World)", 0x99, "b".PadRight(40, 'b'), source: "no-intro");
+        var b = Entry("Tetris (World)", 0x99, "b".PadRight(40, 'b'), source: "libretro");
 
         var (entries, report) = EntryDeduplicator.Deduplicate([a, b]);
 
@@ -261,8 +261,8 @@ public class IndexBuilderTests
         // Two different ROMs (different SHA-1) that happen to share 32 bits. Over 42k rows the birthday
         // odds make this likely. Answering a CRC lookup from either would be a coin flip, so neither
         // stays reachable by CRC - but both stay reachable by SHA-1, serial and name.
-        var one = Entry("Game One (USA)", crc: 0x5555, sha1: "c".PadRight(40, 'c'));
-        var two = Entry("Game Two (Japan)", crc: 0x5555, sha1: "d".PadRight(40, 'd'));
+        var one = Entry("Game One (USA)", 0x5555, "c".PadRight(40, 'c'));
+        var two = Entry("Game Two (Japan)", 0x5555, "d".PadRight(40, 'd'));
 
         var (entries, report) = EntryDeduplicator.Deduplicate([one, two]);
 
@@ -278,8 +278,8 @@ public class IndexBuilderTests
         // Two revisions share a serial but not a CRC. Collapsing them would make the dropped revision
         // unfindable by CRC, so both survive; the better row must be written first so an unordered
         // LIMIT 1 in the reader lands on it.
-        var revised = Entry("Zelda (USA) (Rev 1)", crc: 0xAAA1, serial: "NTR-AZLE-USA");
-        var proto = Entry("Zelda (USA) (Proto)", crc: 0xAAA2, serial: "NTR-AZLE-USA");
+        var revised = Entry("Zelda (USA) (Rev 1)", 0xAAA1, serial: "NTR-AZLE-USA");
+        var proto = Entry("Zelda (USA) (Proto)", 0xAAA2, serial: "NTR-AZLE-USA");
 
         var (entries, _) = EntryDeduplicator.Deduplicate([proto, revised]);
         var ordered = EntryDeduplicator.Order(entries);
@@ -297,8 +297,8 @@ public class IndexBuilderTests
         // bytes and therefore a different CRC, so dropping it would lose a real CRC lookup. Instead the
         // good dump is written first, and an unordered `WHERE console = ? AND serial = ? LIMIT 1` in the
         // reader lands on it.
-        var bad = Entry("Sonic (USA) [b]", crc: 0xB4D0, serial: "MK-1001", status: "baddump");
-        var good = Entry("Sonic the Hedgehog (USA, Europe)", crc: 0x600D, serial: "MK-1001");
+        var bad = Entry("Sonic (USA) [b]", 0xB4D0, serial: "MK-1001", status: "baddump");
+        var good = Entry("Sonic the Hedgehog (USA, Europe)", 0x600D, serial: "MK-1001");
 
         var (entries, report) = EntryDeduplicator.Deduplicate([bad, good]);
         var ordered = EntryDeduplicator.Order(entries);
@@ -318,7 +318,7 @@ public class IndexBuilderTests
         // A nodump entry carries no hash at all; it exists only so a header serial can still name the
         // game. It must never outrank a real dump sharing its serial.
         var nodump = Entry("A Game (USA)", serial: "NTR-AAAA-USA", status: "nodump");
-        var good = Entry("Z Game (USA)", crc: 0x1234, serial: "NTR-AAAA-USA");
+        var good = Entry("Z Game (USA)", 0x1234, serial: "NTR-AAAA-USA");
 
         var ordered = EntryDeduplicator.Order(EntryDeduplicator.Deduplicate([nodump, good]).Entries);
 
@@ -346,8 +346,8 @@ public class IndexBuilderTests
         // Real data: DS game code AGEE is listed for both of these. A serial lookup would answer with
         // whichever row it reached first, and the serial rung runs before CRC32 in the ladder - so the
         // wrong answer would preempt the right one.
-        var goldeneye = Entry("GoldenEye - Rogue Agent (USA)", crc: 0x1111, serial: "AGEE", console: ConsoleType.NintendoDs);
-        var starWars = Entry("Star Wars - The Force Unleashed (USA)", crc: 0x2222, serial: "AGEE", console: ConsoleType.NintendoDs);
+        var goldeneye = Entry("GoldenEye - Rogue Agent (USA)", 0x1111, serial: "AGEE", console: ConsoleType.NintendoDs);
+        var starWars = Entry("Star Wars - The Force Unleashed (USA)", 0x2222, serial: "AGEE", console: ConsoleType.NintendoDs);
 
         var (entries, report) = EntryDeduplicator.Deduplicate([goldeneye, starWars]);
 
@@ -364,9 +364,9 @@ public class IndexBuilderTests
     {
         // The counterpart: revisions and regional dumps of a single game share a serial legitimately and
         // share box art, so the serial stays usable. Only *different* games disqualify it.
-        var rev0 = Entry("Mario Kart DS (USA)", crc: 0x1111, serial: "AMCE", console: ConsoleType.NintendoDs);
-        var rev1 = Entry("Mario Kart DS (USA) (Rev 1)", crc: 0x2222, serial: "AMCE", console: ConsoleType.NintendoDs);
-        var demo = Entry("Mario Kart DS (USA) (Demo)", crc: 0x3333, serial: "AMCE", console: ConsoleType.NintendoDs);
+        var rev0 = Entry("Mario Kart DS (USA)", 0x1111, serial: "AMCE", console: ConsoleType.NintendoDs);
+        var rev1 = Entry("Mario Kart DS (USA) (Rev 1)", 0x2222, serial: "AMCE", console: ConsoleType.NintendoDs);
+        var demo = Entry("Mario Kart DS (USA) (Demo)", 0x3333, serial: "AMCE", console: ConsoleType.NintendoDs);
 
         var (entries, report) = EntryDeduplicator.Deduplicate([demo, rev1, rev0]);
 
@@ -385,9 +385,9 @@ public class IndexBuilderTests
     {
         var entries = new[]
         {
-            Entry("B Game", crc: 2, sha1: "1".PadRight(40, '1')),
-            Entry("A Game", crc: 1, sha1: "2".PadRight(40, '2')),
-            Entry("C Game", crc: 3, sha1: "3".PadRight(40, '3')),
+            Entry("B Game", 2, "1".PadRight(40, '1')),
+            Entry("A Game", 1, "2".PadRight(40, '2')),
+            Entry("C Game", 3, "3".PadRight(40, '3'))
         };
 
         var forward = EntryDeduplicator.Order(EntryDeduplicator.Deduplicate(entries).Entries);
@@ -485,22 +485,22 @@ public class IndexBuilderTests
         using var connection = OpenReadOnly(path);
 
         var name = Scalar(connection, """
-            SELECT e.name FROM entry_fts f
-            JOIN entry e ON e.id = f.rowid
-            WHERE entry_fts MATCH 'mario kart'
-            ORDER BY rank
-            LIMIT 1;
-            """);
+                                      SELECT e.name FROM entry_fts f
+                                      JOIN entry e ON e.id = f.rowid
+                                      WHERE entry_fts MATCH 'mario kart'
+                                      ORDER BY rank
+                                      LIMIT 1;
+                                      """);
         Assert.AreEqual("Mario Kart DS (USA)", name);
 
         // Trigram means substring matching, case-insensitively, without a leading-token anchor -
         // this is the property that replaces PostgreSQL's pg_trgm.
         var substring = Query(connection, """
-            SELECT e.name FROM entry_fts f
-            JOIN entry e ON e.id = f.rowid
-            WHERE entry_fts MATCH '"uper mario"'
-            ORDER BY e.name;
-            """);
+                                          SELECT e.name FROM entry_fts f
+                                          JOIN entry e ON e.id = f.rowid
+                                          WHERE entry_fts MATCH '"uper mario"'
+                                          ORDER BY e.name;
+                                          """);
         CollectionAssert.Contains(substring, "Super Mario Land (World)");
     }
 
@@ -517,7 +517,7 @@ public class IndexBuilderTests
         {
             OutputPath = output,
             InputDirectory = input,
-            Version = "2026-07-20T12:00:00Z",
+            Version = "2026-07-20T12:00:00Z"
         };
 
         var result = new IndexBuilder(options, _ => { }).RunAsync().GetAwaiter().GetResult();
@@ -557,25 +557,27 @@ public class IndexBuilderTests
             File.ReadAllBytes(first.DatabasePath),
             File.ReadAllBytes(second.DatabasePath));
 
-        BuildResult Build(string output, string inputDirectory) =>
-            new IndexBuilder(
+        BuildResult Build(string output, string inputDirectory)
+        {
+            return new IndexBuilder(
                 new BuildOptions
                 {
                     OutputPath = output,
                     InputDirectory = inputDirectory,
-                    Version = "2026-07-20T12:00:00Z",
+                    Version = "2026-07-20T12:00:00Z"
                 },
                 _ => { }).RunAsync().GetAwaiter().GetResult();
+        }
     }
 
     [TestMethod]
     public void IndexWriter_Write_ReplacesAnExistingIndexAtomically()
     {
         var path = Path.Combine(_workDirectory, "nointro.db");
-        IndexWriter.Write(path, [Entry("First Game", crc: 1)], "2026-01-01T00:00:00Z");
+        IndexWriter.Write(path, [Entry("First Game", 1)], "2026-01-01T00:00:00Z");
         var firstLength = new FileInfo(path).Length;
 
-        IndexWriter.Write(path, [Entry("Second Game", crc: 2), Entry("Third Game", crc: 3)], "2026-02-01T00:00:00Z");
+        IndexWriter.Write(path, [Entry("Second Game", 2), Entry("Third Game", 3)], "2026-02-01T00:00:00Z");
 
         Assert.IsTrue(firstLength > 0);
         Assert.IsFalse(File.Exists(path + ".tmp"));
@@ -664,7 +666,7 @@ public class IndexBuilderTests
             DataSource = path,
             Mode = SqliteOpenMode.ReadOnly,
             Cache = SqliteCacheMode.Shared,
-            Pooling = false,
+            Pooling = false
         }.ToString());
 
         connection.Open();
@@ -700,7 +702,9 @@ public class IndexBuilderTests
         string? serial = null,
         string? status = null,
         string source = "test",
-        ConsoleType console = ConsoleType.Nes) => new()
+        ConsoleType console = ConsoleType.Nes)
+    {
+        return new DatEntry
         {
             Console = console,
             Name = name,
@@ -708,8 +712,9 @@ public class IndexBuilderTests
             Sha1 = sha1,
             Serial = serial,
             Status = status,
-            SourceName = source,
+            SourceName = source
         };
+    }
 
     // fetching
     //
@@ -720,7 +725,7 @@ public class IndexBuilderTests
     private static readonly DatSource GameBoySource = new()
     {
         Name = "Nintendo - Game Boy",
-        Console = ConsoleType.GameBoy,
+        Console = ConsoleType.GameBoy
     };
 
     private const string FetchTemplate = "https://example.invalid/{name}.dat";
@@ -804,7 +809,7 @@ public class IndexBuilderTests
     public async Task DatFetcher_A404WithNothingCachedIsNull()
     {
         var handler = new ScriptedHandler(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
-        using var fetcher = new DatFetcher(cacheDirectory: null, handler, TimeSpan.Zero);
+        using var fetcher = new DatFetcher(null, handler, TimeSpan.Zero);
 
         Assert.IsNull(await fetcher.FetchAsync(GameBoySource, FetchTemplate),
             "an optional source that a mirror does not carry is a skip, not a failure");
