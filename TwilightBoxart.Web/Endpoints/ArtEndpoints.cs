@@ -100,10 +100,11 @@ public static class ArtEndpoints
         [FromServices] ArtPipeline pipeline,
         [FromServices] IRomIdentifier identifier,
         [FromServices] ActivityMonitor activity,
+        [FromServices] ILogger<IdentifyLog> logger,
         CancellationToken ct)
     {
         var query = context.Request.Query;
-        var identity = await ResolveIdentityAsync(query, identifier, ct);
+        var identity = await ResolveIdentityAsync(query, identifier, logger, Activity.ClientLabel(context), ct);
 
         // One lookup per request on this route. Counted here because the middleware only sees
         // the status code, which cannot tell "unidentified" from "identified but no art".
@@ -137,7 +138,7 @@ public static class ArtEndpoints
     /// version it shipped with.
     /// </summary>
     private static async Task<RomIdentity?> ResolveIdentityAsync(
-        IQueryCollection query, IRomIdentifier identifier, CancellationToken ct)
+        IQueryCollection query, IRomIdentifier identifier, ILogger logger, string client, CancellationToken ct)
     {
         var name = query["name"].ToString().Trim();
         if (name.Length > ApiLimits.MaxTextLength)
@@ -157,7 +158,23 @@ public static class ArtEndpoints
 
         var identity = await identifier.IdentifyAsync(
             new RomFingerprint { FileName = name, Header = header, Crc32 = crc32, Size = size }, ct);
-        return identity.IsMatched && ArtKey.IsValid(identity.Key) ? identity : null;
+        if (identity.IsMatched && ArtKey.IsValid(identity.Key))
+        {
+            logger.LogDebug("{FileName} identified via {Method} as {Console}/{Key} for {Client}",
+                name, identity.MatchMethod, identity.ConsoleType.Slug(), identity.Key, client);
+            return identity;
+        }
+
+        // At Information on purpose: this route is the constrained-client path, where a miss is
+        // otherwise invisible (the response is an empty 404 and the client just moves on). This is
+        // what lets a bad scan be diagnosed from the logs instead of a packet capture. One line per
+        // failed LOOKUP, not per file: the DS client asks by name first and retries with a CRC
+        // after a 404, so a file rescued on the retry still logs one miss and a terminal miss logs
+        // two. The batch route stays quiet; its callers see their misses in the response.
+        logger.LogInformation(
+            "No identity for {FileName} from {Client} (console {Console}, header {HeaderBytes}b, crc {Crc32})",
+            name, client, identity.ConsoleType, header?.Length ?? 0, crc32?.ToString("X8"));
+        return null;
     }
 
     private static uint? TryParseCrc32(string? value)

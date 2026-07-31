@@ -621,6 +621,23 @@ static void fetch_art(const char *path, const char *name)
    at MAX_DEPTH was ~4.5 KB of the small DS stack. */
 static char scan_path[512];
 
+/* Root directories that are never ROM storage. _nds and _pico hold this app's own output; the
+   rest is the DSi NAND layout that hiyaCFW and Unlaunch mirror onto the SD card - title/ alone
+   holds hundreds of content .app files that can never identify, re-missed on every scan - plus
+   the 3DS equivalent for cards that also boot TWiLightMenu++ on a 3DS. */
+static bool is_system_root_dir(const char *name)
+{
+    static const char *dirs[] = {
+        "_nds", "_pico", "hiya", "title", "ticket", "sys", "shared1", "shared2",
+        "import", "progress", "tmp", "private", "Nintendo 3DS",
+    };
+    for (unsigned i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++) {
+        if (strcasecmp(name, dirs[i]) == 0)
+            return true;
+    }
+    return false;
+}
+
 static void scan_directory(int depth)
 {
     if (depth > MAX_DEPTH || user_aborted())
@@ -644,9 +661,7 @@ static void scan_directory(int depth)
         strcpy(scan_path + base_len + 1, entry->d_name);
 
         if (entry->d_type == DT_DIR) {
-            /* Never descend into _nds or _pico: the boxart output lives there. */
-            if (!(depth == 0 && (strcasecmp(entry->d_name, "_nds") == 0 ||
-                                 strcasecmp(entry->d_name, "_pico") == 0)))
+            if (!(depth == 0 && is_system_root_dir(entry->d_name)))
                 scan_directory(depth + 1);
         } else if (is_rom_ext(file_ext(entry->d_name))) {
             counters.found++;

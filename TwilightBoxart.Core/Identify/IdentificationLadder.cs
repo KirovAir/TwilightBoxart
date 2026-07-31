@@ -35,6 +35,9 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
     /// <summary>Bytes of the digest kept for a name-derived key: 16 hex characters.</summary>
     private const int DigestBytes = 8;
 
+    /// <summary>A copier device's header: 512 bytes prepended to old loose SNES scene dumps.</summary>
+    private const int CopierHeaderLength = 512;
+
     /// <inheritdoc />
     public Task<RomIdentity> IdentifyAsync(RomFingerprint fingerprint, CancellationToken ct = default)
     {
@@ -116,11 +119,32 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
             // can identify it. We never decompressed the ROM, but CRC-32 is affine, so the headerless
             // CRC follows exactly from the whole-file CRC plus the header bytes we already hold
             // (Crc32Arithmetic): no re-read, no decompression.
-            if (TryStrippedCrc32(fingerprint, detection, crc32) is { } stripped &&
+            if (TryStrippedCrc32(fingerprint, detection.LeadingHeaderBytes, crc32) is { } stripped &&
                 stripped != 0 &&
                 index.TryByCrc32(stripped, out var byStrippedCrc))
             {
                 return Matched(MatchMethod.Crc32, detection, byStrippedCrc, fingerprint.Tag);
+            }
+
+            // The blind copier-header lookup, for the client that could not read past 512 bytes. A
+            // SNES header sits at 0x7FC0, far outside the DS client's 512-byte sample, so detection
+            // reports nothing for exactly the dumps most likely to carry a 512-byte copier header:
+            // loose .smc files from the old scene packs, whose whole-file CRC matches no DAT row.
+            // That sample happens to BE the entire copier header, so the headerless CRC still
+            // follows exactly. The strip itself proves nothing, though: an index this size answers
+            // an arbitrary 32-bit value roughly once per 88,000 lookups, and a spurious hit here
+            // would ship a wrong cover across consoles. So the rung demands the copier shape (a
+            // ROM that is some whole number of KiB plus exactly the header) and takes only a SNES
+            // row for an answer, since SNES copiers are where these headers come from.
+            if (detection.LeadingHeaderBytes <= 0 &&
+                fingerprint.Size is { } wrapped &&
+                wrapped % 1024 == CopierHeaderLength &&
+                TryStrippedCrc32(fingerprint, CopierHeaderLength, crc32) is { } copierless &&
+                copierless != 0 &&
+                index.TryByCrc32(copierless, out var byCopierCrc) &&
+                byCopierCrc.ConsoleType == ConsoleType.Snes)
+            {
+                return Matched(MatchMethod.Crc32, detection, byCopierCrc, fingerprint.Tag);
             }
         }
 
@@ -410,12 +434,11 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
     }
 
     /// <summary>
-    /// Recovers the headerless CRC32 when the header carries a container prefix the DAT may not have
+    /// Recovers the headerless CRC32 when the file carries a container prefix the DAT may not have
     /// hashed. Returns null when the inputs do not let us do it exactly.
     /// </summary>
-    private static uint? TryStrippedCrc32(RomFingerprint fingerprint, HeaderDetection detection, uint crc32)
+    private static uint? TryStrippedCrc32(RomFingerprint fingerprint, int prefixLength, uint crc32)
     {
-        var prefixLength = detection.LeadingHeaderBytes;
         if (prefixLength <= 0 ||
             fingerprint.Header is not { } header ||
             header.Length < prefixLength ||

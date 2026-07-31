@@ -219,6 +219,67 @@ public class IdentificationLadderTests
         Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
     }
 
+    // The copier-header lookup
+
+    /// <summary>
+    /// The DS client's case: a loose .smc with a 512-byte copier header, identified from a 512-byte
+    /// sample that cannot prove SNES (the real header sits at 0x7FC0). Detection reports nothing, so
+    /// the detection-driven strip never runs, and the whole-file CRC matches no DAT row; the blind
+    /// 512-byte strip is the only rung that can identify the file. Half a captured DSi scan's SNES
+    /// library hung on this.
+    /// </summary>
+    [TestMethod]
+    public void IdentificationLadder_CopierHeaderLookup_MatchesTheHeaderlessCrcWithoutDetection()
+    {
+        var rom = SnesCopierFile(32_768);
+        var wholeFileCrc = Crc32.HashToUInt32(rom);
+        var headerlessCrc = Crc32.HashToUInt32(rom.AsSpan(512));
+
+        Assert.AreNotEqual(wholeFileCrc, headerlessCrc, "The fixture must actually distinguish the two.");
+
+        using var file = NoIntroIndexFile.Create(
+            new IndexRow(ConsoleType.Snes, "Super Mario Kart (USA)", Crc32: headerlessCrc));
+        using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+
+        var identity = Identify(index, new RomFingerprint
+        {
+            FileName = "MKART.SMC",
+            Crc32 = wholeFileCrc,
+            Size = rom.Length,
+            Header = rom[..512]
+        });
+
+        Assert.AreEqual(MatchMethod.Crc32, identity.MatchMethod);
+        Assert.AreEqual("Super Mario Kart (USA)", identity.CanonicalName);
+        Assert.AreEqual(ConsoleType.Snes, identity.ConsoleType);
+    }
+
+    /// <summary>
+    /// The blind strip runs on evidence-free inputs, and an index this size answers an arbitrary
+    /// derived CRC roughly once per 88,000 lookups, so the rung must refuse any row that is not
+    /// SNES: a spurious hit would otherwise ship a wrong cover across consoles, silently.
+    /// </summary>
+    [TestMethod]
+    public void IdentificationLadder_CopierHeaderLookup_RefusesANonSnesRow()
+    {
+        var rom = SnesCopierFile(32_768);
+        var headerlessCrc = Crc32.HashToUInt32(rom.AsSpan(512));
+
+        using var file = NoIntroIndexFile.Create(
+            new IndexRow(ConsoleType.GameBoy, "Some Game Boy Game (World)", Crc32: headerlessCrc));
+        using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+
+        var identity = Identify(index, new RomFingerprint
+        {
+            FileName = "unmatchable-name.smc",
+            Crc32 = Crc32.HashToUInt32(rom),
+            Size = rom.Length,
+            Header = rom[..512]
+        });
+
+        Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
+    }
+
     // DS / DSi
 
     /// <summary>
@@ -529,6 +590,14 @@ public class IdentificationLadderTests
         ReadOnlySpan<byte> logo = [0x24, 0xFF, 0xAE, 0x51];
         logo.CopyTo(header.AsSpan(0xC0));
         return header;
+    }
+
+    /// <summary>A zeroed 512-byte copier header followed by deterministic pseudo-random ROM data.</summary>
+    private static byte[] SnesCopierFile(int bodyLength)
+    {
+        var rom = new byte[512 + bodyLength];
+        new Random(bodyLength).NextBytes(rom.AsSpan(512));
+        return rom;
     }
 
     /// <summary>A 16-byte iNES header followed by deterministic pseudo-random ROM data.</summary>
