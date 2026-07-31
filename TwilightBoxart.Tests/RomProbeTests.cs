@@ -441,6 +441,19 @@ public class RomProbeTests
     }
 
     [TestMethod]
+    public void ArchiveEntrySelector_JunkStemDoesNotOutrankTheGame()
+    {
+        // .md is Mega Drive by extension, but a README stored before the game is still not the ROM.
+        var pick = ArchiveEntrySelector.Select(
+        [
+            new ArchiveEntryCandidate(0, "README.md", 4096),
+            new ArchiveEntryCandidate(1, "game.gen", 512 * 1024)
+        ]);
+
+        Assert.AreEqual("game.gen", pick?.Name);
+    }
+
+    [TestMethod]
     public void ArchiveEntrySelector_SingleUnnamedBlob_IsAccepted()
     {
         var pick = ArchiveEntrySelector.Select([new ArchiveEntryCandidate(0, "00000000", 512 * 1024)]);

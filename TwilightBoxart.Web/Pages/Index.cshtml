@@ -261,6 +261,9 @@
     {
         rom = SupportedFiles.Rom.Order(StringComparer.Ordinal),
         archive = SupportedFiles.Archive.Order(StringComparer.Ordinal),
+        skipDirs = SupportedFiles.SkipDirectories.Order(StringComparer.Ordinal),
+        skipRootDirs = SupportedFiles.SkipRootDirectories.Order(StringComparer.Ordinal),
+        skipFiles = SupportedFiles.SkipFiles.Order(StringComparer.Ordinal),
         labels = SupportedFiles.ByConsole.ToDictionary(e => e.Console.ToString(), e => e.Console.Name())
     });
 }

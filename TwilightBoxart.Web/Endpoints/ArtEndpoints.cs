@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
+using TwilightBoxart.Core.Probe;
 using TwilightBoxart.Pipeline;
 using TwilightBoxart.Web.Extensions;
 using TwilightBoxart.Web.Models;
@@ -163,6 +164,14 @@ public static class ArtEndpoints
             logger.LogDebug("{FileName} identified via {Method} as {Console}/{Key} for {Client}",
                 name, identity.MatchMethod, identity.ConsoleType.Slug(), identity.Key, client);
             return identity;
+        }
+
+        // Documentation-stem junk goes to Debug instead: shipped clients send README.md forever,
+        // the ladder refuses those by name, and each one would otherwise bury a real miss.
+        if (name.Length > 0 && SupportedFiles.IsSkipFile(name))
+        {
+            logger.LogDebug("Refused junk {FileName} from {Client}", name, client);
+            return null;
         }
 
         // At Information on purpose: this route is the constrained-client path, where a miss is

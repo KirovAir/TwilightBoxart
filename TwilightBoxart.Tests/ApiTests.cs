@@ -539,6 +539,15 @@ public class ApiTests
         CollectionAssert.AreEquivalent(
             SupportedFiles.Archive.ToArray(), lines["archive"],
             "the archive line must match SupportedFiles.Archive exactly");
+        CollectionAssert.AreEquivalent(
+            SupportedFiles.SkipDirectories.ToArray(), lines["skipdirs"],
+            "the skipdirs line must match SupportedFiles.SkipDirectories exactly");
+        CollectionAssert.AreEquivalent(
+            SupportedFiles.SkipRootDirectories.ToArray(), lines["skiprootdirs"],
+            "the skiprootdirs line must match SupportedFiles.SkipRootDirectories exactly");
+        CollectionAssert.AreEquivalent(
+            SupportedFiles.SkipFiles.ToArray(), lines["skipfiles"],
+            "the skipfiles line must match SupportedFiles.SkipFiles exactly");
 
         Assert.IsTrue(lines["rom"].All(e => e.StartsWith('.')),
             "extensions carry their dot, so a client can compare against Path.GetExtension directly");

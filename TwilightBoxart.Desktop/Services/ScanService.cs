@@ -62,11 +62,11 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         progress.Report(new ScanUpdate(counters.Snapshot(),
             Status: "Scanning...", Log: $"Reading art from {backend.Describe}."));
 
-        // 1. Collect. What counts as a ROM comes from the backend so this build finding no covers for
-        // a console added after it shipped is a server-side fix, not a re-download. Never fails: see
-        // IArtBackend.GetScannableExtensionsAsync.
-        var scannable = await backend.GetScannableExtensionsAsync(ct);
-        var files = CollectFiles(request.RootFolder, boxartDir, scannable);
+        // 1. Collect. What counts as a ROM (and what never does) comes from the backend, so this
+        // build finding no covers for a console added after it shipped is a server-side fix, not a
+        // re-download. Never fails: see IArtBackend.GetScanRulesAsync.
+        var rules = await backend.GetScanRulesAsync(ct);
+        var files = CollectFiles(request.RootFolder, boxartDir, rules);
         counters.Found = files.Count;
         progress.Report(new ScanUpdate(counters.Snapshot(), $"Found {files.Count:N0} games and archives."));
         if (files.Count == 0)
@@ -230,13 +230,13 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
 
     /// <summary>
     /// Walks <paramref name="root"/> for files worth probing, skipping the output folder itself.
-    /// <paramref name="scannable"/> is normally the backend's answer; null uses this build's own
-    /// list, which is what the tests and any caller with no backend in hand want.
+    /// <paramref name="rules"/> is normally the backend's answer; null uses this build's own
+    /// lists, which is what the tests and any caller with no backend in hand want.
     /// </summary>
     internal static List<string> CollectFiles(
-        string root, string boxartDir, IReadOnlySet<string>? scannable = null)
+        string root, string boxartDir, ScanRules? rules = null)
     {
-        scannable ??= SupportedFiles.Scannable;
+        rules ??= ScanRules.BuiltIn;
 
         var options = new EnumerationOptions
         {
@@ -269,9 +269,30 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 continue;
             }
 
-            if (!scannable.Contains(Path.GetExtension(path)))
+            if (!rules.Scannable.Contains(Path.GetExtension(path)))
             {
                 continue;
+            }
+
+            // Documentation wearing a ROM extension: README.md is Markdown, not Mega Drive.
+            if (rules.SkipFiles.Contains(Path.GetFileNameWithoutExtension(name)))
+            {
+                continue;
+            }
+
+            // The name-based twin of the attribute skip in the options above: hiyaCFW marks its
+            // SDNAND folders hidden, but a copy that lost the attributes still has the names. The
+            // NAND layout names are generic ("sys", "import"), so they only count at the scan
+            // root; the rest is junk at any depth.
+            var relativeDir = Path.GetDirectoryName(Path.GetRelativePath(root, path));
+            if (relativeDir is { Length: > 0 })
+            {
+                var segments = relativeDir.Split(Path.DirectorySeparatorChar);
+                if (rules.SkipRootDirectories.Contains(segments[0])
+                    || segments.Any(rules.SkipDirectories.Contains))
+                {
+                    continue;
+                }
             }
 
             // Never scan our own output back in - unless the output folder is the card root itself,
@@ -281,6 +302,24 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                     || string.Equals(path, boxartRoot, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
+            }
+
+            // No console ships a ROM under 512 bytes; a 31-byte README does not need a probe.
+            // Loose files only, because an archive's size says nothing about the ROM inside it.
+            // A file that vanished between enumeration and here is simply not collected.
+            if (!SupportedFiles.IsArchive(path))
+            {
+                try
+                {
+                    if (new FileInfo(path).Length < SupportedFiles.MinimumRomBytes)
+                    {
+                        continue;
+                    }
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                {
+                    continue;
+                }
             }
 
             result.Add(path);

@@ -2,6 +2,7 @@
 #define NETWORKING_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 /* The HTTP transport for the backend, split out of main.c so the request/socket plumbing lives on its
    own (mirrors how Kekatsu-DS and other modern DS(i) net apps keep a networking module). TLS is handled
@@ -16,5 +17,11 @@ void net_configure(const char *host, int port, bool tls);
    Anything but 200 leaves no file behind. Bounded by a connect timeout and a per-recv/-send timeout, so
    a stalled server or a dropped link fails the request instead of hanging the scan. */
 int http_get_to_file(const char *path, const char *out_path);
+
+/* GET `path` into `buf`, NUL-terminated, for the small text answers like /v2/formats - same
+   transport, keep-alive, retry and timeouts as http_get_to_file, but the card is never touched.
+   A body that does not fit in `size` fails the request rather than being clipped, so a caller can
+   trust that what it parses is the whole answer. Returns the HTTP status, or -1 on failure. */
+int http_get_to_buffer(const char *path, char *buf, size_t size);
 
 #endif

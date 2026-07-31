@@ -25,15 +25,30 @@ public interface IArtBackend : IDisposable
     Task<byte[]?> GetArtAsync(RomIdentity identity, RenderOptions options, CancellationToken ct);
 
     /// <summary>
-    /// File extensions this scan should open. Asked once per run, so a desktop build that predates a
-    /// newly added console still finds its ROMs.
+    /// What this scan should open and what it should walk past. Asked once per run, so a desktop
+    /// build that predates a newly added console (or a newly learned junk name) still gets it right.
     /// </summary>
     /// <remarks>
-    /// Never throws and never returns empty: an implementation that cannot answer returns
-    /// <see cref="SupportedFiles.Scannable"/>, the set compiled into this build. Being one release
+    /// Never throws and never returns an empty list: an implementation that cannot answer returns
+    /// <see cref="ScanRules.BuiltIn"/>, the sets compiled into this build. Being one release
     /// behind is a missing cover; scanning nothing is a broken app.
     /// </remarks>
-    Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct);
+    Task<ScanRules> GetScanRulesAsync(CancellationToken ct);
+}
+
+/// <summary>
+/// The lists a scan is driven by. Each one falls back to this build's compiled-in set on its own,
+/// so a server that predates a list simply leaves that list at the built-in default.
+/// </summary>
+public sealed record ScanRules(
+    IReadOnlySet<string> Scannable,
+    IReadOnlySet<string> SkipDirectories,
+    IReadOnlySet<string> SkipRootDirectories,
+    IReadOnlySet<string> SkipFiles)
+{
+    public static readonly ScanRules BuiltIn = new(
+        SupportedFiles.Scannable, SupportedFiles.SkipDirectories,
+        SupportedFiles.SkipRootDirectories, SupportedFiles.SkipFiles);
 }
 
 /// <summary>Identifies against a local index and renders locally; no server required. Owns the index.</summary>
@@ -48,12 +63,12 @@ public sealed class LocalArtBackend(
     public string Describe => "the local index";
 
     /// <summary>
-    /// Local mode identifies with this build's own code, so this build's own list IS the truth here -
+    /// Local mode identifies with this build's own code, so this build's own lists ARE the truth here -
     /// there is no server whose opinion could be newer.
     /// </summary>
-    public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct)
+    public Task<ScanRules> GetScanRulesAsync(CancellationToken ct)
     {
-        return Task.FromResult(SupportedFiles.Scannable);
+        return Task.FromResult(ScanRules.BuiltIn);
     }
 
     public Task<IReadOnlyList<RomIdentity>> IdentifyAsync(
@@ -129,7 +144,7 @@ public sealed class RemoteArtBackend : IArtBackend
     public string Describe => $"the backend at {_baseUrl}";
 
     /// <summary>
-    /// Asks the server which extensions to scan, falling back to this build's list on any failure.
+    /// Asks the server what to scan and what to skip, falling back to this build's lists on any failure.
     /// </summary>
     /// <remarks>
     /// The response is <c>key=csv</c> lines rather than JSON, because the DS/DSi client shares this
@@ -137,43 +152,63 @@ public sealed class RemoteArtBackend : IArtBackend
     /// can add keys without breaking a client that predates them - which is the point of serving the
     /// list at all.
     /// </remarks>
-    public async Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct)
+    public async Task<ScanRules> GetScanRulesAsync(CancellationToken ct)
     {
         try
         {
             using var response = await _client.GetAsync($"{_baseUrl}/v2/formats", ct);
             if (!response.IsSuccessStatusCode)
             {
-                return SupportedFiles.Scannable;
+                return ScanRules.BuiltIn;
             }
 
             var body = await response.Content.ReadAsStringAsync(ct);
             var extensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var skipDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var skipRootDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var skipFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var line in body.Split('\n', StringSplitOptions.RemoveEmptyEntries))
             {
                 var separator = line.IndexOf('=');
-                if (separator < 0 || line.AsSpan(0, separator).Trim() is not ("rom" or "archive"))
+                if (separator < 0)
+                {
+                    continue;
+                }
+
+                var target = line.AsSpan(0, separator).Trim() switch
+                {
+                    "rom" or "archive" => extensions,
+                    "skipdirs" => skipDirs,
+                    "skiprootdirs" => skipRootDirs,
+                    "skipfiles" => skipFiles,
+                    _ => null
+                };
+                if (target is null)
                 {
                     continue;
                 }
 
                 foreach (var item in line[(separator + 1)..].Split(',', StringSplitOptions.RemoveEmptyEntries))
                 {
-                    var extension = item.Trim();
-                    if (extension.StartsWith('.'))
+                    var value = item.Trim();
+                    if (value.Length > 0 && (target != extensions || value.StartsWith('.')))
                     {
-                        extensions.Add(extension);
+                        target.Add(value);
                     }
                 }
             }
 
-            // A server that answered with nothing usable is treated as a server that did not answer.
-            return extensions.Count > 0 ? extensions : SupportedFiles.Scannable;
+            // Per list: a server that answered with nothing usable is one that did not answer.
+            return new ScanRules(
+                extensions.Count > 0 ? extensions : SupportedFiles.Scannable,
+                skipDirs.Count > 0 ? skipDirs : SupportedFiles.SkipDirectories,
+                skipRootDirs.Count > 0 ? skipRootDirs : SupportedFiles.SkipRootDirectories,
+                skipFiles.Count > 0 ? skipFiles : SupportedFiles.SkipFiles);
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            return SupportedFiles.Scannable;
+            return ScanRules.BuiltIn;
         }
     }
 

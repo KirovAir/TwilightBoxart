@@ -2,7 +2,9 @@
 // pays dearly for connection setup (a DNS lookup, a TCP handshake and a TLS handshake on a slow
 // radio), so one connection serves the whole scan and is rebuilt only when it breaks. TLS is
 // delegated to tls.c, which shares this socket. Split out of main.c so the socket plumbing - and
-// the timeouts that keep a flaky link from hanging the scan - live in one place.
+// the timeouts that keep a flaky link from hanging the scan - live in one place. A response body
+// lands wherever the caller pointed it - the card for covers, a buffer for the small text
+// answers - through this one transport; see body_sink.
 //
 // The reuse is a shortcut in front of the old one-connection-per-request code, not a replacement
 // for it: a request that finds no live connection behaves exactly as before, and a request whose
@@ -59,7 +61,7 @@
 #define IDLE_REUSE_LIMIT_SECS 30
 
 /* Distinct from any HTTP status: the request failed in a way that deserves one retry on a fresh
-   connection IF it was riding a reused one. Never escapes http_get_to_file. */
+   connection IF it was riding a reused one. Never escapes http_get(). */
 #define RC_RETRY (-2)
 
 /* This many kept connections dying in a row, with not one surviving to serve a second request, means
@@ -233,6 +235,88 @@ static long parse_chunk_size(const char *line)
     return (*p == '\0' || *p == ';' || *p == ' ' || *p == '\t') ? value : -1;
 }
 
+/* Where a 200 body lands. Covers stream to the card through a temp file that is swapped in whole
+   on success, so a dropped transfer can never leave half a PNG behind; small answers (the
+   /v2/formats lists) land in a caller's buffer and the card is never involved. The transport is
+   identical either way - this struct is the whole difference between the two request types. */
+struct body_sink {
+    const char *out_path; /* file mode when non-NULL: bytes go to <out_path>.tmp, renamed on finish */
+    FILE *file;
+    char *buf;            /* memory mode: filled up to cap - 1, NUL-terminated by http_get_to_buffer */
+    size_t cap;
+    size_t len;
+};
+
+/* The temp path of the file currently being written. File-scope rather than in the sink because
+   one request runs at a time, exactly like the request buffer. */
+static char s_tmp_path[520];
+
+/* Opens the sink once the response is worth keeping (a 200 - misses must not churn the card with
+   temp files). Memory mode has nothing to open. */
+static bool sink_open(struct body_sink *sink)
+{
+    if (sink->out_path == NULL)
+        return true;
+
+    snprintf(s_tmp_path, sizeof(s_tmp_path), "%s.tmp", sink->out_path);
+    sink->file = fopen(s_tmp_path, "wb");
+    if (!sink->file)
+        return false;
+
+    /* FAT pays real overhead per write call, so batch the 2 KB network chunks into card-sized
+       flushes. Static for the same reason the request buffer is. */
+    static char file_buffer[16384];
+    setvbuf(sink->file, file_buffer, _IOFBF, sizeof(file_buffer));
+    return true;
+}
+
+static bool sink_write(struct body_sink *sink, const char *data, size_t length)
+{
+    if (sink->file)
+        return fwrite(data, 1, length, sink->file) == length;
+
+    /* The terminating NUL's byte stays reserved. A body that fills the buffer cannot be told from
+       a truncated one, so it is refused rather than clipped - a caller parses all or nothing. */
+    if (length >= sink->cap - sink->len)
+        return false;
+    memcpy(sink->buf + sink->len, data, length);
+    sink->len += length;
+    return true;
+}
+
+/* fclose flushes, so a failure here is a truncated file, same as a short write. Renaming last
+   makes the whole file appear at once; FatFs rename does not replace, so clear the target first. */
+static bool sink_finish(struct body_sink *sink)
+{
+    if (sink->file == NULL)
+        return true;
+
+    FILE *file = sink->file;
+    sink->file = NULL;
+    if (fclose(file) != 0) {
+        remove(s_tmp_path);
+        return false;
+    }
+
+    remove(sink->out_path);
+    if (rename(s_tmp_path, sink->out_path) != 0) {
+        remove(s_tmp_path);
+        return false;
+    }
+    return true;
+}
+
+/* Failure path: nothing of the body may survive, whichever mode. Safe after sink_finish. */
+static void sink_abort(struct body_sink *sink)
+{
+    if (sink->file) {
+        fclose(sink->file);
+        sink->file = NULL;
+        remove(s_tmp_path);
+    }
+    sink->len = 0;
+}
+
 /* connect() with a ceiling: a blocking connect on a dead host would otherwise sit through the whole TCP
    SYN-retry sequence. Non-blocking connect + select is the portable way to bound it (dswifi's sockets
    are lwIP, which supports both). Returns 0 on success, -1 on failure/timeout; the socket is left
@@ -322,13 +406,14 @@ static bool net_connect(void)
     return true;
 }
 
-/* One GET over the already-open s_sock. Returns the HTTP status (definitive - the server answered),
-   -1 for a local failure a new connection cannot cure (SD card full, malformed request), or RC_RETRY
-   for a transport failure. Decides for itself whether the connection is still clean enough to keep:
-   only a provably complete HTTP/1.1 response (Content-Length present and fully consumed, no
-   "Connection: close") leaves it open. Anything else - unknown length, truncation, a mid-body error -
-   closes it, which is exactly the old per-request behaviour. */
-static int do_request(const char *path, const char *out_path)
+/* One GET over the already-open s_sock, its body into the caller's sink. Returns the HTTP status
+   (definitive - the server answered), -1 for a local failure a new connection cannot cure (SD card
+   full, buffer too small, malformed request), or RC_RETRY for a transport failure. Decides for
+   itself whether the connection is still clean enough to keep: only a provably complete HTTP/1.1
+   response (Content-Length present and fully consumed, no "Connection: close") leaves it open.
+   Anything else - unknown length, truncation, a mid-body error - closes it, which is exactly the
+   old per-request behaviour. */
+static int do_request(const char *path, struct body_sink *sink)
 {
     /* Sized for the longest query fetch_art can build (a url-encoded 512-byte header sample), plus the
        request line around it. Static: the DS stack is small. A truncated request would be sent as
@@ -409,24 +494,16 @@ static int do_request(const char *path, const char *out_path)
         return status;
     }
 
-    char tmp_path[520];
-    snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", out_path);
-    FILE *out = fopen(tmp_path, "wb");
-    if (!out) {
+    if (!sink_open(sink)) {
         /* The unread body would poison a kept connection, and an unwritable card is not the network's
            fault: drop the connection, report the local failure. */
         net_disconnect();
         return -1;
     }
 
-    /* FAT pays real overhead per write call, so batch the 2 KB network chunks into card-sized
-       flushes. Static for the same reason the request buffer is. */
-    static char file_buffer[16384];
-    setvbuf(out, file_buffer, _IOFBF, sizeof(file_buffer));
-
     bool ok = true;
     bool transport_failed = false;
-    bool card_failed = false;
+    bool sink_failed = false;
     struct body_source source = { body, body_written };
     body_written = 0;
 
@@ -456,9 +533,9 @@ static int do_request(const char *path, const char *out_path)
                     ok = false;
                     break;
                 }
-                if (fwrite(chunk, 1, (size_t)received, out) != (size_t)received) {
+                if (!sink_write(sink, chunk, (size_t)received)) {
                     ok = false;
-                    card_failed = true;
+                    sink_failed = true;
                     break;
                 }
                 body_written += received;
@@ -500,28 +577,34 @@ static int do_request(const char *path, const char *out_path)
             }
             if (received <= 0)
                 break;
-            if (fwrite(chunk, 1, (size_t)received, out) != (size_t)received) {
+            if (!sink_write(sink, chunk, (size_t)received)) {
                 ok = false;
-                card_failed = true;
+                sink_failed = true;
             }
             body_written += received;
         }
     }
 
-    /* A close before the declared end is a dropped connection, not a PNG - unless the card failed
-       first, because a retry cannot cure a full SD card and would only download the same bytes onto
-       it again. Local failures stay final, exactly as they always were. */
-    if (body_written <= 0 || (content_length >= 0 && body_written != content_length)) {
+    /* A close before the declared end is a dropped connection, not a PNG - unless the sink failed
+       first, because a retry cannot cure a full SD card or a too-small buffer and would only pull
+       the same bytes again. Local failures stay final, exactly as they always were. An empty body
+       is a failure too, with one exception: a buffer sink whose framing PROVES the body ended (a
+       declared zero length, or chunked reaching its terminal chunk) gets its empty answer - what
+       that means is the caller's judgement, where an empty cover is garbage on any reading and an
+       unframed zero-byte close is a drop either way. */
+    bool empty_is_complete = sink->out_path == NULL && (content_length == 0 || chunked);
+    if ((body_written <= 0 && !empty_is_complete) || (content_length >= 0 && body_written != content_length)) {
         ok = false;
-        transport_failed = !card_failed;
+        transport_failed = !sink_failed;
     }
 
-    /* fclose flushes; a failure here is a truncated file, same as a short write. */
-    if (fclose(out) != 0)
+    /* Runs before the keep decision on purpose: a finish that fails is card trouble, and dropping
+       the connection there is merely the old per-request cost, never an error. */
+    if (ok && !sink_finish(sink))
         ok = false;
 
     if (!ok) {
-        remove(tmp_path);
+        sink_abort(sink);
         if (transport_failed)
             return RC_RETRY;
         net_disconnect();
@@ -530,18 +613,12 @@ static int do_request(const char *path, const char *out_path)
 
     if (!keep)
         net_disconnect();
-
-    /* FatFs rename does not replace, so clear the target first. The new art is already complete on disk
-       at this point. */
-    remove(out_path);
-    if (rename(tmp_path, out_path) != 0) {
-        remove(tmp_path);
-        return -1;
-    }
     return 200;
 }
 
-int http_get_to_file(const char *path, const char *out_path)
+/* The shared engine every request type rides: connection reuse, the one retry a reused connection
+   has earned, and the stale-streak bookkeeping. Only the sink differs between callers. */
+static int http_get(const char *path, struct body_sink *sink)
 {
     /* Two attempts at most, and only ever two when the first rode a reused connection. A reused
        connection failing proves nothing - the router may have silently dropped it - so it earns one
@@ -555,7 +632,7 @@ int http_get_to_file(const char *path, const char *out_path)
         if (!reused && !net_connect())
             return -1;
 
-        int rc = do_request(path, out_path);
+        int rc = do_request(path, sink);
         if (rc != RC_RETRY) {
             if (rc >= 100) {
                 s_last_used = time(NULL);
@@ -573,4 +650,19 @@ int http_get_to_file(const char *path, const char *out_path)
         s_stale_streak++;
     }
     return -1; /* unreachable: the second pass never runs on a reused connection */
+}
+
+int http_get_to_file(const char *path, const char *out_path)
+{
+    struct body_sink sink = { .out_path = out_path };
+    return http_get(path, &sink);
+}
+
+int http_get_to_buffer(const char *path, char *buf, size_t size)
+{
+    struct body_sink sink = { .buf = buf, .cap = size };
+    int status = http_get(path, &sink);
+    if (status == 200)
+        buf[sink.len] = '\0';
+    return status;
 }

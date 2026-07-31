@@ -167,11 +167,21 @@ public sealed class IdentificationLadder(IMetadataIndex index, ILogger<Identific
         // FileName is contractually the ROM's own name; for an archive that is the inner entry name and
         // never the archive's. The 2020 client sent the archive name, which disabled name matching for
         // every archived ROM.
-        foreach (var console in SearchPartitions(detection, fingerprint.FileName))
+        //
+        // Documentation wearing a ROM extension (README.md is Markdown, not Mega Drive) is refused
+        // this rung: the exact rungs above still win for a real ROM someone renamed readme.md, but
+        // a name that is documentation in every library must never trigram-match a game. New
+        // clients skip these before fingerprinting; a shipped binary sends them forever, so the
+        // refusal has to live here too.
+        var junk = fingerprint.FileName is { Length: > 0 } fileName && SupportedFiles.IsSkipFile(fileName);
+        if (!junk)
         {
-            if (index.SearchByName(console, fingerprint.FileName) is { } byName)
+            foreach (var console in SearchPartitions(detection, fingerprint.FileName))
             {
-                return Matched(MatchMethod.Filename, detection, byName, fingerprint.Tag);
+                if (index.SearchByName(console, fingerprint.FileName) is { } byName)
+                {
+                    return Matched(MatchMethod.Filename, detection, byName, fingerprint.Tag);
+                }
             }
         }
 

@@ -164,6 +164,51 @@ public static class SupportedFiles
         Rom.Concat(Archive).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Directory names that never hold ROMs at any depth, matched case-insensitively: the launchers'
+    /// own data (including the covers this tool writes), hiyaCFW's folder, the 3DS SD layout, and OS
+    /// metadata folders. Only names specific enough that nobody keeps games under them belong here;
+    /// the generic NAND names live in <see cref="SkipRootDirectories"/>. Published as
+    /// <c>skipdirs=</c> at <c>GET /v2/formats</c>, so a name learned from the logs reaches shipped
+    /// clients without a release.
+    /// </summary>
+    public static readonly IReadOnlySet<string> SkipDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "_nds", "_pico", "hiya", "Nintendo 3DS",
+        "System Volume Information", "$RECYCLE.BIN", ".Trashes", ".Spotlight-V100", ".fseventsd",
+        ".TemporaryItems", "found.000"
+    };
+
+    /// <summary>
+    /// The rest of the DSi NAND layout hiyaCFW and Unlaunch mirror onto the SD card; title/ alone
+    /// floods a scan with content .app files that can never identify. Skipped at the scan root
+    /// ONLY, because the names are generic: a collection folder someone called "import" or "sys"
+    /// deeper down must still be scanned. Published as <c>skiprootdirs=</c>.
+    /// </summary>
+    public static readonly IReadOnlySet<string> SkipRootDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "title", "ticket", "sys", "shared1", "shared2", "import", "progress", "private"
+    };
+
+    /// <summary>
+    /// Documentation stems (a file name minus its last extension) that are never ROMs whatever that
+    /// extension says: .md is Markdown as well as Mega Drive, so every scene pack README.md scanned
+    /// as a ROM and missed twice, once by name and once on the CRC retry. Published as
+    /// <c>skipfiles=</c> beside <see cref="SkipDirectories"/>.
+    /// </summary>
+    public static readonly IReadOnlySet<string> SkipFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "readme", "license", "licence", "copying", "changelog", "authors", "contributing",
+        "notice", "notices", "third_party_notices", "pdf_source_release"
+    };
+
+    /// <summary>
+    /// No supported console ships a ROM smaller than this (the smallest real dumps are 2 KiB Atari
+    /// 2600 carts), so anything under it is a stray text or data file. Production logs showed
+    /// 31-byte READMEs being CRC-retried; clients drop such files before fingerprinting.
+    /// </summary>
+    public const int MinimumRomBytes = 512;
+
+    /// <summary>
     /// Every console a scan can produce a cover for, paired with the extensions a card carries for it.
     /// This is what a user is shown, so it is NOT just the inverse of <see cref="RomExtensions"/>:
     /// MSX2 has no extension of its own (see <see cref="ConsoleType.Msx2"/>) and arrives on .msx like
@@ -203,6 +248,12 @@ public static class SupportedFiles
     public static bool IsScannable(string path)
     {
         return Scannable.Contains(Path.GetExtension(path));
+    }
+
+    /// <summary>Documentation wearing a ROM extension; see <see cref="SkipFiles"/>.</summary>
+    public static bool IsSkipFile(string path)
+    {
+        return SkipFiles.Contains(Path.GetFileNameWithoutExtension(path));
     }
 
     /// <summary>

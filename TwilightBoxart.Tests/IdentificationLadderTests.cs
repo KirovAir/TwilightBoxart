@@ -280,6 +280,37 @@ public class IdentificationLadderTests
         Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
     }
 
+    /// <summary>
+    /// The junk gate blocks only the fuzzy name rung: exact evidence still wins for a real ROM
+    /// someone renamed readme.md, but README.md must never trigram-match a game.
+    /// </summary>
+    [TestMethod]
+    public void IdentificationLadder_JunkStem_ExactCrcStillIdentifies()
+    {
+        const uint crc = 0xDEADBEEF;
+        using var file = NoIntroIndexFile.Create(
+            new IndexRow(ConsoleType.MegaDrive, "Some Mega Drive Game (World)", Crc32: crc));
+        using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+
+        var identity = Identify(index, new RomFingerprint { FileName = "README.md", Crc32 = crc });
+
+        Assert.AreEqual(MatchMethod.Crc32, identity.MatchMethod);
+    }
+
+    [TestMethod]
+    public void IdentificationLadder_JunkStem_NeverMatchesByName()
+    {
+        // The row is close enough that the Castlevania fixture above proves it WOULD fuzzy-match;
+        // the stem gate is the only thing standing between README.md and this cover.
+        using var file = NoIntroIndexFile.Create(
+            new IndexRow(ConsoleType.MegaDrive, "Readme (World)"));
+        using var index = new SqliteMetadataIndex(file.Path, NullLogger.Instance);
+
+        var identity = Identify(index, new RomFingerprint { FileName = "README.md" });
+
+        Assert.AreEqual(MatchMethod.None, identity.MatchMethod);
+    }
+
     // DS / DSi
 
     /// <summary>

@@ -23,14 +23,19 @@ const ROM_EXTENSIONS = new Set(formats.rom);
 const ARCHIVE_EXTENSIONS = new Set(formats.archive);
 
 /**
- * Directories that never hold ROMs. `_nds` and `_pico` are skipped because they hold the
- * launchers' own data, including the cover folders this tool writes to, which we must not read
- * back in as input.
+ * Directories that never hold ROMs (the launchers' own data, the hiyaCFW SDNAND layout, OS junk)
+ * and documentation stems that are never ROMs whatever their extension (README.md is Markdown,
+ * not Mega Drive). Rendered from SupportedFiles like the extensions above, so a name learned from
+ * the server logs reaches this client on the next page load. The NAND names in skipRootDirs are
+ * generic ("sys", "import"), so they only apply at the top of the picked folder; the rest applies
+ * at any depth. The literal covers a stale page whose blob predates these keys.
  */
-const SKIP_DIRS = new Set([
+const SKIP_DIRS = new Set((formats.skipDirs ?? [
     '_nds', '_pico', 'system volume information', '$recycle.bin', '.trashes', '.spotlight-v100',
     '.fseventsd', '.temporaryitems', 'found.000',
-]);
+]).map(d => d.toLowerCase()));
+const SKIP_ROOT_DIRS = new Set((formats.skipRootDirs ?? []).map(d => d.toLowerCase()));
+const SKIP_FILES = new Set((formats.skipFiles ?? []).map(s => s.toLowerCase()));
 
 /**
  * Lowercase file extension including the dot.
@@ -49,6 +54,17 @@ function extname(name) {
 export const isRom = (name) => ROM_EXTENSIONS.has(extname(name));
 const isArchive = (name) => ARCHIVE_EXTENSIONS.has(extname(name));
 export const isScannable = (name) => isRom(name) || isArchive(name);
+
+/** Documentation wearing a ROM extension, matched on the name minus its last extension. */
+function isJunkFile(name) {
+    const base = name.slice(name.lastIndexOf('/') + 1);
+    const dot = base.lastIndexOf('.');
+    const stem = dot <= 0 ? base : base.slice(0, dot);
+    return SKIP_FILES.has(stem.toLowerCase());
+}
+
+/** No supported console ships a ROM this small; mirrors SupportedFiles.MinimumRomBytes in Core. */
+const MIN_ROM_BYTES = 512;
 
 /**
  * A Nintendo-LZ77-wrapped ROM: "Game.lz77.sfc". The inner extension is the real console - which is why
@@ -89,11 +105,12 @@ export async function* walkDirectory(dir, path = '', onError) {
         const child = path ? `${path}/${name}` : name;
 
         if (handle.kind === 'directory') {
-            if (SKIP_DIRS.has(name.toLowerCase())) continue;
+            const lower = name.toLowerCase();
+            if (SKIP_DIRS.has(lower) || (path === '' && SKIP_ROOT_DIRS.has(lower))) continue;
             yield* walkDirectory(handle, child, onError);
             continue;
         }
-        if (!isScannable(name)) continue;
+        if (!isScannable(name) || isJunkFile(name)) continue;
         yield {name, path: child, getFile: () => handle.getFile()};
     }
 }
@@ -105,8 +122,10 @@ export function* walkFileList(files) {
         // Drop the picked folder's own name so paths match the File System Access walk.
         const path = rel.slice(rel.indexOf('/') + 1);
         if (file.name.startsWith('._') || file.name === '.DS_Store') continue;
-        if (path.split('/').some(seg => SKIP_DIRS.has(seg.toLowerCase()))) continue;
-        if (!isScannable(file.name)) continue;
+        const segments = path.split('/');
+        if (segments.some(seg => SKIP_DIRS.has(seg.toLowerCase()))) continue;
+        if (segments.length > 1 && SKIP_ROOT_DIRS.has(segments[0].toLowerCase())) continue;
+        if (!isScannable(file.name) || isJunkFile(file.name)) continue;
         yield {name: file.name, path, getFile: async () => file};
     }
 }
@@ -173,7 +192,9 @@ export async function boxartDirectory(root, path) {
  * is the content blob, and its CRC32 is in the DAT, so it can still be identified.
  */
 function chooseEntry(entries) {
-    const files = entries.filter(e => !e.name.endsWith('/') && e.usize > 0);
+    // Junk stems are out before either pass: a scene zip stores README.md before the game, and
+    // .md reads as Mega Drive by extension alone.
+    const files = entries.filter(e => !e.name.endsWith('/') && e.usize > 0 && !isJunkFile(e.name));
     if (!files.length) return null;
     return files.find(e => isRom(e.name)) ?? files.reduce((a, b) => (b.usize > a.usize ? b : a));
 }
@@ -246,7 +267,14 @@ export async function probeFile(file, fileName, wantHeader = false) {
         };
     }
 
-    // Loose ROM. No container header to read, so the 512-byte ROM header is the cheap path, plus a
+    // Loose ROM, so the file IS the ROM and its size can veto it: the smallest real dump is a
+    // 2 KiB Atari 2600 cart, and no probe or server round trip turns a 31-byte README into a
+    // cover. The containers above are exempt because their size says nothing about the ROM inside.
+    if (file.size < MIN_ROM_BYTES) {
+        return {ok: false, container: 'loose', reason: 'too small to be a ROM'};
+    }
+
+    // No container header to read, so the 512-byte ROM header is the cheap path, plus a
     // full-read CRC32. Mirrors LooseRomProbe in Core: the size budget applies only where a header
     // title id makes the hash redundant, which is DS and DSi and nothing else. Everything else is
     // hashed whatever its size, or the biggest SNES and N64 romhacks arrive with nothing to match on.

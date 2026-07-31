@@ -26,6 +26,7 @@
 #include "music_bin.h"
 #include "tls.h"
 #include "credit_font.h"
+#include "formats.h"
 #include "lz77.h"
 #include "networking.h"
 
@@ -198,74 +199,6 @@ static bool file_crc32(const char *path, u32 *result, u32 *size, bool *cancelled
     return ok;
 }
 
-static const char *file_ext(const char *name)
-{
-    const char *dot = strrchr(name, '.');
-    return dot ? dot : "";
-}
-
-static bool is_ds_ext(const char *ext)
-{
-    static const char *exts[] = { ".nds", ".ds", ".dsi", ".srl", ".ids", ".app" };
-    for (unsigned i = 0; i < sizeof(exts) / sizeof(exts[0]); i++) {
-        if (strcasecmp(ext, exts[i]) == 0)
-            return true;
-    }
-    return false;
-}
-
-/* The extension list the backend hands out at /v2/formats, normalised to ",.nds,.gba," - lowercase,
-   with a comma on BOTH ends so a substring search cannot match half an extension (".gb" would
-   otherwise hit inside ".gbc"). Empty until fetch_rom_extensions() succeeds, and that is the whole
-   design: a backend that is unreachable, older than this binary, or answering 401 costs nothing,
-   because is_rom_ext just keeps using the built-in list. */
-static char g_server_exts[1024];
-
-/* Extensions worth scanning. Client-side knowledge deliberately ENDS here, at "is this a ROM":
-   which console a file belongs to, where its serial lives, what its title is - all of that is the
-   server's job, worked out from the file name and the header sample this client sends along.
-
-   The built-in list is a FALLBACK, not the truth. A card is flashed once and kept for years, so
-   every extension frozen into this binary is a fact that expires the day a console is added to the
-   backend - and it expires silently, as a game TWiLightMenu++ happily launches while this walks
-   straight past it. Asking the server first is what stops that; the list below is what keeps the
-   client working when nobody answers. It mirrors SupportedFiles in TwilightBoxart.Core. */
-static bool is_rom_ext(const char *ext)
-{
-    static const char *exts[] = {
-        ".nds", ".ds", ".dsi", ".srl", ".ids", ".app",
-        ".gba", ".agb", ".mb", ".gb", ".sgb", ".gbc",
-        ".nes", ".fds", ".sfc", ".smc", ".snes",
-        ".n64", ".z64", ".v64", ".gen", ".md", ".sms", ".gg",
-        ".min", ".sg", ".sc", ".pce", ".ws", ".wsc", ".ngp", ".ngc",
-        ".a26", ".a52", ".a78", ".col", ".int", ".msx",
-    };
-
-    if (*ext == '\0')
-        return false;
-
-    char needle[16];
-    size_t length = strlen(ext);
-
-    /* The server's answer wins when we have one and the extension can be framed in commas. An
-       extension too long for the buffer is not one the server sent, so the built-in list answers it. */
-    if (g_server_exts[0] != '\0' && length + 3 <= sizeof(needle)) {
-        size_t o = 0;
-        needle[o++] = ',';
-        for (size_t i = 0; i < length; i++)
-            needle[o++] = (char)tolower((unsigned char)ext[i]);
-        needle[o++] = ',';
-        needle[o] = '\0';
-        return strstr(g_server_exts, needle) != NULL;
-    }
-
-    for (unsigned i = 0; i < sizeof(exts) / sizeof(exts[0]); i++) {
-        if (strcasecmp(ext, exts[i]) == 0)
-            return true;
-    }
-    return false;
-}
-
 /* Percent-encodes into out. Conservative: everything but unreserved chars is escaped. */
 static void url_encode(const char *in, char *out, size_t out_size)
 {
@@ -297,53 +230,6 @@ static void base64_encode(const unsigned char *in, size_t len, char *out)
         out[o++] = i + 2 < len ? alphabet[v & 0x3F] : '=';
     }
     out[o] = '\0';
-}
-
-/* Asks the backend which extensions are worth scanning and fills g_server_exts. Best effort by
-   construction: every failure path leaves the buffer empty, which hands is_rom_ext back to its
-   built-in list. Nothing here reports an error, because there is no error to report - an older or
-   offline backend simply means this binary scans what it already knew about. */
-static void fetch_rom_extensions(void)
-{
-    const char *tmp = "/_nds/TwilightBoxart.fmt";
-    if (http_get_to_file("/v2/formats", tmp) != 200)
-        return;
-
-    FILE *file = fopen(tmp, "rb");
-    if (!file)
-        return;
-
-    char body[1024];
-    size_t read = fread(body, 1, sizeof(body) - 1, file);
-    fclose(file);
-    remove(tmp);
-    body[read] = '\0';
-
-    /* One key=csv pair per line. Only "rom=" matters here; any other line is skipped rather than
-       rejected, so the backend can add keys later without this binary having to understand them. */
-    for (const char *line = body; line && *line; ) {
-        if (strncmp(line, "rom=", 4) == 0) {
-            const char *value = line + 4;
-            size_t length = strcspn(value, "\r\n");
-
-            /* Leave the buffer empty rather than half-filled: a truncated list would silently skip
-               whatever fell off the end, which is the exact failure this endpoint exists to remove. */
-            if (length == 0 || length + 3 > sizeof(g_server_exts))
-                return;
-
-            size_t o = 0;
-            g_server_exts[o++] = ',';
-            for (size_t i = 0; i < length; i++)
-                g_server_exts[o++] = (char)tolower((unsigned char)value[i]);
-            g_server_exts[o++] = ',';
-            g_server_exts[o] = '\0';
-            return;
-        }
-
-        line = strchr(line, '\n');
-        if (line)
-            line++;
-    }
 }
 
 /* the scan */
@@ -621,23 +507,6 @@ static void fetch_art(const char *path, const char *name)
    at MAX_DEPTH was ~4.5 KB of the small DS stack. */
 static char scan_path[512];
 
-/* Root directories that are never ROM storage. _nds and _pico hold this app's own output; the
-   rest is the DSi NAND layout that hiyaCFW and Unlaunch mirror onto the SD card - title/ alone
-   holds hundreds of content .app files that can never identify, re-missed on every scan - plus
-   the 3DS equivalent for cards that also boot TWiLightMenu++ on a 3DS. */
-static bool is_system_root_dir(const char *name)
-{
-    static const char *dirs[] = {
-        "_nds", "_pico", "hiya", "title", "ticket", "sys", "shared1", "shared2",
-        "import", "progress", "tmp", "private", "Nintendo 3DS",
-    };
-    for (unsigned i = 0; i < sizeof(dirs) / sizeof(dirs[0]); i++) {
-        if (strcasecmp(name, dirs[i]) == 0)
-            return true;
-    }
-    return false;
-}
-
 static void scan_directory(int depth)
 {
     if (depth > MAX_DEPTH || user_aborted())
@@ -661,11 +530,16 @@ static void scan_directory(int depth)
         strcpy(scan_path + base_len + 1, entry->d_name);
 
         if (entry->d_type == DT_DIR) {
-            if (!(depth == 0 && is_system_root_dir(entry->d_name)))
+            if (!is_skip_dir(entry->d_name, depth))
                 scan_directory(depth + 1);
-        } else if (is_rom_ext(file_ext(entry->d_name))) {
-            counters.found++;
-            fetch_art(scan_path, entry->d_name);
+        } else if (is_rom_ext(file_ext(entry->d_name)) && !is_junk_file(entry->d_name)) {
+            /* Smaller than the header sample is smaller than any real ROM, so a 31-byte README
+               stub is not worth a request; a file stat cannot read still gets its try. */
+            struct stat st;
+            if (stat(scan_path, &st) != 0 || st.st_size >= HEADER_SAMPLE) {
+                counters.found++;
+                fetch_art(scan_path, entry->d_name);
+            }
         }
 
         scan_path[base_len] = '\0';
@@ -1675,8 +1549,8 @@ int main(void)
     }
     printf("\n");
 
-    /* Before walking the card, ask what counts as a ROM. Silent and optional - see is_rom_ext. */
-    fetch_rom_extensions();
+    /* Before walking the card, ask what counts as a ROM and what never does - see formats.c. */
+    fetch_formats();
 
     /* Stopping a scan is usually "wrong size" or "wrong border", not "I am done", so the end of a
        run goes back to the settings rather than straight out of the program. */

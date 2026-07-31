@@ -44,7 +44,7 @@ into a config file.
 | `GET`  | `/v2/index/nointro.db`         | The generated No-Intro index, for the desktop client's Local mode                          |
 | `GET`  | `/v2/art/{platform}/{key}.png` | Rendered box art. **The canonical cacheable URL**                                          |
 | `GET`  | `/v2/art.png`                  | Identify and deliver in one call, for a client that cannot batch. PNG bytes or empty 404   |
-| `GET`  | `/v2/formats`                  | File extensions worth scanning, so clients need not hard-code them                         |
+| `GET`  | `/v2/formats`                  | File extensions worth scanning and names never worth scanning, so clients need not hard-code them |
 | `GET`  | `/v2/health`                   | Whether this instance is up, and whether it has an index                                   |
 | `POST` | `/api`                         | The v0.7 protocol, served for real: classic form fields in, PNG bytes out                  |
 |        | `/v2/admin/*`                  | Owner-only, cookie-authed: login, stats, and the index-rebuild button behind `/admin.html` |
@@ -181,19 +181,25 @@ cover with no explanation. There is never a body on a non-200.
 
 ### `GET /v2/formats`
 
-Which file extensions are worth opening. Plain text, one `key=csv` line per role:
+Which file extensions are worth opening, and which names never are. Plain text, one `key=csv` line per role:
 
 ```
 rom=.a26,.a52,.a78,.agb,.app,.col,.ds,.dsi,.fds,.gb,.gba,.gbc,.gen,.gg,.ids,.int,.md,.mb,.min,.msx,.n64,.nds,.nes,.ngc,.ngp,.pce,.sc,.sfc,.sg,.sgb,.smc,.sms,.snes,.srl,.v64,.ws,.wsc,.z64
 archive=.7z,.zip
+skipdirs=$RECYCLE.BIN,.Spotlight-V100,.TemporaryItems,.Trashes,.fseventsd,Nintendo 3DS,System Volume Information,_nds,_pico,found.000,hiya
+skiprootdirs=import,private,progress,shared1,shared2,sys,ticket,title
+skipfiles=authors,changelog,contributing,copying,licence,license,notice,notices,pdf_source_release,readme,third_party_notices
 ```
 
-The two roles are not cosmetic. They are different code paths, and different clients support different subsets:
+The roles are not cosmetic. They are different code paths, and different clients support different subsets:
 
-| Key       | Meaning                                                                               | Who uses it                      |
-|-----------|---------------------------------------------------------------------------------------|----------------------------------|
-| `rom`     | The file **is** a game. Probed directly; its extension also hints at the console      | Everyone                         |
-| `archive` | The file **contains** a game. Opened and read from its own header, never decompressed | Clients that can read containers |
+| Key            | Meaning                                                                               | Who uses it                      |
+|----------------|---------------------------------------------------------------------------------------|----------------------------------|
+| `rom`          | The file **is** a game. Probed directly; its extension also hints at the console      | Everyone                         |
+| `archive`      | The file **contains** a game. Opened and read from its own header, never decompressed | Clients that can read containers |
+| `skipdirs`     | Directories that never hold ROMs, skipped at any depth                                | 2.4+ clients                     |
+| `skiprootdirs` | The hiyaCFW SDNAND layout: generic names (`sys`, `import`) skipped at the scan root only | 2.4+ clients                  |
+| `skipfiles`    | Documentation stems (name minus extension) that are never ROMs: `README.md` is Markdown, not Mega Drive | 2.4+ clients   |
 
 The DS/DSi homebrew has no archive support, so it reads `rom=` and ignores the rest; handing it one merged list would
 send it into `.zip` files it cannot open. The desktop client reads both.

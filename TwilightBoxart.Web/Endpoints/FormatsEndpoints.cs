@@ -5,8 +5,8 @@ using TwilightBoxart.Web.Extensions;
 namespace TwilightBoxart.Web.Endpoints;
 
 /// <summary>
-/// <c>GET /v2/formats</c> - which file extensions are worth scanning, so a client does not have to
-/// know.
+/// <c>GET /v2/formats</c> - which file extensions are worth scanning, and which directory and file
+/// names never are, so a client does not have to know.
 /// </summary>
 /// <remarks>
 /// This exists because the clients are the hardest thing in the system to update. The DS/DSi homebrew
@@ -32,7 +32,10 @@ public static class FormatsEndpoints
     /// </summary>
     private static readonly string Body =
         $"rom={string.Join(',', SupportedFiles.Rom.Order(StringComparer.Ordinal))}\n" +
-        $"archive={string.Join(',', SupportedFiles.Archive.Order(StringComparer.Ordinal))}\n";
+        $"archive={string.Join(',', SupportedFiles.Archive.Order(StringComparer.Ordinal))}\n" +
+        $"skipdirs={string.Join(',', SupportedFiles.SkipDirectories.Order(StringComparer.Ordinal))}\n" +
+        $"skiprootdirs={string.Join(',', SupportedFiles.SkipRootDirectories.Order(StringComparer.Ordinal))}\n" +
+        $"skipfiles={string.Join(',', SupportedFiles.SkipFiles.Order(StringComparer.Ordinal))}\n";
 
     public static void MapFormatsEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -41,7 +44,7 @@ public static class FormatsEndpoints
             .RequireCors(CorsExtensions.PublicGetPolicy)
             .RequireApiKey()
             .WithName("GetFormats")
-            .WithSummary("File extensions worth scanning, as key=csv lines.");
+            .WithSummary("File extensions worth scanning and names never worth scanning, as key=csv lines.");
     }
 
     /// <summary>

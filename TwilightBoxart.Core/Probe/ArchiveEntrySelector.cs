@@ -50,7 +50,9 @@ public static class ArchiveEntrySelector
     /// </summary>
     public static ArchiveEntryCandidate? Select(IReadOnlyList<ArchiveEntryCandidate> entries)
     {
-        // First pass: the first entry, in stored order, whose extension we recognise.
+        // First pass: the first entry, in stored order, whose extension we recognise. Junk stems
+        // are passed over: a scene zip stores README.md before the game, and .md reads as Mega
+        // Drive by extension alone.
         foreach (var entry in entries)
         {
             if (IsIgnorable(entry))
@@ -58,7 +60,8 @@ public static class ArchiveEntrySelector
                 continue;
             }
 
-            if (SupportedFiles.Rom.Contains(Path.GetExtension(LeafName(entry.Name))))
+            var leaf = LeafName(entry.Name);
+            if (SupportedFiles.Rom.Contains(Path.GetExtension(leaf)) && !SupportedFiles.IsSkipFile(leaf))
             {
                 return entry;
             }

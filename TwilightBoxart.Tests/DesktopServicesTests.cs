@@ -133,11 +133,13 @@ public class DesktopServicesTests
     [TestMethod]
     public void CollectFiles_KeepsASiblingOfTheBoxartDir()
     {
-        // Regression: a prefix match without the trailing separator also swallowed "boxart-old".
+        // Regression: a prefix match without the trailing separator also swallowed "covers-old".
+        // A custom output dir on purpose: the default lives under _nds, which the name-based
+        // directory skip removes before the output filter ever sees it.
         var root = MakeTempRoot();
-        var boxart = Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
+        var boxart = Path.Combine(root, "covers");
         WriteFile(boxart, "inside.nds");
-        WriteFile(Path.Combine(root, "_nds", "TWiLightMenu", "boxart-old"), "keep.nds");
+        WriteFile(Path.Combine(root, "covers-old"), "keep.nds");
 
         var names = CollectNames(root, boxart);
 
@@ -149,7 +151,7 @@ public class DesktopServicesTests
     public void CollectFiles_BoxartDirGivenWithATrailingSeparator_IsStillSkipped()
     {
         var root = MakeTempRoot();
-        var boxart = Path.Combine(root, "_nds", "TWiLightMenu", "boxart");
+        var boxart = Path.Combine(root, "covers");
         WriteFile(boxart, "inside.nds");
 
         var files = ScanService.CollectFiles(root, boxart + Path.DirectorySeparatorChar);
@@ -195,6 +197,23 @@ public class DesktopServicesTests
 
         Assert.AreEqual(1, files.Count);
         Assert.AreEqual("game.nds", Path.GetFileName(files[0]));
+    }
+
+    [TestMethod]
+    public void CollectFiles_SkipsSystemDirsJunkNamesAndTinyFiles()
+    {
+        var root = MakeTempRoot();
+        WriteFile(Path.Combine(root, "title", "00030004"), "00000000.app");
+        WriteFile(root, "README.md");
+        File.WriteAllBytes(Path.Combine(root, "tiny.gb"), [0x42]);
+        WriteFile(Path.Combine(root, "games"), "game.nds");
+        // The NAND names are root-only: a collection folder that happens to be called "title"
+        // deeper down must still be scanned.
+        WriteFile(Path.Combine(root, "games", "title"), "nested.gba");
+
+        var names = CollectNames(root, Path.Combine(root, "_nds", "TWiLightMenu", "boxart"));
+
+        CollectionAssert.AreEquivalent(new[] { "game.nds", "nested.gba" }, names);
     }
 
     // ── ScanService.RunAsync ─────────────────────────────────────────────────────────────────
@@ -247,9 +266,9 @@ public class DesktopServicesTests
             return Task.FromResult<byte[]?>([0x89, 0x50, 0x4E, 0x47]);
         }
 
-        public Task<IReadOnlySet<string>> GetScannableExtensionsAsync(CancellationToken ct)
+        public Task<ScanRules> GetScanRulesAsync(CancellationToken ct)
         {
-            return Task.FromResult<IReadOnlySet<string>>(SupportedFiles.Scannable);
+            return Task.FromResult(ScanRules.BuiltIn);
         }
 
         public void Dispose()
@@ -314,8 +333,9 @@ public class DesktopServicesTests
 
     private static void WriteFile(string directory, string name)
     {
+        // Big enough to clear the junk floor; CollectFiles drops files under 512 bytes on purpose.
         Directory.CreateDirectory(directory);
-        File.WriteAllBytes(Path.Combine(directory, name), [0x42]);
+        File.WriteAllBytes(Path.Combine(directory, name), new byte[512]);
     }
 
     // ── UpdateService.TryGetNewer ────────────────────────────────────────────────────────────
