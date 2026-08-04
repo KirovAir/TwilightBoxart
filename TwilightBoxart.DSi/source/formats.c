@@ -9,6 +9,7 @@
    nobody answers. They mirror SupportedFiles in TwilightBoxart.Core. */
 
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include <strings.h>
 
@@ -80,25 +81,25 @@ bool is_ds_ext(const char *ext)
     return false;
 }
 
+static const char *builtin_rom_exts[] = {
+    ".nds", ".ds", ".dsi", ".srl", ".ids", ".app",
+    ".gba", ".agb", ".mb", ".gb", ".sgb", ".gbc",
+    ".nes", ".fds", ".sfc", ".smc", ".snes",
+    ".n64", ".z64", ".v64", ".gen", ".md", ".sms", ".gg",
+    ".min", ".sg", ".sc", ".pce", ".ws", ".wsc", ".ngp", ".ngc",
+    ".a26", ".a52", ".a78", ".col", ".int", ".msx",
+};
+
 bool is_rom_ext(const char *ext)
 {
-    static const char *exts[] = {
-        ".nds", ".ds", ".dsi", ".srl", ".ids", ".app",
-        ".gba", ".agb", ".mb", ".gb", ".sgb", ".gbc",
-        ".nes", ".fds", ".sfc", ".smc", ".snes",
-        ".n64", ".z64", ".v64", ".gen", ".md", ".sms", ".gg",
-        ".min", ".sg", ".sc", ".pce", ".ws", ".wsc", ".ngp", ".ngc",
-        ".a26", ".a52", ".a78", ".col", ".int", ".msx",
-    };
-
     if (*ext == '\0')
         return false;
 
     if (g_server_exts[0] != '\0')
         return in_server_list(g_server_exts, ext);
 
-    for (unsigned i = 0; i < sizeof(exts) / sizeof(exts[0]); i++) {
-        if (strcasecmp(ext, exts[i]) == 0)
+    for (unsigned i = 0; i < sizeof(builtin_rom_exts) / sizeof(builtin_rom_exts[0]); i++) {
+        if (strcasecmp(ext, builtin_rom_exts[i]) == 0)
             return true;
     }
     return false;
@@ -204,4 +205,32 @@ void fetch_formats(void)
         if (line)
             line++;
     }
+}
+
+/* One stored list, framing commas shown as spaces so the console wraps between entries. */
+static void print_server_list(const char *label, const char *list)
+{
+    printf("%s: ", label);
+    if (list[0] == '\0') {
+        printf("(built-in)\n");
+        return;
+    }
+    for (const char *p = list + 1; *p; p++)
+        putchar(*p == ',' ? ' ' : *p);
+    printf("\n");
+}
+
+void print_formats(void)
+{
+    if (g_server_exts[0] != '\0') {
+        print_server_list("rom (server)", g_server_exts);
+    } else {
+        printf("rom (built-in):\n");
+        for (unsigned i = 0; i < sizeof(builtin_rom_exts) / sizeof(builtin_rom_exts[0]); i++)
+            printf("%s ", builtin_rom_exts[i]);
+        printf("\n");
+    }
+    print_server_list("skipdirs", g_server_skip_dirs);
+    print_server_list("skiprootdirs", g_server_skip_root_dirs);
+    print_server_list("skipfiles", g_server_skip_files);
 }

@@ -17,7 +17,7 @@ dual-licensed **Apache-2.0 OR GPL-2.0-or-later**. The full license text is prese
 [BlocksDS dswifi](https://codeberg.org/blocksds/dswifi), **MIT-licensed**. See
 [TwilightBoxart.DSi/dswifi-patched/COPYING](TwilightBoxart.DSi/dswifi-patched/COPYING).
 
-The binary is upstream tag `v1.22.1-blocks` plus one local patch
+The binary is upstream tag `v1.22.2-blocks` plus one local patch
 ([dhcp-broadcast-flag.patch](TwilightBoxart.DSi/dswifi-patched/dhcp-broadcast-flag.patch)).
 [dswifi-patched/README.md](TwilightBoxart.DSi/dswifi-patched/README.md) documents the exact
 rebuild recipe, so the blob is reproducible from source.

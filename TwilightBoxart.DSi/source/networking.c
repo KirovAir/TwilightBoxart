@@ -32,13 +32,12 @@
 #include "networking.h"
 #include "tls.h"
 
-/* dswifi-patched/lib/libdswifi9.a was built against BlocksDS 1.22.1, whose lwIP fcntl ABI uses
-   O_NONBLOCK == 1. BlocksDS 1.22.2 changed the public header to picolibc's 0x4000 without changing
-   this vendored archive: fcntl(F_SETFL) then rejects the flag, and every connection fails before
-   connect() is called. Fail the build instead of ever shipping that mismatched combination again.
-   When the archive is deliberately rebuilt for a newer SDK, update this guard with it. */
-#if O_NONBLOCK != 1
-#error "dswifi-patched ABI mismatch: build with the pinned BlocksDS 1.22.1 image or rebuild the archive"
+/* dswifi-patched/lib/libdswifi9.a was built against BlocksDS 1.22.2, whose fcntl ABI uses
+   O_NONBLOCK == 0x4000. Mixing the archive with headers from a different SDK once shipped a build
+   where fcntl(F_SETFL) rejected the flag and every connection failed before connect() was called.
+   Fail the build instead. When the archive is rebuilt for a newer SDK, update this guard with it. */
+#if O_NONBLOCK != 0x4000
+#error "dswifi-patched ABI mismatch: rebuild dswifi-patched/lib/libdswifi9.a against this SDK (see dswifi-patched/README.md)"
 #endif
 
 /* Sent on every /v2 request; the server answers 401 without it. Not a secret - it is compiled into this

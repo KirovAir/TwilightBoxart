@@ -1,5 +1,5 @@
-# BlocksDS ROM makefile. `make` with BlocksDS 1.22.1 installed, or use the pinned container:
-#   docker run --rm -v "$PWD:/work" -w /work skylyrac/blocksds@sha256:6d885f5e4245b31feca2db5ab51924556145d539b5184cafdc40cd306ba34587 make
+# BlocksDS ROM makefile. `make` with BlocksDS installed, or use the container:
+#   docker run --rm -v "$PWD:/work" -w /work skylyrac/blocksds:slim-latest make
 
 BLOCKSDS	?= /opt/blocksds/core
 BLOCKSDSEXT	?= /opt/blocksds/external
@@ -7,9 +7,9 @@ BLOCKSDSEXT	?= /opt/blocksds/external
 NAME		:= twilightboxart
 
 # The version lives in Directory.Build.props, which is what every .NET project here builds from.
-# Taking major.minor from it means a bump in one place reaches the ROM header, the on-screen label
+# Reading it from there means a bump in one place reaches the ROM header, the on-screen label
 # and the User-Agent together, instead of three copies drifting apart.
-APP_VERSION	:= $(shell sed -n 's:.*<Version>\([0-9]*\.[0-9]*\).*:\1:p' ../Directory.Build.props)
+APP_VERSION	:= $(shell sed -n 's:.*<Version>\([0-9.]*\)</Version>.*:\1:p' ../Directory.Build.props)
 ifeq ($(APP_VERSION),)
 $(error Could not read <Version> from ../Directory.Build.props)
 endif

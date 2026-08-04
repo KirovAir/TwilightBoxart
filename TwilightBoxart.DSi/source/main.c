@@ -1552,6 +1552,20 @@ int main(void)
     /* Before walking the card, ask what counts as a ROM and what never does - see formats.c. */
     fetch_formats();
 
+    /* Debug peek: holding R here shows what that answered before the scan runs on it. */
+    scanKeys();
+    if (keysHeld() & KEY_R) {
+        consoleClear();
+        print_formats();
+        printf("\nPress A to continue.\n");
+        while (1) {
+            cothread_yield_irq(IRQ_VBLANK);
+            scanKeys();
+            if (keysDown() & KEY_A)
+                break;
+        }
+    }
+
     /* Stopping a scan is usually "wrong size" or "wrong border", not "I am done", so the end of a
        run goes back to the settings rather than straight out of the program. */
     for (;;) {

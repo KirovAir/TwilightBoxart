@@ -28,4 +28,7 @@ bool is_junk_file(const char *name);
    compiled-in lists answer, so an older or offline backend costs nothing. */
 void fetch_formats(void);
 
+/* Prints the lists a scan would use right now and where each came from (server or built-in). */
+void print_formats(void);
+
 #endif

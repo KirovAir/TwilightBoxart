@@ -29,6 +29,11 @@ public static class FormatsEndpoints
     /// per line is two lines of C to consume (find the key, read to the newline, split on commas),
     /// and is just as trivial in C#. It also degrades well: a client that does not recognise a future
     /// key skips the line instead of failing to parse the document.
+    ///
+    /// <para>
+    /// <c>rom=</c> stays the FIRST line: the shipped 2.2/2.3 DS clients read only the first kilobyte
+    /// of this body, so the one line they depend on must never be pushed past it by new keys.
+    /// </para>
     /// </summary>
     private static readonly string Body =
         $"rom={string.Join(',', SupportedFiles.Rom.Order(StringComparer.Ordinal))}\n" +

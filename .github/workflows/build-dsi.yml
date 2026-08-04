@@ -18,9 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Keep this in lockstep with dswifi-patched/lib/libdswifi9.a. BlocksDS 1.22.2 changed
-    # O_NONBLOCK's value; mixing its headers with the 1.22.1 archive makes every connect fail.
-    container: skylyrac/blocksds@sha256:6d885f5e4245b31feca2db5ab51924556145d539b5184cafdc40cd306ba34587
+    container: skylyrac/blocksds:slim-latest
     steps:
       - uses: actions/checkout@v5
 
