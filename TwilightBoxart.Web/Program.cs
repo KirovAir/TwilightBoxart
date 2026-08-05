@@ -197,6 +197,7 @@ await builder.RunWithLoggingAsync(async b =>
     app.MapIdentifyEndpoints();
     app.MapIndexEndpoints();
     app.MapArtEndpoints();
+    app.MapRenderEndpoints();
     app.MapFormatsEndpoints();
     app.MapAdminEndpoints();
     app.MapHealthEndpoints();

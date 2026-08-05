@@ -14,6 +14,7 @@ using TwilightBoxart.Core.Identify;
 using TwilightBoxart.Core.Models;
 using TwilightBoxart.Core.Probe;
 using TwilightBoxart.Core.Index;
+using TwilightBoxart.Web.Models;
 using TwilightBoxart.Web.Services;
 using TwilightBoxart.Tests.Fixtures;
 
@@ -219,6 +220,74 @@ public class ApiTests
         var second = await _client.SendAsync(conditional);
 
         Assert.AreEqual(HttpStatusCode.NotModified, second.StatusCode);
+    }
+
+    #endregion
+
+    #region Render (own covers)
+
+    [TestMethod]
+    public async Task Render_ReturnsTheRenderedImageWithClampedOptionsAndNoCaching()
+    {
+        using var content = new ByteArrayContent(FakeArtSource.Png);
+        var response = await _client.PostAsync("/v2/render?w=999999&h=888888&b=Line&bt=99", content);
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual("image/png", response.Content.Headers.ContentType?.MediaType);
+
+        // Unlike /v2/art there is no shared URL here: this response is one user's image, and a
+        // cache holding it would serve one person's cover to the next.
+        Assert.AreEqual("no-store", response.Headers.CacheControl?.ToString());
+
+        // Uploads run through the same clamp as every other render parameter source.
+        var captured = _factory.Renderer.LastOptions;
+        Assert.IsNotNull(captured);
+        Assert.AreEqual(RenderOptions.MaxWidth, captured.Width);
+        Assert.AreEqual(RenderOptions.MaxHeight, captured.Height);
+    }
+
+    [TestMethod]
+    public async Task Render_HonoursThePicoTarget()
+    {
+        using var content = new ByteArrayContent(FakeArtSource.Png);
+        var response = await _client.PostAsync("/v2/render?t=pico", content);
+
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        Assert.AreEqual("image/bmp", response.Content.Headers.ContentType?.MediaType);
+        Assert.AreEqual(RenderTarget.Pico, _factory.Renderer.LastOptions?.Target);
+    }
+
+    [TestMethod]
+    public async Task Render_RefusesABodyThatIsNotAnImage()
+    {
+        using var content = new ByteArrayContent("this is not art"u8.ToArray());
+        var response = await _client.PostAsync("/v2/render", content);
+
+        Assert.AreEqual(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        Assert.AreEqual(0, (await response.Content.ReadAsByteArrayAsync()).Length,
+            "an image route answers with image bytes or nothing, never an error document");
+    }
+
+    [TestMethod]
+    public async Task Render_RejectsABodyOverTheUploadCap()
+    {
+        using var content = new ByteArrayContent(new byte[ApiLimits.MaxRenderBodyBytes + 1]);
+        var response = await _client.PostAsync("/v2/render", content);
+
+        Assert.AreEqual(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+    }
+
+    [TestMethod]
+    public async Task Render_RequiresTheApiKey()
+    {
+        using var factory = new TwilightWebFactory();
+        using var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Remove(ApiKey.HeaderName);
+
+        using var content = new ByteArrayContent(FakeArtSource.Png);
+        var response = await client.PostAsync("/v2/render", content);
+
+        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     #endregion

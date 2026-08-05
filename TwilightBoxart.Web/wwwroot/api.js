@@ -22,7 +22,7 @@ const API_KEY = 'tb2_9f4c1d7a3e8b5062';
  * bumped alongside <Version> in Directory.Build.props, which is where every other copy comes from.
  */
 const CLIENT_HEADER = 'X-Twilight-Client';
-const CLIENT = 'web/2.3';
+const CLIENT = 'web/2.3.1';
 
 /** Server-side limits: <=500 items and <=1 MB per identify call. */
 export const IDENTIFY_CHUNK = 200;
@@ -129,8 +129,13 @@ export async function identifyBatch(fingerprints, signal) {
 function artUrl(identity, o) {
     const path = identity?.artPath;
     if (!path) return null;
+    return path + renderQuery(o);
+}
+
+/** The render parameters as a query string, '?' included. Shared by the art and render routes. */
+function renderQuery(o) {
     // ar only travels when it is off, so the default keeps the exact URL Pico clients already mint.
-    if (o.target === 'pico') return `${path}?t=pico${o.keepAspectRatio ? '' : '&ar=0'}`;
+    if (o.target === 'pico') return `?t=pico${o.keepAspectRatio ? '' : '&ar=0'}`;
     const q = new URLSearchParams({
         w: String(o.width),
         h: String(o.height),
@@ -139,7 +144,7 @@ function artUrl(identity, o) {
         bt: String(o.borderThickness),
         bc: (o.borderColor >>> 0).toString(16).toUpperCase().padStart(8, '0'),
     });
-    return `${path}?${q}`;
+    return `?${q}`;
 }
 
 /**
@@ -153,5 +158,28 @@ export async function fetchArt(identity, options, signal) {
     const res = await fetchWithRetry(url, {signal});
     if (res.status === 404) return null;
     if (!res.ok) throw new HttpError(res.status, url);
+    return new Uint8Array(await res.arrayBuffer());
+}
+
+/**
+ * Render the user's own image into a cover, through the same server-side renderer every downloaded
+ * cover goes through, so an own cover is pixel-for-pixel a first-class one. The image goes up once
+ * and only the rendered bytes come back; the server stores nothing. Returns null when the server
+ * says the bytes are not a usable image, which the caller owes the user an explanation for.
+ */
+export async function renderCustom(blob, options, signal) {
+    let res;
+    try {
+        res = await fetchWithRetry(`${BASE}/render${renderQuery(options)}`, {
+            method: 'POST',
+            headers: {'Content-Type': blob.type || 'application/octet-stream'},
+            body: blob,
+            signal,
+        });
+    } catch (e) {
+        if (e.status === 415) return null;
+        throw e;
+    }
+    if (!res.ok) throw new HttpError(res.status, `${BASE}/render`);
     return new Uint8Array(await res.arrayBuffer());
 }

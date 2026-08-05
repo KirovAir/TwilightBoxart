@@ -91,6 +91,21 @@ public class BoxartRendererTests
     }
 
     [TestMethod]
+    public void BoxartRenderer_RefusesADecompressionBomb()
+    {
+        // A well-formed, CRC-valid PNG of under a hundred bytes whose header declares 81 megapixels.
+        // Decoding it would allocate four bytes per pixel; the renderer must refuse it on the
+        // declared dimensions alone, before the decoder gets to allocate anything.
+        var bomb = PngDeclaring(9_000, 9_000);
+
+        var refused = Assert.ThrowsExactly<InvalidImageContentException>(() =>
+            new BoxartRenderer().Render(bomb, new RenderOptions()));
+
+        StringAssert.Contains(refused.Message, "megapixel",
+            "the refusal must come from the decode budget, not from the truncated pixel data");
+    }
+
+    [TestMethod]
     public void BoxartRenderer_FitsTheBindingAxisExactly()
     {
         // The bound axis must land on the target, not a rounded-up pixel past it. The 2020 client scaled
@@ -352,6 +367,37 @@ public class BoxartRendererTests
         using var buffer = new MemoryStream();
         image.Save(buffer, new PngEncoder());
         return new ArtBlob(buffer.ToArray(), "test://synthetic", "image/png");
+    }
+
+    /// <summary>
+    /// A CRC-valid PNG that declares the given dimensions and carries no pixel data at all - the
+    /// shape of a decompression bomb, minus the part that costs memory.
+    /// </summary>
+    private static ArtBlob PngDeclaring(int width, int height)
+    {
+        var ihdr = new byte[17];
+        "IHDR"u8.CopyTo(ihdr);
+        BinaryPrimitives.WriteInt32BigEndian(ihdr.AsSpan(4), width);
+        BinaryPrimitives.WriteInt32BigEndian(ihdr.AsSpan(8), height);
+        ihdr[12] = 8; // bit depth
+        ihdr[13] = 6; // colour type: RGBA
+
+        using var buffer = new MemoryStream();
+        buffer.Write(PngSignature);
+        WriteChunk(buffer, ihdr);
+        WriteChunk(buffer, "IEND"u8.ToArray());
+        return new ArtBlob(buffer.ToArray(), "test://bomb", "image/png");
+    }
+
+    /// <summary>One PNG chunk: big-endian data length, type + data, CRC over type + data.</summary>
+    private static void WriteChunk(MemoryStream buffer, byte[] typeAndData)
+    {
+        Span<byte> word = stackalloc byte[4];
+        BinaryPrimitives.WriteInt32BigEndian(word, typeAndData.Length - 4);
+        buffer.Write(word);
+        buffer.Write(typeAndData);
+        BinaryPrimitives.WriteUInt32BigEndian(word, System.IO.Hashing.Crc32.HashToUInt32(typeAndData));
+        buffer.Write(word);
     }
 
     private static Image<Rgba32> Decode(byte[] png)

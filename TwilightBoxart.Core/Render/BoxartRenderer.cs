@@ -22,6 +22,14 @@ public sealed class BoxartRenderer : IBoxartRenderer
     private static readonly DecoderOptions Decoder = new() { SkipMetadata = true, MaxFrames = 1 };
 
     /// <summary>
+    /// Most pixels a source image may decode to. A decompression-bomb guard, not a quality knob: a
+    /// few-hundred-byte PNG can declare 50,000x50,000 and the decoder would allocate 4 bytes per
+    /// pixel for it. 40 MP clears every real cover scan and phone photo that fits under the upload
+    /// cap, while capping a hostile blob's decode at ~160 MB of the server's memory.
+    /// </summary>
+    public const long MaxDecodePixels = 40_000_000;
+
+    /// <summary>
     /// Quantization ladder for the size fallback, worst-case last. PNG palettes may only be 1, 2, 4 or
     /// 8 bits per pixel, but trimming the palette below 256 still shrinks the deflate stream, so the
     /// first few rungs keep 8-bit indices and just reduce colour count.
@@ -47,6 +55,16 @@ public sealed class BoxartRenderer : IBoxartRenderer
     public byte[] Render(ArtBlob source, RenderOptions options)
     {
         var settings = options.Normalized();
+
+        // Identify parses only the container header, so the declared dimensions are vetted before
+        // the real decode allocates width * height * 4 bytes for them. Guarded here rather than at
+        // the endpoints so every caller is covered, including a desktop client rendering locally.
+        var info = Image.Identify(Decoder, source.Data);
+        if ((long)info.Width * info.Height > MaxDecodePixels)
+        {
+            throw new InvalidImageContentException(
+                $"{info.Width}x{info.Height} is over the {MaxDecodePixels / 1_000_000} megapixel decode budget");
+        }
 
         // The blob's declared Content-Type is ignored on purpose: ImageSharp sniffs the container,
         // which is more reliable than an upstream header.

@@ -29,6 +29,12 @@ public static class ApiLimits
     /// validates against it too; re-exported so the two cannot drift.
     /// </summary>
     public const int MaxTextLength = PipelineLimits.MaxTextLength;
+
+    /// <summary>
+    /// Maximum <c>POST /v2/render</c> body: the same ceiling as an upstream cover download, so a
+    /// user's own image may never cost more to buffer than GameTDB's biggest would.
+    /// </summary>
+    public const long MaxRenderBodyBytes = Core.Art.ArtSourceLimits.MaxDownloadBytes;
 }
 
 /// <summary>Unauthenticated liveness/observability payload. Deliberately carries no paths and no keys.</summary>

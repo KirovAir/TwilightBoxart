@@ -27,6 +27,13 @@ public static class RateLimitingExtensions
     /// <summary>Constrained clients that fetch one image per request rather than batching.</summary>
     public const string ResolvePolicy = "resolve";
 
+    /// <summary>
+    /// Custom-art renders. Tighter than the art routes because every request decodes a user image
+    /// instead of hitting a cache, yet roomy enough for a rescan that re-renders a whole library
+    /// of own covers after a settings change.
+    /// </summary>
+    public const string RenderPolicy = "render";
+
     /// <summary>Tight, because every request is a password guess.</summary>
     public const string LoginPolicy = "login";
 
@@ -53,6 +60,7 @@ public static class RateLimitingExtensions
             Add(options, IdentifyPolicy, 60);
             Add(options, ArtPolicy, 1800);
             Add(options, ResolvePolicy, 1200);
+            Add(options, RenderPolicy, 120);
             Add(options, LoginPolicy, 10);
         });
     }

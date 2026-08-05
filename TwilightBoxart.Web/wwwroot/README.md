@@ -20,6 +20,7 @@ browser keeps serving from four-hour-old cache.
 | `scan.js`                 | Which files are ROMs, walking the card, writing PNGs             |
 | `romprobe.js`             | ZIP and 7z parsing                                               |
 | `api.js`                  | The only file that knows the backend's wire format               |
+| `custom.js`               | The "add your own cover" dialog: game picker, preview, confirm   |
 | `store.js`                | IndexedDB: the folder handle and the content-keyed caches        |
 | `zipwriter.js`            | Store-only ZIP writer for the read-only fallback                 |
 | `sw.js`                   | Registration only, so the install prompt appears. Caches nothing |

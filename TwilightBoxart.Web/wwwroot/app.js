@@ -4,6 +4,7 @@
 import * as api from './api.js';
 import * as scan from './scan.js';
 import * as store from './store.js';
+import * as custom from './custom.js';
 import {crc32File} from './romprobe.js';
 import {buildZip, downloadBlob} from './zipwriter.js';
 
@@ -223,21 +224,37 @@ function setStatus(message, kind = '') {
 
 function renderMisses() {
     const missed = state.items.filter(i => i.status === 'missed' || i.status === 'error');
-    $('misses').hidden = missed.length === 0;
+    // Games whose gap the user filled themselves stay listed: a row that vanishes on success
+    // reads as an error, and the ✓ is what tells them it worked.
+    const listed = state.items.filter(i => i.status === 'missed' || i.status === 'error' || i.customResolved);
+    $('misses').hidden = listed.length === 0;
+    $('miss-title').textContent = missed.length ? 'No art for these' : 'All covered';
     $('miss-count').textContent = missed.length ? `(${missed.length})` : '';
     const body = $('miss-body');
     body.replaceChildren();
-    for (const item of missed.slice(0, 200)) {
+    for (const item of listed.slice(0, 200)) {
         const tr = document.createElement('tr');
         const name = document.createElement('td');
         name.textContent = item.probe?.innerName ?? item.fileName;
         name.title = item.path;
         const why = document.createElement('td');
-        why.textContent = item.reason ?? 'no reason recorded';
-        tr.append(name, why);
+        const action = document.createElement('td');
+        action.className = 'miss-action';
+        if (item.customResolved) {
+            tr.className = 'covered';
+            why.textContent = state.mode === 'write' ? 'covered by your own image ✓' : 'your own cover is in the zip ✓';
+            action.appendChild(coverButton(item, 'Change'));
+        } else {
+            why.textContent = item.reason ?? 'no reason recorded';
+            // No content key means the file could not even be read, so there is nothing to pin a
+            // cover to; the reason column already says what to do about those.
+            if (item.contentKey) action.appendChild(coverButton(item, '＋ Add cover'));
+        }
+        tr.append(name, why, action);
+        if (item.contentKey) makeDropTarget(tr, item);
         body.appendChild(tr);
     }
-    $('miss-note').textContent = missed.length > 200 ? `Showing the first 200 of ${missed.length}.` : '';
+    $('miss-note').textContent = listed.length > 200 ? `Showing the first 200 of ${listed.length}.` : '';
     $('retry').hidden = missed.length === 0 || state.running;
 
     // Retrying always re-asks the server, which is quick. It ALSO reads any oversized loose file
@@ -252,6 +269,123 @@ function renderMisses() {
         ? `Re-asks the server, and reads ${plural(deep.length, 'file')} in full to checksum ${
             deep.length === 1 ? 'it' : 'them'}. Files this big were skipped on the first pass.`
         : 'Re-asks the server about every miss, ignoring what was remembered from earlier scans.';
+}
+
+/* your own covers */
+
+function coverButton(item, label) {
+    const button = document.createElement('button');
+    button.className = 'small';
+    button.textContent = label;
+    button.onclick = () => {
+        if (!state.running) custom.openForItem(item);
+    };
+    return button;
+}
+
+/** Mid-drag the browser only reveals THAT files are coming, never what they are. */
+const hasFiles = (e) => !!e.dataTransfer && Array.from(e.dataTransfer.types ?? []).includes('Files');
+
+function makeDropTarget(el, item) {
+    el.addEventListener('dragover', (e) => {
+        if (!hasFiles(e) || state.running) return;
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.add('drop-hot');
+    });
+    el.addEventListener('dragleave', () => el.classList.remove('drop-hot'));
+    el.addEventListener('drop', (e) => {
+        el.classList.remove('drop-hot');
+        const file = e.dataTransfer?.files?.[0];
+        if (!file || state.running) return;
+        e.preventDefault();
+        e.stopPropagation();
+        dragDepth = 0;
+        $('drop-overlay').hidden = true;
+        custom.openForItem(item, file);
+    });
+}
+
+/**
+ * Anywhere on the page is a drop target once a scan has run: people with a folder of scans open
+ * will simply try it, and it must work without them having found any button first. The overlay is
+ * pointer-transparent, so a drop aimed at a specific miss row still lands on the row.
+ */
+let dragDepth = 0;
+
+function wireDropZone() {
+    const usable = (e) => hasFiles(e) && state.items.length && !state.running && !$('custom-modal').open;
+    window.addEventListener('dragenter', (e) => {
+        if (!usable(e)) return;
+        dragDepth++;
+        $('drop-overlay').hidden = false;
+    });
+    // dragleave fires on every child boundary too; only leaving the last one ends the drag.
+    window.addEventListener('dragleave', () => {
+        if (--dragDepth > 0) return;
+        dragDepth = 0;
+        $('drop-overlay').hidden = true;
+    });
+    window.addEventListener('dragover', (e) => {
+        if (usable(e)) e.preventDefault();
+    });
+    window.addEventListener('drop', (e) => {
+        dragDepth = 0;
+        $('drop-overlay').hidden = true;
+        if (!usable(e)) return;
+        e.preventDefault();
+        const file = e.dataTransfer?.files?.[0];
+        if (file) custom.openWithFile(file);
+    });
+}
+
+/**
+ * A cover the user confirmed in the modal: put it where the run's covers went, remember the
+ * ORIGINAL image so later scans and settings changes re-render it like any downloaded cover,
+ * and settle the books.
+ */
+async function useCustomArt(item, file, rendered, options, fit) {
+    const path = boxartPath(options.target);
+    item.outName = outputName(item, options.target === 'pico' ? '.bmp' : '.png');
+
+    if (state.mode === 'write') {
+        const boxart = await scan.boxartDirectory(state.root, path);
+        await scan.writeArt(boxart, item.outName, rendered);
+    } else {
+        // Replace the entry the run already queued for this game, or the zip carries both.
+        const full = `${path}/${item.outName}`;
+        const existing = state.zipEntries.findIndex(([name]) => name === full);
+        if (existing >= 0) state.zipEntries[existing] = [full, rendered];
+        else state.zipEntries.push([full, rendered]);
+        $('zip-wrap').hidden = false;
+        $('zipbtn').textContent = `Download ${state.zipEntries.length.toLocaleString()} images as a .zip`;
+    }
+
+    await store.saveCustomArt(item.contentKey, {blob: file, name: file.name ?? '', fit})
+        .catch(e => log(`Could not remember the cover for later scans: ${e.message}`, 'warn'));
+
+    // Only a real card write earns an "already written" record. A zip session writes no card, and
+    // if this browser ever gains write mode, a stale record would skip the one write that would
+    // actually put the cover there.
+    if (state.mode === 'write') {
+        const key = renderKey(options);
+        const writeKey = path === defaultPath(options.target) ? key : `${key}@${path}`;
+        await store.saveWritten([[store.writtenKey(item.contentKey, writeKey), {name: item.outName}]])
+            .catch(() => { /* worst case the next scan re-checks the card */
+            });
+    }
+
+    if (item.countedMissed) {
+        uncountMiss(item);
+        counters.written++;
+    }
+    item.status = 'written';
+    item.reason = null;
+    item.customResolved = true;
+    log(`${item.outName}: your own cover is ${state.mode === 'write' ? 'on the card' : 'in the zip'}.`, 'good');
+    renderMisses();
+    refreshCacheNote();
+    paint();
 }
 
 /* picking the card */
@@ -423,7 +557,9 @@ async function reprobeAll(items, signal) {
  */
 async function identifyAll(items, signal) {
     const pending = items.filter(i => i.probe);
-    const cached = await store.loadIdentities([...new Set(pending.map(i => i.contentKey))]);
+    // A cache that cannot be read is a slower scan, never a failed one.
+    const cached = await store.loadIdentities([...new Set(pending.map(i => i.contentKey))])
+        .catch(() => new Map());
 
     const needed = [];
     for (const item of pending) {
@@ -570,15 +706,32 @@ function outputName(item, extension) {
 }
 
 async function deliverArt(items, settings, signal) {
-    const key = renderKey(settings);
     const extension = settings.target === 'pico' ? '.bmp' : '.png';
-    const matched = items.filter(i => i.status === 'identified');
+
+    // The user's own covers ride along: they outrank a downloaded cover for the same game, and
+    // they rescue misses, so games the index does not know are eligible too as long as their
+    // content could be keyed.
+    const eligible = items.filter(i => i.status === 'identified'
+        || ((i.status === 'missed' || i.status === 'error') && i.contentKey));
+    if (!eligible.length) return;
+    const customArt = await store.loadCustomArt([...new Set(eligible.map(i => i.contentKey))])
+        .catch(() => new Map());
+    const matched = eligible.filter(i => i.status === 'identified' || customArt.has(i.contentKey));
     if (!matched.length) return;
+
+    // An own cover keeps the fit it was previewed and saved with; the run's settings decide the rest.
+    const optionsFor = (item) => {
+        const fit = customArt.get(item.contentKey)?.fit;
+        return fit ? {...settings, keepAspectRatio: fit === 'ar'} : settings;
+    };
 
     // A custom destination salts the "already written" records so the default folder's history
     // cannot skip writes into a folder that never received them.
     const path = boxartPath(settings.target);
-    const writeKey = path === defaultPath(settings.target) ? key : `${key}@${path}`;
+    const writeKeyFor = (item) => {
+        const key = renderKey(optionsFor(item));
+        return path === defaultPath(settings.target) ? key : `${key}@${path}`;
+    };
 
     let boxart = null;
     if (state.mode === 'write') {
@@ -587,14 +740,18 @@ async function deliverArt(items, settings, signal) {
     }
 
     const writtenCache = boxart
-        ? await store.loadWritten(matched.map(i => store.writtenKey(i.contentKey, writeKey)))
+        ? await store.loadWritten(matched.map(i => store.writtenKey(i.contentKey, writeKeyFor(i))))
+            .catch(() => new Map())
         : new Map();
     const seen = new Set();
     const freshlyWritten = [];
 
     await pool(matched, ART_CONCURRENCY, async (item) => {
         item.outName = outputName(item, extension);
+        const own = customArt.get(item.contentKey);
         const skip = () => {
+            // A miss resolved by the user's own cover already on the card is not a miss anymore.
+            uncountMiss(item);
             item.status = 'skipped';
             counters.skipped++;
             paint();
@@ -610,7 +767,7 @@ async function deliverArt(items, settings, signal) {
         // The "already downloaded" record only means anything when there was a card to write to.
         // In read-only mode skipping would quietly hand the user an empty .zip.
         if (boxart && !settings.overwrite) {
-            if (writtenCache.has(store.writtenKey(item.contentKey, writeKey))) {
+            if (writtenCache.has(store.writtenKey(item.contentKey, writeKeyFor(item)))) {
                 skip();
                 return;
             }
@@ -620,10 +777,14 @@ async function deliverArt(items, settings, signal) {
             }
         }
 
-        const art = await api.fetchArt(item.identity, settings, signal);
+        const art = own
+            ? await api.renderCustom(own.blob, optionsFor(item), signal)
+            : await api.fetchArt(item.identity, settings, signal);
         if (!art) {
             item.status = 'missed';
-            item.reason = `recognised as ${item.identity.canonicalName ?? item.identity.key} (${api.platformLabel(item.identity)}), but no cover exists for it yet`;
+            item.reason = own
+                ? 'your own cover for this could not be converted again'
+                : `recognised as ${item.identity.canonicalName ?? item.identity.key} (${api.platformLabel(item.identity)}), but no cover exists for it yet`;
             countMiss(item);
             paint();
             return;
@@ -639,9 +800,10 @@ async function deliverArt(items, settings, signal) {
         if (boxart) await scan.writeArt(boxart, item.outName, art);
         else state.zipEntries.push([`${path}/${item.outName}`, art]);
 
+        uncountMiss(item);
         item.status = 'written';
         counters.written++;
-        freshlyWritten.push([store.writtenKey(item.contentKey, writeKey), {name: item.outName}]);
+        freshlyWritten.push([store.writtenKey(item.contentKey, writeKeyFor(item)), {name: item.outName}]);
         paint();
     }, signal);
 
@@ -661,6 +823,7 @@ async function run({retryOnly = false, deep = false} = {}) {
     $('start').disabled = true;
     $('cancel').hidden = false;
     $('retry').hidden = true;
+    $('custom-wrap').hidden = true;
     const started = performance.now();
 
     try {
@@ -712,6 +875,8 @@ async function run({retryOnly = false, deep = false} = {}) {
         state.running = false;
         $('start').disabled = false;
         $('cancel').hidden = true;
+        // The quiet, always-there way in: one footnote, visible from the first completed run on.
+        $('custom-wrap').hidden = !state.items.length;
         renderMisses();
         refreshCacheNote();
         paint();
@@ -729,9 +894,11 @@ function formatBytes(n) {
 
 async function refreshCacheNote() {
     try {
-        const {identities, written} = await store.cacheStats();
-        $('cache-note').textContent = identities || written
-            ? `Remembering ${plural(identities, 'game')} from earlier scans.`
+        const {identities, written, custom: own} = await store.cacheStats();
+        $('cache-note').textContent = identities || written || own
+            ? `Remembering ${plural(identities, 'game')}${own
+                ? ` and ${plural(own, 'cover of your own', 'covers of your own')}`
+                : ''} from earlier scans.`
             : '';
     } catch { /* private browsing can refuse IndexedDB; the app still works */
     }
@@ -764,6 +931,18 @@ function wireUp() {
             saveSettings();
         });
     }
+
+    custom.init({
+        items: () => state.items,
+        settings: readSettings,
+        onUse: useCustomArt,
+        log,
+        formatBytes,
+    });
+    $('custom-open').onclick = () => {
+        if (!state.running) custom.openPicker();
+    };
+    wireDropZone();
 
     $('pick').onclick = pickRoot;
     $('start').onclick = () => run();

@@ -556,6 +556,182 @@ td:last-child {
     color: var(--muted);
 }
 
+/* your own covers */
+
+/* The misses table grew an action column, so "why" is the middle cell there, not the last. */
+#misses td:nth-child(2) {
+    color: var(--muted);
+}
+
+#misses td.miss-action {
+    color: inherit;
+    text-align: right;
+    white-space: nowrap;
+}
+
+#misses td.miss-action button {
+    white-space: nowrap;
+}
+
+#misses tr.covered td:nth-child(2) {
+    color: var(--green-deep);
+}
+
+#misses tr.drop-hot td {
+    background: rgba(117, 102, 221, 0.12);
+}
+
+.custom-note {
+    margin-top: 14px;
+}
+
+/* A button that reads as a link: the quiet way into the modal, never a call to action. */
+button.linklike {
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    font: inherit;
+    color: var(--accent-deep);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#custom-modal {
+    width: min(560px, calc(100vw - 40px));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    color: var(--text);
+    padding: 20px 24px;
+    box-shadow: 0 18px 50px rgba(37, 51, 82, 0.25);
+}
+
+#custom-modal::backdrop {
+    background: rgba(43, 39, 83, 0.35);
+}
+
+#custom-search {
+    width: 100%;
+    padding: 8px 11px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    font: inherit;
+}
+
+#custom-games {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    max-height: 300px;
+    overflow: auto;
+    display: grid;
+    gap: 2px;
+}
+
+#custom-games button {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 7px 11px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: none;
+    box-shadow: none;
+    font-family: inherit;
+    font-weight: 400;
+    font-size: 14px;
+    text-align: left;
+}
+
+#custom-games button:hover {
+    background: var(--panel-2);
+    border-color: var(--line);
+}
+
+#custom-games button span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#custom-games button em {
+    flex: none;
+    font-style: normal;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.custom-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+}
+
+.custom-compare figure {
+    margin: 0;
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+}
+
+.custom-compare figcaption {
+    font-size: 12px;
+}
+
+#custom-src {
+    max-width: 180px;
+    max-height: 180px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+}
+
+/* Shown at twice its real pixels (custom.js sets the width), pixelated so the preview is honest
+   about what the console will actually display. */
+#custom-out {
+    image-rendering: pixelated;
+    border-radius: 4px;
+    border: 1px solid var(--line);
+}
+
+.custom-arrow {
+    color: var(--muted);
+    font-size: 20px;
+}
+
+/* Mid-drag hint. pointer-events: none is load-bearing: the drop must land on what is under it. */
+#drop-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    margin: 8px;
+    pointer-events: none;
+    border: 3px dashed var(--accent);
+    border-radius: 12px;
+    background: rgba(117, 102, 221, 0.08);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#drop-overlay span {
+    margin-top: 60px;
+    padding: 10px 22px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--display);
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(43, 39, 83, 0.35);
+}
+
 /* log: the console's screen, the one dark thing on the page */
 
 .log {

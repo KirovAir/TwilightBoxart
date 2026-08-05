@@ -208,21 +208,29 @@
             <button id="zipbtn" class="primary">Download images as a .zip</button>
             <span class="muted">Unzip it onto your card; the folders inside already match.</span>
         </p>
+
+        <p id="custom-wrap" class="muted custom-note" hidden>
+            Prefer different art for a game?
+            <button id="custom-open" class="linklike">Add your own cover…</button>
+        </p>
     </section>
 
     <section class="panel" id="misses" hidden>
-        <h2>No art for these <span id="miss-count" class="muted"></span></h2>
+        <h2><span id="miss-title">No art for these</span> <span id="miss-count" class="muted"></span></h2>
         <div class="table-wrap">
             <table>
                 <thead>
                 <tr>
                     <th>Game</th>
                     <th>Why</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody id="miss-body"></tbody>
             </table>
         </div>
+        <p class="muted">💡 Have the box art? Drop an image on a game, or press Add cover. A photo
+            or a screenshot works fine; it gets sized for your launcher.</p>
         <p id="miss-note" class="muted"></p>
     </section>
 
@@ -235,6 +243,53 @@
         </p>
     </section>
 </main>
+
+<!-- The "add your own cover" dialog. One flow for every way in: pick the game when it is not known
+     yet, then preview the server's render next to the original and confirm. custom.js drives it. -->
+<dialog id="custom-modal" aria-labelledby="custom-title">
+    <h2 id="custom-title">Add your own cover</h2>
+
+    <div id="custom-pick">
+        <p class="muted">Which game is it for?</p>
+        <input type="search" id="custom-search" placeholder="Type part of the game's name…" autocomplete="off">
+        <ul id="custom-games"></ul>
+        <p id="custom-more" class="muted"></p>
+    </div>
+
+    <div id="custom-preview" hidden>
+        <div class="custom-compare">
+            <figure>
+                <img id="custom-src" alt="The image you picked">
+                <figcaption class="muted">Your image</figcaption>
+            </figure>
+            <span class="custom-arrow" aria-hidden="true">→</span>
+            <figure>
+                <img id="custom-out" alt="The rendered cover">
+                <figcaption class="muted">On your console · <span id="custom-meta"></span></figcaption>
+            </figure>
+        </div>
+        <div class="row">
+            <label class="check"><input type="radio" name="customfit" id="custom-fit" checked> Keep its shape</label>
+            <label class="check"><input type="radio" name="customfit" id="custom-fill"> Fill the box</label>
+        </div>
+        <p class="muted">Uses your box art settings from step 2. The image is sent once to be
+            converted and never stored.</p>
+        <p id="custom-replaces" class="status warn" hidden>This replaces the cover this game already has.</p>
+        <p id="custom-error" class="status bad" hidden></p>
+        <div class="row">
+            <label class="filebtn">Choose another image
+                <input type="file" id="custom-file" accept="image/*" hidden>
+            </label>
+            <span class="grow"></span>
+            <button id="custom-use" class="primary" disabled>Use this cover</button>
+        </div>
+    </div>
+</dialog>
+
+<!-- Shown mid-drag only. pointer-events: none, so the drop still lands on whatever is under it. -->
+<div id="drop-overlay" hidden aria-hidden="true">
+    <span>Drop the image to add a cover</span>
+</div>
 
 <footer>
     <p>
@@ -264,7 +319,8 @@
         skipDirs = SupportedFiles.SkipDirectories.Order(StringComparer.Ordinal),
         skipRootDirs = SupportedFiles.SkipRootDirectories.Order(StringComparer.Ordinal),
         skipFiles = SupportedFiles.SkipFiles.Order(StringComparer.Ordinal),
-        labels = SupportedFiles.ByConsole.ToDictionary(e => e.Console.ToString(), e => e.Console.Name())
+        labels = SupportedFiles.ByConsole.ToDictionary(e => e.Console.ToString(), e => e.Console.Name()),
+        upload = TwilightBoxart.Web.Models.ApiLimits.MaxRenderBodyBytes
     });
 }
 <script type="application/json" id="formats">@Html.Raw(formats)</script>
@@ -274,7 +330,7 @@
     // the tag it is written on, so the tag below stamps app.js and nothing it imports. An import map
     // points those specifiers at the same stamped URLs, using the same file hashes. A browser
     // without import map support simply loads the plain names, exactly as it does today.
-    var modules = new[] { "api.js", "scan.js", "store.js", "romprobe.js", "zipwriter.js" };
+    var modules = new[] { "api.js", "scan.js", "store.js", "romprobe.js", "zipwriter.js", "custom.js" };
     var imports = string.Join(",\n", modules.Select(m =>
         $"            \"./{m}\": \"{Versions.AddFileVersionToPath(Request.PathBase, "/" + m)}\""));
 }
