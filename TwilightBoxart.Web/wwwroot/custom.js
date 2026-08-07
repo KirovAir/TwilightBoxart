@@ -14,6 +14,12 @@ const UPLOAD_MAX = JSON.parse(document.getElementById('formats').textContent).up
 /** Most games shown in the picker at once; typing narrows it, and a scroll of 25 is already noise. */
 const PICKER_LIMIT = 25;
 
+/**
+ * Pico Launcher only ever displays the left 106 of its BMP's 128 columns
+ * (RenderOptions.PicoVisibleWidth); the rest is padding the preview should hide too.
+ */
+const PICO_VISIBLE_WIDTH = 106;
+
 let ctx = null;
 let current = null;
 /** Stamps each preview render; a stale response must never overwrite a newer one. */
@@ -207,9 +213,15 @@ async function renderPreview() {
     out.onload = () => {
         // Twice the real pixels: 128x115 is a postage stamp on a desktop screen, and the launcher
         // scales up anyway. Pixelated, so the preview shows the pixels the DS will actually get.
+        // For Pico the wrapper clips to the visible window, like the launcher does, and the meta
+        // line reports what is shown rather than the file's padded width.
+        const visible = settings.target === 'pico'
+            ? Math.min(PICO_VISIBLE_WIDTH, out.naturalWidth)
+            : out.naturalWidth;
         out.style.width = `${out.naturalWidth * 2}px`;
+        $('custom-crop').style.width = `${visible * 2}px`;
         $('custom-meta').textContent =
-            `${out.naturalWidth} × ${out.naturalHeight} · ${ctx.formatBytes(bytes.length)} · fits ✓`;
+            `${visible} × ${out.naturalHeight} · ${ctx.formatBytes(bytes.length)} · fits ✓`;
         $('custom-use').disabled = false;
     };
     out.src = outUrl;

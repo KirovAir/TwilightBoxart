@@ -598,7 +598,7 @@ button.linklike {
 }
 
 #custom-modal {
-    width: min(560px, calc(100vw - 40px));
+    width: min(680px, calc(100vw - 40px));
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--panel);
@@ -693,12 +693,18 @@ button.linklike {
     border: 1px solid var(--line);
 }
 
-/* Shown at twice its real pixels (custom.js sets the width), pixelated so the preview is honest
-   about what the console will actually display. */
-#custom-out {
-    image-rendering: pixelated;
+/* Shown at twice its real pixels (custom.js sets the widths), pixelated so the preview is honest
+   about what the console will actually display. The wrapper clips the Pico BMP's padding columns,
+   which the launcher never shows either. */
+#custom-crop {
+    overflow: hidden;
     border-radius: 4px;
     border: 1px solid var(--line);
+}
+
+#custom-out {
+    display: block;
+    image-rendering: pixelated;
 }
 
 .custom-arrow {
