@@ -20,7 +20,7 @@ Automatically downloads box art / covers for your favorite launcher. DS, DSi and
 else a Nintendo DS can play that is supported: Gameboy, SNES, NES, Mega Drive, PC Engine, WonderSwan, Neo Geo
 Pocket, the Atari consoles [and more](#supported-systems). Runs in your browser, as a desktop app,
 or as homebrew on the DS itself. 😊
-Missing a cover? Easily create your own custom covers! (Web only)
+Missing a cover? Easily [create your own custom covers](#custom-covers)! (Web only)
 
 ## 👾 DS / DSi version
 
@@ -43,11 +43,17 @@ shape, size, border, overwrite and scan mode are all in the options menu.
 [twilightboxart.com](https://twilightboxart.com/) scans the card and writes the covers straight onto
 it, no upload and no install.
 
-Missing a cover after the scan? Add your own: drop any image on a game (a scan, a photo of the box,
-a screenshot) and it comes back exactly as needed for your launcher. :)
-
 <p align="center">
   <img src="docs/webapp.png" width="620" alt="The TwilightBoxart web app">
+</p>
+
+<a id="custom-covers"></a>
+Nothing found for a game? Add your own: drop any image on it (a scan, a photo of the box, a
+screenshot) and it comes back exactly as needed for your launcher. It is sent once to be converted
+and never stored. :)
+
+<p align="center">
+  <img src="docs/customcover.png" width="520" alt="Adding a custom cover in the web app">
 </p>
 
 ## 💻 Desktop version
