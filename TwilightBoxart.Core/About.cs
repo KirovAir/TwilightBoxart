@@ -14,8 +14,9 @@ public static class About
     public const string LatestReleaseApiUrl = "https://api.github.com/repos/KirovAir/TwilightBoxart/releases/latest";
 
     /// <summary>
-    /// major.minor, read from the assembly so it follows <c>Version</c> in Directory.Build.props.
-    /// Hardcoding it here meant a release could ship telling upstreams the wrong number.
+    /// The release number as we write it: major.minor, plus the patch when there is one. Read from the
+    /// assembly so it follows <c>Version</c> in Directory.Build.props; hardcoding it here meant a release
+    /// could ship telling upstreams the wrong number.
     /// </summary>
     public static string Version { get; } = ReadVersion();
 
@@ -40,6 +41,14 @@ public static class About
     private static string ReadVersion()
     {
         var version = typeof(About).Assembly.GetName().Version;
-        return version is null ? "0.0" : $"{version.Major}.{version.Minor}";
+        if (version is null)
+        {
+            return "0.0";
+        }
+
+        // A x.y.0 build is called "2.3", not "2.3.0", so only a real patch shows up.
+        return version.Build > 0
+            ? $"{version.Major}.{version.Minor}.{version.Build}"
+            : $"{version.Major}.{version.Minor}";
     }
 }
