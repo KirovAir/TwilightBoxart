@@ -9,7 +9,7 @@ namespace TwilightBoxart.Web.Endpoints;
 /// Short names because these travel in a URL that a DS client stores in a config file and that a
 /// browser caches per variant: <c>w</c>, <c>h</c>, <c>ar</c> (keep aspect ratio), <c>b</c> (border
 /// style), <c>bt</c> (border thickness), <c>bc</c> (border colour), <c>t</c> (render target;
-/// absent means TWiLightMenu, <c>pico</c> selects the Pico Launcher BMP).
+/// absent means TWiLightMenu, <c>pico</c> selects the shared fixed BMP format).
 ///
 /// Everything unparseable falls back to the default rather than 400ing. A box art request with a
 /// typo'd border colour should still return box art. What is NOT tolerant is the range: the result

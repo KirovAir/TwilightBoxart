@@ -1,8 +1,10 @@
 # TwilightBoxart for DS and DSi
 
 Homebrew that fills your launcher's boxart folder from the console itself:
-`_nds/TWiLightMenu/boxart/` with PNGs for TWiLightMenu++, or `_pico/covers/user/` with the
-fixed-format 8-bit BMPs Pico Launcher (DS Pico) reads. Runs on a DSi in DSi mode (WPA2 WiFi)
+`_nds/TWiLightMenu/boxart/` with PNGs for TWiLightMenu++, `_pico/covers/user/` with the
+fixed-format 8-bit BMPs Pico Launcher (DS Pico) reads, or `_nds/covers_name/` with BMP covers
+for AKMenu-Next. The AKMenu-Next covers are keyed by ROM filename without its extension and work
+for NDS (`.nds`/`.ndz`) and GBA games. Runs on a DSi in DSi mode (WPA2 WiFi)
 and on an original DS or DS Lite flashcart in DS mode (open or WEP WiFi). It is the thinnest client
 of them all: for each ROM it sends the file name and the file's first 512 bytes, and writes the PNG
 it gets back over HTTPS by default or plain HTTP (`backend_tls` in the ini; the compiled-in
@@ -18,11 +20,16 @@ Copy `twilightboxart.nds` anywhere on your card, launch it from TWiLightMenu++, 
 it connects, scans the whole card (skipping `_nds`), fetches what is missing and reports found,
 written, already there and no art. Hold B to stop a scan. Art already on the card is left alone.
 
-At launch a small options screen picks the launcher (TWLMenu++ or DS Pico), the cover size,
-border style, thicker border and overwrite, all with the D-pad; A starts. Choices persist in the
-same settings file as the WiFi network. With DS Pico selected the size and border rows go dark:
-Pico's cover format is fixed, so there is nothing there to choose, and the client just asks the
-backend for the ready-made BMP. The touch screen is only used for typing on the keyboard.
+At launch a small options screen picks the launcher (shown as "TWLMenu++", "Pico" and "AK-Next"
+to fit the screen), the cover size, border style, thicker border and overwrite, all with the
+D-pad; A starts. Choices persist in the same settings file as the WiFi network. With either BMP
+launcher selected the size and border rows go dark and D-pad navigation skips them: its cover
+format is fixed, so the client asks the backend for the ready-made BMP. Size shows "Fixed" and the
+border rows show "N/A", without changing the saved TWiLightMenu++ settings. Thicker border also
+shows "N/A" when no border is selected. Shape, overwrite and scan mode remain available.
+With AKMenu-Next, games that aren't DS or GBA are left out, because it only shows covers for
+those. The first counter line then reads "120 scanned, 40 not DS/GBA".
+The touch screen is only used for typing on the keyboard.
 
 That settings file (`/_nds/TwilightBoxart.ini`, written on first run) also carries the backend:
 `backend_host`, `backend_port` and `backend_tls` default to the hosted service at

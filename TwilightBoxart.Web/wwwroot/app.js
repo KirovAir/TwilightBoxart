@@ -20,18 +20,26 @@ const TWILIGHT_MAX_PNG_BYTES = 0xB000;
 const BOXART_PATH = '_nds/TWiLightMenu/boxart';
 /** Pico's filename-keyed folder: it works for every system and outranks the game-code folders. */
 const PICO_PATH = '_pico/covers/user';
+/** AKMenu-Next looks up BMP covers for NDS and GBA ROMs by filename without the extension. */
+const AKMENU_PATH = '_nds/covers_name';
 
 const isPico = () => $('launcher-pico').checked;
-const defaultPath = (target) => target === 'pico' ? PICO_PATH : BOXART_PATH;
+const isAkMenu = () => $('launcher-akmenu').checked;
+const isFixedBmp = () => isPico() || isAkMenu();
+const defaultPath = (target) => target === 'pico' ? PICO_PATH
+    : target === 'akmenu' ? AKMENU_PATH
+        : BOXART_PATH;
 
 /**
  * Picking a card also picks the launcher, when the card only has one of them installed. Most
  * people own one card set up one way, and the destination folder is the thing they are least
- * equipped to check. A card carrying both launchers cannot say, so the setting stands.
+ * equipped to check. A card carrying multiple launchers cannot say, so the setting stands.
  */
-function adoptLauncher(hasTwilight, hasPico) {
-    if (hasTwilight === hasPico) return;
-    $(hasPico ? 'launcher-pico' : 'launcher-twilight').checked = true;
+function adoptLauncher(hasTwilight, hasPico, hasAkMenu) {
+    if ([hasTwilight, hasPico, hasAkMenu].filter(Boolean).length !== 1) return;
+    $('launcher-twilight').checked = hasTwilight;
+    $('launcher-pico').checked = hasPico;
+    $('launcher-akmenu').checked = hasAkMenu;
     syncSettingsUx();
     resetDestForLauncher();
     saveSettings();
@@ -55,13 +63,15 @@ const state = {
     root: null,
     fileList: null,
     items: [],
+    scanTarget: null,
     running: false,
     abort: null,
     zipEntries: [],
     installPrompt: null,
 };
 
-const counters = {found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0};
+// unsupported: games the chosen launcher can't show covers for (AKMenu-Next: anything but DS and GBA).
+const counters = {found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0, unsupported: 0};
 
 /**
  * The missed counter moves only through these two, and each item remembers whether it is counted:
@@ -91,7 +101,7 @@ function readSettings() {
     const choice = document.querySelector('input[name="borderstyle"]:checked')?.value ?? 'NintendoDsi';
     const line = choice === 'Black' || choice === 'White';
     return {
-        target: isPico() ? 'pico' : 'twilight',
+        target: isPico() ? 'pico' : isAkMenu() ? 'akmenu' : 'twilight',
         width: clamp(+$('w').value || 128, 1, 256),
         height: clamp(+$('h').value || 115, 1, 192),
         keepAspectRatio: $('ar').checked,
@@ -104,12 +114,11 @@ function readSettings() {
 }
 
 /**
- * Mirrors RenderOptions.CacheDiscriminator() so the two caches agree on what "same" means. Pico
- * folds its geometry away but not its shape, and carries a render version: a bump has to reach here
- * too, or a card keeps the covers it was written last time.
+ * Uses the server's render settings for written-file bookkeeping. Keep the launcher in this key too:
+ * Pico and AKMenu-Next share BMP bytes but write to different folders.
  */
-const renderKey = (s) => s.target === 'pico'
-    ? (s.keepAspectRatio ? 'pico2' : 'pico2_fill')
+const renderKey = (s) => s.target === 'pico' || s.target === 'akmenu'
+    ? `${s.target}_${s.keepAspectRatio ? 'pico2' : 'pico2_fill'}`
     : `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
 
 function saveSettings() {
@@ -122,7 +131,11 @@ function restoreSettings() {
     // the size radio, style plus colour pick the border radio.
     try {
         const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-        if (s.target) $(s.target === 'pico' ? 'launcher-pico' : 'launcher-twilight').checked = true;
+        if (s.target) {
+            $('launcher-twilight').checked = s.target === 'twilight';
+            $('launcher-pico').checked = s.target === 'pico';
+            $('launcher-akmenu').checked = s.target === 'akmenu';
+        }
         if (s.width) $('w').value = s.width;
         if (s.height) $('h').value = s.height;
         if (s.keepAspectRatio !== undefined) $('ar').checked = s.keepAspectRatio;
@@ -148,31 +161,36 @@ function restoreSettings() {
 
 /** Grays out what the current choices make irrelevant, like the classic app did. */
 function syncSettingsUx() {
-    // Pico's geometry is fixed, so the size and border controls gray out. The aspect ratio is the
-    // one setting in there that still means something, so it stays live.
-    const pico = isPico();
-    $('pico-note').hidden = !pico;
-    for (const id of ['size-classic', 'size-large', 'size-xl', 'size-custom']) $(id).disabled = pico;
+    // Both BMP targets have fixed geometry. Aspect ratio still controls how art fills the window.
+    const fixedBmp = isFixedBmp();
+    $('pico-note').hidden = !isPico();
+    $('akmenu-note').hidden = !isAkMenu();
+    $('size-fixed').hidden = !fixedBmp;
+    $('size-controls').hidden = fixedBmp;
+    $('size-limit').hidden = fixedBmp;
+    $('border-na').hidden = !fixedBmp;
+    $('border-controls').hidden = fixedBmp;
+    for (const id of ['size-classic', 'size-large', 'size-xl', 'size-custom']) $(id).disabled = fixedBmp;
 
     const custom = $('size-custom').checked;
-    $('w').disabled = $('h').disabled = pico || !custom;
-    $('border').disabled = pico;
-    const border = $('border').checked && !pico;
+    $('w').disabled = $('h').disabled = fixedBmp || !custom;
+    $('border').disabled = fixedBmp;
+    const border = $('border').checked && !fixedBmp;
     for (const el of document.querySelectorAll('input[name="borderstyle"]')) el.disabled = !border;
     $('thick').disabled = !border;
     const customDest = $('dest-custom').checked;
     $('dest').disabled = !customDest;
     // The one live-radio read: this is the settings screen previewing the choice being made.
-    if (!customDest) $('dest').value = defaultPath(isPico() ? 'pico' : 'twilight');
+    if (!customDest) $('dest').value = defaultPath(readSettings().target);
 }
 
 /**
  * The destination always follows the launcher, manual override or not: a folder chosen for one
- * launcher's layout is the wrong place for the other's covers, and leaving it behind quietly fills
- * a Pico card with PNGs TWiLightMenu++ was meant to read.
+ * launcher's layout is the wrong place for another's covers, and leaving it behind can quietly
+ * fill a card with the wrong format or filename convention.
  */
 function resetDestForLauncher() {
-    $('dest').value = defaultPath(isPico() ? 'pico' : 'twilight');
+    $('dest').value = defaultPath(readSettings().target);
 }
 
 const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
@@ -195,11 +213,12 @@ function paint() {
             const el = $('c-' + k);
             if (el) el.textContent = v.toLocaleString();
         }
+        $('c-unsupported-wrap').hidden = counters.unsupported === 0;
         // Reading the card fills the first half of the bar, fetching covers the second, so the
         // long first scan visibly moves from the start instead of sitting at zero.
         const total = counters.found || 1;
         const read = Math.min(1, counters.probed / total);
-        const done = Math.min(1, (counters.written + counters.skipped + counters.missed) / total);
+        const done = Math.min(1, (counters.written + counters.skipped + counters.missed + counters.unsupported) / total);
         $('bar-fill').style.width = `${(read * 50 + done * 50).toFixed(1)}%`;
     }, 120);
 }
@@ -346,7 +365,8 @@ function wireDropZone() {
  */
 async function useCustomArt(item, file, rendered, options, fit) {
     const path = boxartPath(options.target);
-    item.outName = outputName(item, options.target === 'pico' ? '.bmp' : '.png');
+    item.outName = outputName(item, options.target === 'twilight' ? '.png' : '.bmp',
+        options.target === 'akmenu');
 
     if (state.mode === 'write') {
         const boxart = await scan.boxartDirectory(state.root, path);
@@ -411,11 +431,16 @@ async function useRoot(root) {
     // Both launchers count: the launcher radio can change after the card is picked.
     const hasTwilight = await scan.hasTwilightSentinel(root);
     const hasPico = await scan.hasPicoSentinel(root);
-    adoptLauncher(hasTwilight, hasPico);
+    const hasAkMenu = await scan.hasAkMenuSentinel(root);
+    adoptLauncher(hasTwilight, hasPico, hasAkMenu);
 
-    const launchers = [hasTwilight && 'TWiLightMenu++', hasPico && 'Pico Launcher'].filter(Boolean);
+    const launchers = [
+        hasTwilight && 'TWiLightMenu++',
+        hasPico && 'Pico Launcher',
+        hasAkMenu && 'AKMenu-Next',
+    ].filter(Boolean);
     if (launchers.length) setStatus(`Ready: "${root.name}" looks like a ${launchers.join(' + ')} card.`, 'good');
-    else setStatus(`"${root.name}" doesn't look like a TWiLightMenu++ or Pico Launcher card.`, 'warn');
+    else setStatus(`"${root.name}" doesn't look like a supported launcher card.`, 'warn');
     $('start').disabled = false;
     $('card-name').textContent = root.name;
     refreshCacheNote();
@@ -447,12 +472,13 @@ function useFileList(files) {
     $('reconnect').hidden = true;
     const hasTwilight = scan.fileListHasSentinel(files);
     const hasPico = scan.fileListHasPicoSentinel(files);
-    adoptLauncher(hasTwilight, hasPico);
+    const hasAkMenu = scan.fileListHasAkMenuSentinel(files);
+    adoptLauncher(hasTwilight, hasPico, hasAkMenu);
 
-    const sentinel = hasTwilight || hasPico;
+    const sentinel = hasTwilight || hasPico || hasAkMenu;
     setStatus(sentinel
-            ? `Reading ${files.length.toLocaleString()} files. This looks like a TWiLightMenu++ or Pico Launcher card.`
-            : `Reading ${files.length.toLocaleString()} files. This doesn't look like a TWiLightMenu++ or Pico Launcher card.`,
+            ? `Reading ${files.length.toLocaleString()} files. This looks like a supported launcher card.`
+            : `Reading ${files.length.toLocaleString()} files. This doesn't look like a supported launcher card.`,
         sentinel ? 'good' : 'warn');
     $('start').disabled = false;
     $('card-name').textContent = files[0]?.webkitRelativePath.split('/')[0] ?? '';
@@ -505,7 +531,7 @@ async function collectFiles(signal) {
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
-async function probeAll(found, signal) {
+async function probeAll(found, signal, target) {
     const items = found.map((f, i) => ({
         tag: String(i), path: f.path, fileName: f.name, getFile: f.getFile,
         status: 'pending', reason: null, probe: null, identity: null,
@@ -519,6 +545,9 @@ async function probeAll(found, signal) {
             item.status = 'missed';
             item.reason = probe.reason;
             countMiss(item);
+        } else if (target === 'akmenu' && !scan.isAkMenuRom(probe.innerName || item.fileName)) {
+            item.status = 'unsupported';
+            counters.unsupported++;
         } else {
             item.probe = probe;
             item.contentKey = store.contentKey(probe);
@@ -697,16 +726,20 @@ async function deepen(items, signal) {
  * The cover's name is the ROM's name, never the archive's. When the inner entry is not
  * recognisably a ROM (No-Intro's DSiWare blobs are named things like `00000000`), the file on the
  * card is the archive, so that is what the launcher will look the art up by. Both launchers key
- * on it: TWiLightMenu as `<name>.png`, Pico's user folder as `<name>.bmp`.
+ * on it: TWiLightMenu as `<name>.png`, Pico as `<name>.bmp`, AKMenu-Next as the ROM basename plus `.bmp`.
  */
-function outputName(item, extension) {
+function outputName(item, extension, stripRomExtension = false) {
     const inner = item.probe?.innerName;
-    const base = inner && scan.isRom(inner) ? inner : item.fileName;
+    let base = inner && scan.isRom(inner) ? inner : item.fileName;
+    if (stripRomExtension) {
+        const dot = base.lastIndexOf('.');
+        if (dot > 0) base = base.slice(0, dot);
+    }
     return scan.safeFileName(base) + extension;
 }
 
 async function deliverArt(items, settings, signal) {
-    const extension = settings.target === 'pico' ? '.bmp' : '.png';
+    const extension = settings.target === 'twilight' ? '.png' : '.bmp';
 
     // The user's own covers ride along: they outrank a downloaded cover for the same game, and
     // they rescue misses, so games the index does not know are eligible too as long as their
@@ -747,7 +780,7 @@ async function deliverArt(items, settings, signal) {
     const freshlyWritten = [];
 
     await pool(matched, ART_CONCURRENCY, async (item) => {
-        item.outName = outputName(item, extension);
+        item.outName = outputName(item, extension, settings.target === 'akmenu');
         const own = customArt.get(item.contentKey);
         const skip = () => {
             // A miss resolved by the user's own cover already on the card is not a miss anymore.
@@ -792,8 +825,8 @@ async function deliverArt(items, settings, signal) {
 
         // The backend is supposed to guarantee this ceiling. If it ever does not, TWiLightMenu
         // drops the image silently and the user gets no explanation at all, so say it here.
-        // Pico's fixed-size BMP has no such trap.
-        if (settings.target !== 'pico' && art.length > TWILIGHT_MAX_PNG_BYTES) {
+        // The fixed-size BMP targets have no such trap.
+        if (settings.target === 'twilight' && art.length > TWILIGHT_MAX_PNG_BYTES) {
             log(`${item.outName} is ${formatBytes(art.length)}; TWiLightMenu ignores box art over ${formatBytes(TWILIGHT_MAX_PNG_BYTES)}.`, 'warn');
         }
 
@@ -814,10 +847,14 @@ async function deliverArt(items, settings, signal) {
 
 async function run({retryOnly = false, deep = false} = {}) {
     if (state.running) return;
+    const settings = readSettings();
+    if (retryOnly && state.scanTarget !== settings.target) {
+        setStatus('The launcher changed. Start a new scan before retrying missing covers.', 'warn');
+        return;
+    }
     state.running = true;
     state.abort = new AbortController();
     const signal = state.abort.signal;
-    const settings = readSettings();
     saveSettings();
 
     $('start').disabled = true;
@@ -844,14 +881,19 @@ async function run({retryOnly = false, deep = false} = {}) {
             // A retry deliberately ignores the identity cache: it is what we are retrying.
             await identifyPass(items.filter(i => i.probe && i.status === 'pending'), signal);
         } else {
+            state.scanTarget = settings.target;
             Object.keys(counters).forEach(k => counters[k] = 0);
             state.zipEntries = [];
             $('zip-wrap').hidden = true;
             log('Looking for games…');
             const found = await collectFiles(signal);
             log(`Found ${found.length.toLocaleString()} games. Reading them…`);
-            items = await probeAll(found, signal);
+            items = await probeAll(found, signal, settings.target);
             state.items = items;
+            if (counters.unsupported) {
+                log(`Left out ${counters.unsupported.toLocaleString()} games that aren't DS or GBA. `
+                    + 'AKMenu-Next only shows covers for those.');
+            }
             await identifyAll(items, signal);
         }
 
@@ -863,7 +905,8 @@ async function run({retryOnly = false, deep = false} = {}) {
         else log(`Done in ${((performance.now() - started) / 1000).toFixed(1)}s: `
             + `${counters.written.toLocaleString()} ${state.mode === 'write' ? 'new covers' : 'ready to download'}, `
             + `${counters.skipped.toLocaleString()} already there, `
-            + `${counters.missed.toLocaleString()} without art.`, 'good');
+            + `${counters.missed.toLocaleString()} without art`
+            + (counters.unsupported ? `, ${counters.unsupported.toLocaleString()} not DS or GBA.` : '.'), 'good');
 
         if (state.mode === 'readonly' && state.zipEntries.length) {
             $('zip-wrap').hidden = false;
@@ -914,7 +957,7 @@ function wireUp() {
             $('h').value = h;
         });
     }
-    for (const id of ['launcher-twilight', 'launcher-pico',
+    for (const id of ['launcher-twilight', 'launcher-pico', 'launcher-akmenu',
         'size-classic', 'size-large', 'size-xl', 'size-custom', 'w', 'h', 'ar',
         'border', 'border-dsi', 'border-3ds', 'border-black', 'border-white', 'thick', 'overwrite',
         'dest', 'dest-custom']) {
@@ -925,7 +968,7 @@ function wireUp() {
     }
 
     // After the loop above, so it wins over syncSettingsUx's non-override preview.
-    for (const id of ['launcher-twilight', 'launcher-pico']) {
+    for (const id of ['launcher-twilight', 'launcher-pico', 'launcher-akmenu']) {
         $(id).addEventListener('change', () => {
             resetDestForLauncher();
             saveSettings();

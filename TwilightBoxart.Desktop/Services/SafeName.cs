@@ -2,7 +2,8 @@ namespace TwilightBoxart.Desktop.Services;
 
 /// <summary>
 /// Produces the box art file name the launcher looks up: the ROM's own name with the render
-/// target's extension appended (TWiLightMenu++ <c>.png</c>, Pico's user folder <c>.bmp</c>).
+/// target's extension appended (TWiLightMenu++ <c>.png</c>, Pico <c>.bmp</c>). AKMenu-Next's
+/// filename-keyed folder omits the ROM extension from the cover name.
 /// </summary>
 public static class SafeName
 {
@@ -49,9 +50,19 @@ public static class SafeName
     /// are entries named things like <c>00000000</c>), so that is what the menu will look art up by.
     /// </summary>
     public static string OutputFileName(
-        string outerFileName, string? innerName, bool innerIsRom, string extension = ".png")
+        string outerFileName, string? innerName, bool innerIsRom, string extension = ".png",
+        bool stripRomExtension = false)
     {
         var basis = innerIsRom && !string.IsNullOrEmpty(innerName) ? innerName : outerFileName;
+        if (stripRomExtension)
+        {
+            var dot = basis.LastIndexOf('.');
+            if (dot > 0)
+            {
+                basis = basis[..dot];
+            }
+        }
+
         return Sanitize(basis) + extension;
     }
 }

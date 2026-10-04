@@ -73,7 +73,7 @@ const char *file_ext(const char *name)
 
 bool is_ds_ext(const char *ext)
 {
-    static const char *exts[] = { ".nds", ".ds", ".dsi", ".srl", ".ids", ".app" };
+    static const char *exts[] = { ".nds", ".ds", ".dsi", ".srl", ".ids", ".app", ".ndz" };
     for (unsigned i = 0; i < sizeof(exts) / sizeof(exts[0]); i++) {
         if (strcasecmp(ext, exts[i]) == 0)
             return true;
@@ -82,7 +82,7 @@ bool is_ds_ext(const char *ext)
 }
 
 static const char *builtin_rom_exts[] = {
-    ".nds", ".ds", ".dsi", ".srl", ".ids", ".app",
+    ".nds", ".ds", ".dsi", ".srl", ".ids", ".app", ".ndz",
     ".gba", ".agb", ".mb", ".gb", ".sgb", ".gbc",
     ".nes", ".fds", ".sfc", ".smc", ".snes",
     ".n64", ".z64", ".v64", ".gen", ".md", ".sms", ".gg",

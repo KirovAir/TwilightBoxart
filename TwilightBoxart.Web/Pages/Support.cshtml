@@ -102,7 +102,7 @@
             write to it.<br>
             2. It identifies your ROMs and downloads the art exactly as it would otherwise.<br>
             3. You get one <code>.zip</code>. Extract it at the <strong>root of the card</strong>;
-            the folders inside are already <code>_nds/TWiLightMenu/boxart/</code>, so everything
+            the folders inside are already arranged for the selected launcher, so everything
             lands in the right place.
         </p>
         <p class="muted">The only thing you lose is the last step being automatic. The desktop app
@@ -127,12 +127,10 @@
     <section class="panel">
         <h2>What it does to your card</h2>
         <p>
-            It writes PNG files into <code>_nds/TWiLightMenu/boxart/</code> (or the folder you set
-            manually), creating it if it is missing, and it reads a few hundred bytes from each game
-            to work out what it is. <strong>It changes nothing else.</strong> No renaming, no
-            moving, no deleting, and specifically no rewriting of <code>settings.ini</code>: the
-            server guarantees every image fits TWiLightMenu's cache slot, so nothing needs
-            patching.
+            It writes covers into the selected launcher's folder (or the folder you set manually),
+            creating it if it is missing, and it reads a few hundred bytes from each game to work
+            out what it is. <strong>It changes nothing else.</strong> No renaming, no moving, no
+            deleting, and specifically no rewriting of <code>settings.ini</code>.
         </p>
         <p class="muted">
             Every write goes through a swap file that is only swapped in on close, so pulling the

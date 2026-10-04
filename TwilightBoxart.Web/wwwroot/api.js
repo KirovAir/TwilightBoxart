@@ -121,9 +121,9 @@ export async function identifyBatch(fingerprints, signal) {
  * The identity's art URL with render parameters appended. The path itself comes from the server
  * (identify's artPath) and is followed verbatim: this client owns the render PREFERENCES, the
  * server owns the URL. The query mirrors RenderOptions.ToQueryString() exactly: w/h pixels, ar
- * aspect ratio as 1/0, b border style, bt thickness, bc colour as AARRGGBB hex; for Pico just
- * t=pico, since its format is fixed and the folded knobs would only split the one render across
- * cache URLs. Matching the server's own encoder makes these URLs textually identical to the
+ * aspect ratio as 1/0, b border style, bt thickness, bc colour as AARRGGBB hex; for the fixed BMP
+ * targets just t=pico, since AKMenu-Next accepts the same bytes and the folded knobs would only
+ * split the one render across cache URLs. Matching the server's own encoder makes these URLs textually identical to the
  * Content-Location it advertises, so every client converges on one cacheable URL per render.
  */
 function artUrl(identity, o) {
@@ -135,7 +135,9 @@ function artUrl(identity, o) {
 /** The render parameters as a query string, '?' included. Shared by the art and render routes. */
 function renderQuery(o) {
     // ar only travels when it is off, so the default keeps the exact URL Pico clients already mint.
-    if (o.target === 'pico') return `?t=pico${o.keepAspectRatio ? '' : '&ar=0'}`;
+    if (o.target === 'pico' || o.target === 'akmenu') {
+        return `?t=pico${o.keepAspectRatio ? '' : '&ar=0'}`;
+    }
     const q = new URLSearchParams({
         w: String(o.width),
         h: String(o.height),

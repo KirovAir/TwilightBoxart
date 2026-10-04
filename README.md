@@ -4,7 +4,7 @@
 
 <h1 align="center">TwilightBoxart</h1>
 
-<p align="center">Box art for <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener"><b>TWiLightMenu++</b></a> and <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener"><b>Pico Launcher</b></a>, straight onto your SD card.</p>
+<p align="center">Box art for <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener"><b>TWiLightMenu++</b></a>, <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener"><b>Pico Launcher</b></a> and <a href="https://github.com/coderkei/akmenu-next" target="_blank" rel="noopener"><b>AKMenu-Next</b></a>, straight onto your SD card.</p>
 
 <p align="center">
   <a href="https://github.com/KirovAir/TwilightBoxart/releases"><img src="https://img.shields.io/github/v/release/KirovAir/TwilightBoxart?color=7566DD&label=release" alt="Latest release"></a>
@@ -73,9 +73,12 @@ Every app asks which launcher up front.
 | --- | --- | --- |
 | <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener">TWiLightMenu++</a> | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
 | <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener">Pico Launcher</a> (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
+| <a href="https://github.com/coderkei/akmenu-next" target="_blank" rel="noopener">AKMenu-Next</a> | 8-bit BMP, 128 × 96, for NDS and GBA | `_nds/covers_name/<rom name without extension>.bmp` |
 
 Pico covers go in the filename-keyed `user` folder: it works for every system below, where the
 game-code folders only do NDS and GBA.
+AKMenu-Next uses the same BMP format; its loader trims the black padding columns and looks up NDS
+and GBA covers by the ROM filename without its extension.
 
 Only cover images are written, into the boxart folder. Nothing else on the card is touched.
 
@@ -124,7 +127,8 @@ names the dump, the other has the cover. The menu also lists `.xex`/`.atr` (Atar
 them, so every lookup would miss.
 
 File extensions follow TWiLightMenu++'s own list, so anything the menu will launch is something
-this will scan. That includes `.agb`/`.mb` for GBA and `.srl`/`.ids`/`.app` for DS(i).
+this will scan. That includes `.agb`/`.mb` for GBA, `.srl`/`.ids`/`.app` for DS(i), and `.ndz`
+for AKMenu-Next.
 
 </details>
 
@@ -136,8 +140,13 @@ A lot of work went into the matching. It rarely misses.
 * [libretro-thumbnails](https://github.com/libretro-thumbnails) by
   [No-Intro](https://no-intro.org) name matching.
 * Every TWiLightMenu++ cover is delivered under the menu's box art size limit, so nothing silently
-  refuses to show up on the console. Pico covers come pre-converted to the launcher's own 8-bit
-  BMP format, no separate converter needed.
+  refuses to show up on the console. Pico and AKMenu-Next covers come pre-converted to their
+  compatible 8-bit BMP format, no separate converter needed.
+
+For Pico Launcher and AKMenu-Next, the apps show the fixed cover size and mark border settings as
+unavailable. AKMenu-Next only shows covers for DS and GBA games, so other games are left out and
+reported separately instead of being counted as already there. Switching back to TWiLightMenu++
+restores its saved size and border choices.
 
 ## 🐳 Self-hosting
 
@@ -166,8 +175,9 @@ GPL-3.0. See [LICENSE.md](LICENSE.md). The DS/DSi client ships with
 Covers come from [GameTDB](https://www.gametdb.com) and
 [libretro-thumbnails](https://github.com/libretro-thumbnails); identification data from
 [No-Intro](https://no-intro.org) via the [libretro-database](https://github.com/libretro/libretro-database)
-mirror. Built for [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu) and
-[Pico Launcher](https://github.com/LNH-team/pico-launcher) by
+mirror. Built for [TWiLightMenu++](https://github.com/DS-Homebrew/TWiLightMenu),
+[Pico Launcher](https://github.com/LNH-team/pico-launcher) and
+[AKMenu-Next](https://github.com/coderkei/akmenu-next) by
 [LNH-team](https://github.com/LNH-team).
 Music on the DS/DSi client: "Pixel Cart Drift" by Jesse Sander.
 

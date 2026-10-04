@@ -80,6 +80,8 @@ public class DesktopServicesTests
             ScanService.BoxartDirectory(root, RenderTarget.TwilightMenu));
         Assert.AreEqual(Path.Combine(root, "_pico", "covers", "user"),
             ScanService.BoxartDirectory(root, RenderTarget.Pico));
+        Assert.AreEqual(Path.Combine(root, "_nds", "covers_name"),
+            ScanService.BoxartDirectory(root, RenderTarget.AkMenuNext));
     }
 
     [TestMethod]
@@ -98,6 +100,12 @@ public class DesktopServicesTests
 
         Directory.Delete(Path.Combine(root, "_nds", "TWiLightMenu"));
         Assert.AreEqual(RenderTarget.Pico, ScanService.DetectTarget(root));
+
+        Directory.Delete(Path.Combine(root, "_pico"));
+        Directory.CreateDirectory(Path.Combine(root, "_nds", "akmenunext"));
+        Assert.AreEqual(RenderTarget.AkMenuNext, ScanService.DetectTarget(root));
+        Directory.CreateDirectory(Path.Combine(root, "_pico"));
+        Assert.IsNull(ScanService.DetectTarget(root), "AKMenu-Next and Pico both installed");
     }
 
     [TestMethod]
@@ -110,6 +118,41 @@ public class DesktopServicesTests
         Assert.AreEqual(RenderTarget.Pico, options.Target);
         Assert.AreEqual(RenderOptions.PicoWidth, options.Width);
         Assert.AreEqual(RenderOptions.PicoHeight, options.Height);
+    }
+
+    [TestMethod]
+    public void AkMenuNextSettingsKeepItsTargetAndFixedBmpGeometry()
+    {
+        var options = new AppSettings
+        {
+            Target = RenderTarget.AkMenuNext,
+            Width = 208,
+            Height = 143
+        }.ToRenderOptions();
+
+        Assert.AreEqual(RenderTarget.AkMenuNext, options.Target);
+        Assert.AreEqual(RenderOptions.PicoWidth, options.Width);
+        Assert.AreEqual(RenderOptions.PicoHeight, options.Height);
+        Assert.AreEqual("image/bmp", options.ContentType);
+    }
+
+    [TestMethod]
+    public void AkMenuNextOutputNameOmitsTheRomsExtension()
+    {
+        Assert.AreEqual("Some Game (USA).bmp",
+            SafeName.OutputFileName("Some Game (USA).nds", null, false, ".bmp", stripRomExtension: true));
+        Assert.AreEqual("Game (Europe).bmp",
+            SafeName.OutputFileName("archive.zip", "Game (Europe).gba", true, ".bmp", stripRomExtension: true));
+    }
+
+    [TestMethod]
+    public void AkMenuNextOnlyDisplaysItsSupportedRomTypes()
+    {
+        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.nds"));
+        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.ndz"));
+        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.GBA"));
+        Assert.IsFalse(SupportedFiles.IsAkMenuNextRom("game.sfc"));
+        Assert.IsFalse(SupportedFiles.IsAkMenuNextRom("game.agb"));
     }
 
     // ── ScanService.CollectFiles ─────────────────────────────────────────────────────────────

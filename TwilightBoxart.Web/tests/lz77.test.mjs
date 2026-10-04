@@ -15,7 +15,7 @@ import {lz77Decompress, crc32} from '../wwwroot/romprobe.js';
 globalThis.document = {
     getElementById: () => ({
         textContent: JSON.stringify({
-            rom: ['.sfc', '.smc', '.gen', '.md', '.sms', '.gg', '.pce', '.nds'],
+            rom: ['.sfc', '.smc', '.gen', '.md', '.sms', '.gg', '.pce', '.nds', '.ndz'],
             archive: ['.zip', '.7z'],
             labels: {},
         }),
@@ -81,4 +81,20 @@ test('probeFile leaves a plain ROM on the loose path, untouched by the .lz77 bra
     assert.equal(probe.container, 'loose');
     // Same bytes as the compressed twin above => same CRC => resolves to the same game.
     assert.equal(probe.crc32, crc32(rom));
+});
+
+test('recognizes AKMenu-Next cards and its filename-keyed cover folder', () => {
+    assert.equal(scan.isAkMenuRom('game.nds'), true);
+    assert.equal(scan.isAkMenuRom('game.ndz'), true);
+    assert.equal(scan.isAkMenuRom('game.GBA'), true);
+    assert.equal(scan.isAkMenuRom('game.sfc'), false);
+    assert.equal(scan.fileListHasAkMenuSentinel([
+        {webkitRelativePath: 'card/_nds/akmenunext/akmenu-next.nds'},
+    ]), true);
+    assert.equal(scan.fileListHasAkMenuSentinel([
+        {webkitRelativePath: 'card/_nds/covers_name/Super Mario.nds.bmp'},
+    ]), true);
+    assert.equal(scan.fileListHasAkMenuSentinel([
+        {webkitRelativePath: 'card/_nds/TWiLightMenu/settings.ini'},
+    ]), false);
 });

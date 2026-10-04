@@ -15,8 +15,7 @@ const UPLOAD_MAX = JSON.parse(document.getElementById('formats').textContent).up
 const PICKER_LIMIT = 25;
 
 /**
- * Pico Launcher only ever displays the left 106 of its BMP's 128 columns
- * (RenderOptions.PicoVisibleWidth); the rest is padding the preview should hide too.
+ * The BMP targets display the left 106 of the 128 columns; hide the padding in the preview too.
  */
 const PICO_VISIBLE_WIDTH = 106;
 
@@ -208,14 +207,16 @@ async function renderPreview() {
     current.rendered = bytes;
     current.settings = settings;
     outUrl = revoke(outUrl);
-    outUrl = URL.createObjectURL(new Blob([bytes], {type: settings.target === 'pico' ? 'image/bmp' : 'image/png'}));
+    outUrl = URL.createObjectURL(new Blob([bytes], {
+        type: settings.target === 'twilight' ? 'image/png' : 'image/bmp'
+    }));
     const out = $('custom-out');
     out.onload = () => {
         // Twice the real pixels: 128x115 is a postage stamp on a desktop screen, and the launcher
         // scales up anyway. Pixelated, so the preview shows the pixels the DS will actually get.
-        // For Pico the wrapper clips to the visible window, like the launcher does, and the meta
-        // line reports what is shown rather than the file's padded width.
-        const visible = settings.target === 'pico'
+        // The BMP launchers clip to the visible window, like the launchers do, and the meta line
+        // reports what is shown rather than the file's padded width.
+        const visible = settings.target === 'pico' || settings.target === 'akmenu'
             ? Math.min(PICO_VISIBLE_WIDTH, out.naturalWidth)
             : out.naturalWidth;
         out.style.width = `${out.naturalWidth * 2}px`;

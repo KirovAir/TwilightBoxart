@@ -78,9 +78,10 @@ public static class SupportedFiles
     /// NOTE vs the 2020 client: .n64/.z64/.v64 are new (946 N64 files were invisible), and matching must
     /// be case-insensitive (the old zip-entry check was not).
     ///
-    /// The list is kept in step with the extension list TWiLightMenu++ itself browses
-    /// (romsel_dsimenutheme/arm9/source/main.cpp), because a ROM the menu will launch but we will not
-    /// scan is a cover the user can never get. Deliberately NOT included, despite the menu accepting
+    /// The list follows the extension list TWiLightMenu++ itself browses
+    /// (romsel_dsimenutheme/arm9/source/main.cpp), with .ndz added for AKMenu-Next, because a ROM a
+    /// supported launcher will launch but we will not scan is a cover the user can never get.
+    /// Deliberately NOT included, despite the menu accepting
     /// them: .xex/.atr (Atari 8-bit: a No-Intro DAT exists but there is no libretro-thumbnails
     /// repository, so every lookup would 404), .m5 (Sord M5: neither), .dsk (Amstrad CPC: no
     /// No-Intro DAT, and .dsk is a generic disk image shared with MSX and ZX Spectrum), and
@@ -105,6 +106,7 @@ public static class SupportedFiles
             [".ds"] = ConsoleType.NintendoDs,
             [".srl"] = ConsoleType.NintendoDs,
             [".ids"] = ConsoleType.NintendoDs,
+            [".ndz"] = ConsoleType.NintendoDs,
             [".dsi"] = ConsoleType.NintendoDsi,
 
             // The menu groups .app with the DS extensions, but that grouping only says "launches via
@@ -248,6 +250,18 @@ public static class SupportedFiles
     public static bool IsScannable(string path)
     {
         return Scannable.Contains(Path.GetExtension(path));
+    }
+
+    /// <summary>ROM extensions for which AKMenu-Next displays its filename-keyed covers.</summary>
+    public static bool IsAkMenuNextRom(string path)
+    {
+        var extension = Path.GetExtension(path);
+        return extension.Equals(".nds", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".dsi", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".srl", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".ids", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".ndz", StringComparison.OrdinalIgnoreCase) ||
+               extension.Equals(".gba", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Documentation wearing a ROM extension; see <see cref="SkipFiles"/>.</summary>

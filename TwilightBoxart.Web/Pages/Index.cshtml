@@ -9,9 +9,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#F1EFFA">
 
-    <title>TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher</title>
+    <title>TwilightBoxart · Box art for TWiLightMenu++, Pico Launcher and AKMenu-Next</title>
     <meta name="description"
-          content="Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.">
+          content="Box art/Covers for TWiLightMenu++, Pico Launcher and AKMenu-Next, straight onto your SD card.">
 
     <!-- Absolute and hardcoded on purpose. A self-hosted instance is not a rival copy of the site
          competing for the same results, it is this app run privately, so it points at the original. -->
@@ -20,14 +20,14 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="TwilightBoxart">
     <meta property="og:url" content="https://twilightboxart.com/">
-    <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++ and Pico Launcher">
+    <meta property="og:title" content="TwilightBoxart · Box art for TWiLightMenu++, Pico Launcher and AKMenu-Next">
     <meta property="og:description"
-          content="Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.">
+          content="Box art/Covers for TWiLightMenu++, Pico Launcher and AKMenu-Next, straight onto your SD card.">
     <meta property="og:image" content="https://twilightboxart.com/og.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt"
-          content="TwilightBoxart: box art for TWiLightMenu++ and Pico Launcher, straight onto your SD card.">
+          content="TwilightBoxart: box art for TWiLightMenu++, Pico Launcher and AKMenu-Next, straight onto your SD card.">
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="manifest" href="manifest.json">
@@ -46,7 +46,7 @@
             "url": "https://twilightboxart.com/",
             "applicationCategory": "UtilitiesApplication",
             "operatingSystem": "Web, Windows, macOS, Linux",
-            "description": "Box art/Covers for TWiLightMenu++ and Pico Launcher, straight onto your SD card for any system.",
+            "description": "Box art/Covers for TWiLightMenu++, Pico Launcher and AKMenu-Next, straight onto your SD card.",
             "license": "https://www.gnu.org/licenses/gpl-3.0.html",
             "isAccessibleForFree": true,
             "offers": {
@@ -64,7 +64,7 @@
         <img src="icon.png" alt="" width="58" height="58">
         <div>
             <h1>Twilight<span class="pop">Boxart</span></h1>
-            <p class="tag">TWiLightMenu++ &amp; Pico Launcher Boxart Downloader</p>
+            <p class="tag">TWiLightMenu++, Pico Launcher &amp; AKMenu-Next Boxart Downloader</p>
         </div>
     </div>
     <nav class="topbar-actions">
@@ -145,14 +145,19 @@
                 <label class="check"><input type="radio" name="launcher" id="launcher-twilight" value="twilight"
                                             checked> TWiLightMenu++</label>
                 <label class="check"><input type="radio" name="launcher" id="launcher-pico" value="pico"> Pico
-                    Launcher (DS Pico)</label>
+                    Launcher</label>
+                <label class="check"><input type="radio" name="launcher" id="launcher-akmenu" value="akmenu"> AKMenu-Next</label>
             </div>
-            <p class="muted" id="pico-note" style="margin: 8px 0 0" hidden>Pico covers are one fixed format
-                (128 × 96, 256 colours), so only the aspect ratio below applies.</p>
+            <p class="muted" id="pico-note" style="margin: 8px 0 0" hidden>Pico Launcher covers have a fixed size,
+                so you can only choose whether to keep the aspect ratio.</p>
+            <p class="muted" id="akmenu-note" style="margin: 8px 0 0" hidden>AKMenu-Next covers have a fixed size,
+                so you can only choose whether to keep the aspect ratio. Covers are made for DS and GBA games
+                only.</p>
         </fieldset>
         <fieldset id="settings-size">
             <legend>Boxart Size:</legend>
-            <div class="row">
+            <p class="muted" id="size-fixed" hidden>128 × 96, set by the launcher</p>
+            <div class="row" id="size-controls">
                 <label class="check"><input type="radio" name="size" id="size-classic" value="classic" checked>
                     Classic</label>
                 <label class="check"><input type="radio" name="size" id="size-large" value="large"> Large</label>
@@ -164,11 +169,12 @@
             </div>
             <label class="check" style="margin-top: 10px"><input type="checkbox" id="ar" checked> Keep original
                 aspect ratio (recommended)</label>
-            <p class="muted" style="margin: 8px 0 0">The DS screen tops out at 256 × 192.</p>
+            <p class="muted" id="size-limit" style="margin: 8px 0 0">The DS screen tops out at 256 × 192.</p>
         </fieldset>
         <fieldset id="settings-extra">
             <legend>Extra:</legend>
-            <div class="row">
+            <p class="muted" id="border-na" hidden>Borders aren't available for this launcher.</p>
+            <div class="row" id="border-controls">
                 <label class="check"><input type="checkbox" id="border"> Add border?</label>
                 <label class="check"><input type="radio" name="borderstyle" id="border-dsi" value="NintendoDsi"
                                             checked> DSi Theme</label>
@@ -202,6 +208,8 @@
             <li class="ok"><span id="c-written">0</span><em>new art</em></li>
             <li title="Already on the card, left alone"><span id="c-skipped">0</span><em>already there</em></li>
             <li class="bad"><span id="c-missed">0</span><em>no art</em></li>
+            <li id="c-unsupported-wrap" title="AKMenu-Next only shows covers for DS and GBA games" hidden>
+                <span id="c-unsupported">0</span><em>not DS or GBA</em></li>
         </ul>
 
         <p id="zip-wrap" hidden>
@@ -297,6 +305,7 @@
         <a href="https://github.com/libretro-thumbnails">libretro-thumbnails</a> · game info from
         <a href="https://no-intro.org">No-Intro</a> · made for
         <a href="https://github.com/DS-Homebrew/TWiLightMenu">TWiLightMenu++</a> ·
+        <a href="https://github.com/coderkei/akmenu-next">AKMenu-Next</a> ·
         <a href="support.html">browser support notes</a>
     </p>
     <p class="legal">

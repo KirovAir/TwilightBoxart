@@ -58,8 +58,7 @@ public sealed partial class MainViewModel : ObservableObject
         // without anyone touching the setting; a card with both launchers cannot say, and the stored
         // choice stands.
         var target = (RootFolder is null ? null : ScanService.DetectTarget(RootFolder)) ?? settings.Target;
-        IsLauncherPico = target == RenderTarget.Pico;
-        IsLauncherTwilight = !IsLauncherPico;
+        SelectLauncher(Enum.IsDefined(target) ? target : RenderTarget.TwilightMenu);
         BoxartManual = !string.IsNullOrWhiteSpace(settings.BoxartFolder);
         BoxartFolder = BoxartManual ? settings.BoxartFolder! : DerivedBoxartFolder;
         KeepAspectRatio = settings.KeepAspectRatio;
@@ -127,7 +126,7 @@ public sealed partial class MainViewModel : ObservableObject
     /// frontends; the view shows a warning so a DS user does not fill a card with invisible art.
     /// </summary>
     public bool IsOversizeForTwilight =>
-        Width > RenderOptions.TwilightMaxWidth || Height > RenderOptions.TwilightMaxHeight;
+        IsLauncherTwilight && (Width > RenderOptions.TwilightMaxWidth || Height > RenderOptions.TwilightMaxHeight);
 
     [ObservableProperty]
     private bool _keepAspectRatio;
@@ -178,20 +177,72 @@ public sealed partial class MainViewModel : ObservableObject
         }
     }
 
-    // The launcher the covers are for. Pico's format is fixed, so the view hides the size and
-    // border panels entirely when it is selected: the clearest statement that nothing applies.
+    // The launcher the covers are for. Both BMP targets have fixed geometry, so the view hides the
+    // size and border panels entirely when either is selected.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsOversizeForTwilight))]
     private bool _isLauncherTwilight = true;
 
     [ObservableProperty]
     private bool _isLauncherPico;
 
+    [ObservableProperty]
+    private bool _isLauncherAkMenuNext;
+
+    private void SelectLauncher(RenderTarget target)
+    {
+        switch (target)
+        {
+            case RenderTarget.Pico:
+                IsLauncherPico = true;
+                break;
+            case RenderTarget.AkMenuNext:
+                IsLauncherAkMenuNext = true;
+                break;
+            default:
+                IsLauncherTwilight = true;
+                break;
+        }
+    }
+
     /// <summary>
-    /// Switching launcher always rewrites the destination, manual override or not: a folder chosen
-    /// for one launcher's layout is the wrong place for the other's covers, and leaving it behind
-    /// quietly fills a Pico card with PNGs TWiLightMenu++ was meant to read.
+    /// Switching launcher always rewrites the destination: a folder chosen for one launcher's
+    /// layout is the wrong place for another's covers.
     /// </summary>
     partial void OnIsLauncherPicoChanged(bool value)
+    {
+        if (value)
+        {
+            IsLauncherTwilight = false;
+            IsLauncherAkMenuNext = false;
+        }
+
+        OnLauncherChanged();
+    }
+
+    partial void OnIsLauncherTwilightChanged(bool value)
+    {
+        if (value)
+        {
+            IsLauncherPico = false;
+            IsLauncherAkMenuNext = false;
+        }
+
+        OnLauncherChanged();
+    }
+
+    partial void OnIsLauncherAkMenuNextChanged(bool value)
+    {
+        if (value)
+        {
+            IsLauncherTwilight = false;
+            IsLauncherPico = false;
+        }
+
+        OnLauncherChanged();
+    }
+
+    private void OnLauncherChanged()
     {
         BoxartFolder = DerivedBoxartFolder;
     }
@@ -246,6 +297,13 @@ public sealed partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private int _missed;
+
+    /// <summary>Games AKMenu-Next shows no covers for; the counter is hidden while this is zero.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasUnsupported))]
+    private int _unsupported;
+
+    public bool HasUnsupported => Unsupported > 0;
 
     [ObservableProperty]
     private double _progressValue;
@@ -388,9 +446,8 @@ public sealed partial class MainViewModel : ObservableObject
         var detected = ScanService.DetectTarget(path);
         if (detected is not null && detected != SelectedTarget)
         {
-            IsLauncherPico = detected == RenderTarget.Pico;
-            IsLauncherTwilight = !IsLauncherPico;
-            StatusText = $"Ready: {path} - looks like a {(IsLauncherPico ? "Pico Launcher" : "TWiLightMenu++")} card.";
+            SelectLauncher(detected.Value);
+            StatusText = $"Ready: {path} - looks like a {LauncherName(detected.Value)} card.";
         }
     }
 
@@ -413,7 +470,8 @@ public sealed partial class MainViewModel : ObservableObject
         Written = c.Written;
         Skipped = c.Skipped;
         Missed = c.Missed;
-        ProgressValue = c.Found > 0 ? 100.0 * (c.Written + c.Skipped + c.Missed) / c.Found : 0;
+        Unsupported = c.Unsupported;
+        ProgressValue = c.Found > 0 ? 100.0 * (c.Written + c.Skipped + c.Missed + c.Unsupported) / c.Found : 0;
 
         if (update.Status is { } status)
         {
@@ -441,7 +499,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void ResetCounters()
     {
-        Found = Written = Skipped = Missed = 0;
+        Found = Written = Skipped = Missed = Unsupported = 0;
         ProgressValue = 0;
         _log.Clear();
         LogText = "";
@@ -454,7 +512,19 @@ public sealed partial class MainViewModel : ObservableObject
         : BoxartBorderStyle.NintendoDsi;
 
     private RenderTarget SelectedTarget =>
-        IsLauncherPico ? RenderTarget.Pico : RenderTarget.TwilightMenu;
+        IsLauncherAkMenuNext ? RenderTarget.AkMenuNext
+            : IsLauncherPico ? RenderTarget.Pico
+            : RenderTarget.TwilightMenu;
+
+    private static string LauncherName(RenderTarget target)
+    {
+        return target switch
+        {
+            RenderTarget.Pico => "Pico Launcher",
+            RenderTarget.AkMenuNext => "AKMenu-Next",
+            _ => "TWiLightMenu++"
+        };
+    }
 
     private AppSettings ToSettings()
     {

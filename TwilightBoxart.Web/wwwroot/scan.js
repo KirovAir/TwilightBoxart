@@ -21,6 +21,7 @@ import {
 const formats = JSON.parse(document.getElementById('formats').textContent);
 const ROM_EXTENSIONS = new Set(formats.rom);
 const ARCHIVE_EXTENSIONS = new Set(formats.archive);
+const AKMENU_ROM_EXTENSIONS = new Set(['.nds', '.dsi', '.srl', '.ids', '.ndz', '.gba']);
 
 /**
  * Directories that never hold ROMs (the launchers' own data, the hiyaCFW SDNAND layout, OS junk)
@@ -52,6 +53,7 @@ function extname(name) {
 }
 
 export const isRom = (name) => ROM_EXTENSIONS.has(extname(name));
+export const isAkMenuRom = (name) => AKMENU_ROM_EXTENSIONS.has(extname(name));
 const isArchive = (name) => ARCHIVE_EXTENSIONS.has(extname(name));
 export const isScannable = (name) => isRom(name) || isArchive(name);
 
@@ -153,7 +155,7 @@ export function fileListHasSentinel(files) {
     return false;
 }
 
-/** The Pico Launcher equivalents: `_pico/` is the sentinel. */
+/** Pico uses `_pico/` as its sentinel. */
 export async function hasPicoSentinel(root) {
     try {
         await root.getDirectoryHandle('_pico');
@@ -167,6 +169,31 @@ export function fileListHasPicoSentinel(files) {
     for (const f of files) {
         const rel = (f.webkitRelativePath || '').toLowerCase();
         if (rel.includes('/_pico/')) return true;
+    }
+    return false;
+}
+
+/** AKMenu-Next stores its files under `_nds/akmenunext/`. */
+export async function hasAkMenuSentinel(root) {
+    try {
+        const nds = await root.getDirectoryHandle('_nds');
+        if (await nds.getDirectoryHandle('akmenunext')) return true;
+    } catch {
+        // Also recognize a card that already has the launcher's cover directory.
+    }
+    try {
+        const nds = await root.getDirectoryHandle('_nds');
+        await nds.getDirectoryHandle('covers_name');
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+export function fileListHasAkMenuSentinel(files) {
+    for (const f of files) {
+        const rel = (f.webkitRelativePath || '').toLowerCase();
+        if (rel.includes('/_nds/akmenunext/') || rel.includes('/_nds/covers_name/')) return true;
     }
     return false;
 }
@@ -295,7 +322,7 @@ const CRC_BYTE_BUDGET = 64 * 1024 * 1024;
  * Whether the header carries a title id good enough to identify the file without a checksum, which
  * is DS and DSi and nothing else. Mirrors SupportedFiles.HasTitleId in Core.
  */
-const TITLE_ID_EXTENSIONS = new Set(['.nds', '.ds', '.dsi', '.srl', '.ids', '.app']);
+const TITLE_ID_EXTENSIONS = new Set(['.nds', '.ds', '.dsi', '.srl', '.ids', '.app', '.ndz']);
 const hasTitleId = (name) => TITLE_ID_EXTENSIONS.has((name.match(/\.[^.]*$/) ?? [''])[0].toLowerCase());
 
 /* writing */

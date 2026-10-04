@@ -125,7 +125,7 @@ the next rung of the ladder, or you will silently mis-identify ROMs.
 | `b`   | Border style: `None`, `Line`, `NintendoDsi`, `Nintendo3Ds` (or its number) | `None`     |       |
 | `bt`  | Border thickness                                                           | 1          | 0-5   |
 | `bc`  | Border colour, `RRGGBB` or `AARRGGBB`, `#` optional                        | `FF000000` |       |
-| `t`   | Render target: `pico` for a Pico Launcher cover; absent means TWiLightMenu |            |       |
+| `t`   | Render target: `pico` for the shared fixed BMP format; absent means TWiLightMenu |         |       |
 
 ```
 GET /v2/art/nds/ASME?w=128&h=115&b=NintendoDsi&bt=2&bc=1a1a1a
@@ -140,10 +140,11 @@ Every returned PNG is **at most 45,056 bytes** (`0xB000`), quantized if it has t
 art cache as 40 slots of exactly that size and *silently* ignores anything larger, which produces bug reports nobody can
 explain. The server guarantees the ceiling so no client ever has to rewrite the user's `settings.ini`.
 
-With `t=pico` the response is Pico Launcher's cover format instead: an **8bpp indexed BMP, 128x96**
+With `t=pico` the response is the fixed-cover format: an **8bpp indexed BMP, 128x96**
 (art in the visible left 106x96, right 22 columns black), served as `image/bmp`, always 13,366 bytes. Every other render
-parameter is ignored there, because the launcher's format is fixed; the client's whole job is to write the bytes to
-`_pico/covers/user/<rom name>.bmp`.
+parameter is ignored there, because the launcher's format is fixed. Pico clients write to
+`_pico/covers/user/<rom name>.bmp`; AKMenu-Next clients write to
+`_nds/covers_name/<rom name without extension>.bmp` for NDS and GBA games.
 
 Responses carry an `ETag` (the source art's hash) and `Cache-Control: public, max-age=86400`, and honour `If-None-Match`
 with a `304`. The ETag changes when the art changes and is stable across every size and border variant of the same
@@ -184,7 +185,7 @@ cover with no explanation. There is never a body on a non-200.
 Which file extensions are worth opening, and which names never are. Plain text, one `key=csv` line per role:
 
 ```
-rom=.a26,.a52,.a78,.agb,.app,.col,.ds,.dsi,.fds,.gb,.gba,.gbc,.gen,.gg,.ids,.int,.md,.mb,.min,.msx,.n64,.nds,.nes,.ngc,.ngp,.pce,.sc,.sfc,.sg,.sgb,.smc,.sms,.snes,.srl,.v64,.ws,.wsc,.z64
+rom=.a26,.a52,.a78,.agb,.app,.col,.ds,.dsi,.fds,.gb,.gba,.gbc,.gen,.gg,.ids,.int,.md,.mb,.min,.msx,.n64,.nds,.ndz,.nes,.ngc,.ngp,.pce,.sc,.sfc,.sg,.sgb,.smc,.sms,.snes,.srl,.v64,.ws,.wsc,.z64
 archive=.7z,.zip
 skipdirs=$RECYCLE.BIN,.Spotlight-V100,.TemporaryItems,.Trashes,.fseventsd,Nintendo 3DS,System Volume Information,_nds,_pico,found.000,hiya
 skiprootdirs=import,private,progress,shared1,shared2,sys,ticket,title

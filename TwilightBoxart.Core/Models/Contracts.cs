@@ -34,12 +34,14 @@ public enum BoxartBorderStyle
 /// <summary>
 /// Which launcher the render is for. The target owns the container format and geometry:
 /// TWiLightMenu++ wants a PNG under its cache-slot cap, Pico Launcher wants a fixed-size
-/// 8bpp BMP. Everything upstream of rendering (identify, sources, caching) is target-blind.
+/// 8bpp BMP, and AKMenu-Next reads the same BMP format from its filename-keyed folder.
+/// Everything upstream of rendering (identify, sources, caching) is target-blind.
 /// </summary>
 public enum RenderTarget
 {
     TwilightMenu = 0,
-    Pico
+    Pico,
+    AkMenuNext
 }
 
 /// <summary>
@@ -272,11 +274,10 @@ public sealed record RenderOptions
         // Same defence as the border style below: an undefined target must not leak into cache keys.
         var target = Enum.IsDefined(Target) ? Target : RenderTarget.TwilightMenu;
 
-        // Pico's geometry is fixed by the launcher, so those knobs fold flat: byte-identical renders
-        // then share one cache entry no matter what the client happened to send along. The aspect
-        // ratio is NOT one of them - it decides whether art of a different shape keeps its
-        // proportions or fills the window - so it survives, as the only choice Pico has left.
-        if (target == RenderTarget.Pico)
+        // These BMP targets use Pico's fixed geometry, so those knobs fold flat: byte-identical
+        // renders then share one cache entry. The aspect ratio still decides whether art of a
+        // different shape keeps its proportions or fills the window.
+        if (target is RenderTarget.Pico or RenderTarget.AkMenuNext)
         {
             return this with
             {
@@ -347,24 +348,25 @@ public sealed record RenderOptions
     /// </remarks>
     public string CacheDiscriminator()
     {
-        return Target == RenderTarget.Pico
+        return Target is RenderTarget.Pico or RenderTarget.AkMenuNext
             // The folded knobs (see Normalized) would only repeat themselves here; the aspect ratio
             // is the one that survives, and it produces genuinely different bytes.
             ? $"pico{PicoRenderVersion}{(KeepAspectRatio ? "" : "_fill")}"
             : $"{Width}x{Height}_{(KeepAspectRatio ? "ar" : "fill")}_{BorderStyle}_{BorderThickness}_{BorderColor:X8}_{MaxPngBytes}";
     }
 
-    /// <summary>What the rendered bytes are: a PNG for TWiLightMenu++, an 8bpp BMP for Pico.</summary>
-    public string ContentType => Target == RenderTarget.Pico ? "image/bmp" : "image/png";
+    /// <summary>What the rendered bytes are: a PNG for TWiLightMenu++, an 8bpp BMP for Pico and AKMenu-Next.</summary>
+    public string ContentType => Target is RenderTarget.Pico or RenderTarget.AkMenuNext ? "image/bmp" : "image/png";
 
     /// <summary>The matching on-disk extension, dot included.</summary>
-    public string FileExtension => Target == RenderTarget.Pico ? ".bmp" : ".png";
+    public string FileExtension => Target is RenderTarget.Pico or RenderTarget.AkMenuNext ? ".bmp" : ".png";
 
     /// <summary>
     /// The options as art-URL query parameters: <c>?w=&amp;h=&amp;ar=&amp;b=&amp;bt=&amp;bc=</c>
     /// for TWiLightMenu (target absent, so every URL minted before targets existed keeps its
-    /// meaning), and just <c>?t=pico</c> for Pico, whose folded knobs would only be noise
-    /// splitting one fixed render across cache URLs. The single encoder for this wire format on
+    /// meaning), and just <c>?t=pico</c> for the fixed BMP targets, whose folded knobs would only
+    /// split one render across cache URLs. AKMenu-Next accepts Pico's BMP bytes, so both use the
+    /// existing wire target. The single encoder for this wire format on
     /// purpose: the server's Content-Location and the desktop client must emit identical strings
     /// or the same render stops converging on the same cache URL. <see cref="MaxPngBytes"/>
     /// deliberately does not travel; it is TWiLightMenu++'s hard constraint, not a client
@@ -372,7 +374,7 @@ public sealed record RenderOptions
     /// </summary>
     public string ToQueryString()
     {
-        return Target == RenderTarget.Pico
+        return Target is RenderTarget.Pico or RenderTarget.AkMenuNext
             // ar only travels when it is off: the default keeps the exact URL every Pico client
             // already mints, so the caches they have built up stay warm.
             ? (KeepAspectRatio ? "?t=pico" : "?t=pico&ar=0")

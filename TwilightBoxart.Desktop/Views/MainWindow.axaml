@@ -21,7 +21,7 @@
                     <TextBlock Text="TwilightBoxart" FontSize="20" FontWeight="Bold" Foreground="#2B2753" />
                     <TextBlock Text="{Binding Version}" FontSize="20" FontWeight="Bold" Foreground="#7566DD" />
                 </StackPanel>
-                <TextBlock Text="TWiLightMenu++ &amp; Pico Launcher Boxart Downloader - © KirovAir 2026"
+                <TextBlock Text="TWiLightMenu++, Pico Launcher &amp; AKMenu-Next Boxart Downloader - © KirovAir 2026"
                            FontSize="12" Foreground="#746F9B" />
             </StackPanel>
             <Button Grid.Column="2" VerticalAlignment="Center" Padding="8,4" Background="Transparent"
@@ -90,12 +90,17 @@
                             <StackPanel Orientation="Horizontal" Spacing="16">
                                 <RadioButton GroupName="launcher" Content="TWiLightMenu++"
                                              IsChecked="{Binding IsLauncherTwilight}" />
-                                <RadioButton GroupName="launcher" Content="Pico Launcher (DS Pico)"
+                                <RadioButton GroupName="launcher" Content="Pico Launcher"
                                              IsChecked="{Binding IsLauncherPico}" />
+                                <RadioButton GroupName="launcher" Content="AKMenu-Next"
+                                             IsChecked="{Binding IsLauncherAkMenuNext}" />
                             </StackPanel>
                             <TextBlock
-                                Text="Pico covers are one fixed format (128×96, 256 colours), so only the aspect ratio applies."
+                                Text="Pico Launcher covers have a fixed size, so you can only choose whether to keep the aspect ratio."
                                 IsVisible="{Binding IsLauncherPico}" Classes="hint" />
+                            <TextBlock
+                                Text="AKMenu-Next covers have a fixed size, so you can only choose whether to keep the aspect ratio. Covers are made for DS and GBA games only."
+                                IsVisible="{Binding IsLauncherAkMenuNext}" Classes="hint" />
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -106,7 +111,10 @@
                     <Border Classes="group">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Grid.Column="0" Spacing="6" VerticalAlignment="Center">
+                                <TextBlock Text="128 × 96, set by the launcher" Classes="hint"
+                                           IsVisible="{Binding !IsLauncherTwilight}" />
                                 <StackPanel Orientation="Horizontal" Spacing="16"
+                                            IsVisible="{Binding IsLauncherTwilight}"
                                             IsEnabled="{Binding IsLauncherTwilight}">
                                     <RadioButton GroupName="size" Content="Classic" IsChecked="{Binding IsSizeClassic}" />
                                     <RadioButton GroupName="size" Content="Large" IsChecked="{Binding IsSizeLarge}" />
@@ -122,6 +130,7 @@
                             </StackPanel>
                             <Grid Grid.Column="1" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto"
                                   VerticalAlignment="Center"
+                                  IsVisible="{Binding IsLauncherTwilight}"
                                   IsEnabled="{Binding IsLauncherTwilight}">
                                 <TextBlock Grid.Row="0" Grid.Column="0" Text="Width:" VerticalAlignment="Center"
                                            Margin="0,0,10,0" />
@@ -144,9 +153,13 @@
                 <StackPanel Spacing="3" IsEnabled="{Binding IsLauncherTwilight}">
                     <TextBlock Classes="section" Text="Border" />
                     <Border Classes="group">
+                        <Grid>
+                        <TextBlock Text="Borders aren't available for this launcher." Classes="hint"
+                                   IsVisible="{Binding !IsLauncherTwilight}" />
                         <!-- WrapPanel, not StackPanel: at narrow widths the tail of this row ("Thicker
                              border") must wrap under rather than clip out of the group's bounds. -->
-                        <WrapPanel ItemSpacing="16" LineSpacing="6">
+                        <WrapPanel ItemSpacing="16" LineSpacing="6"
+                                   IsVisible="{Binding IsLauncherTwilight}">
                             <CheckBox Content="Add border?" IsChecked="{Binding AddBorder}" />
                             <RadioButton GroupName="border" Content="DSi Theme" IsChecked="{Binding IsBorderDsi}"
                                          IsEnabled="{Binding AddBorder}" />
@@ -159,6 +172,7 @@
                             <CheckBox Content="Thicker border" IsChecked="{Binding ThickBorder}"
                                       IsEnabled="{Binding AddBorder}" />
                         </WrapPanel>
+                        </Grid>
                     </Border>
                 </StackPanel>
             </StackPanel>
@@ -192,6 +206,11 @@
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="{Binding Missed}" FontWeight="Bold" Foreground="#C64465" />
                         <TextBlock Classes="counter" Text="no art" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding HasUnsupported}"
+                                ToolTip.Tip="AKMenu-Next only shows covers for DS and GBA games">
+                        <TextBlock Text="{Binding Unsupported}" FontWeight="Bold" Foreground="#746F9B" />
+                        <TextBlock Classes="counter" Text="not DS or GBA" />
                     </StackPanel>
                 </StackPanel>
                 <CheckBox Grid.Column="1" Content="Overwrite existing boxart?" IsChecked="{Binding Overwrite}"

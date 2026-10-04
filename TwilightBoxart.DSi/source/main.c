@@ -1,8 +1,8 @@
 // TwilightBoxart DS/DSi client. A thin pipe over the backend:
 // read a ROM's header, ask the backend for art by serial or name, write the cover it
-// returns into the chosen launcher's boxart folder (TWiLightMenu++ PNG, or Pico Launcher
-// BMP). No TLS, no JSON, no image decoding. The server guarantees every TWiLightMenu PNG
-// fits its 45,056-byte box art slot; Pico covers are a fixed-size BMP by construction.
+// returns into the chosen launcher's boxart folder (TWiLightMenu++ PNG, or Pico / AKMenu-Next
+// BMP). No TLS, no JSON, no image decoding. The server guarantees every TWiLightMenu PNG fits
+// its 45,056-byte box art slot; the BMP targets share Pico's fixed-size format.
 
 #include <ctype.h>
 #include <dirent.h>
@@ -47,6 +47,7 @@
 /* Pico Launcher's filename-keyed folder: works for every system (the game-code folders only do
    NDS/GBA) and the launcher gives it precedence. */
 #define PICO_DIR    "/_pico/covers/user"
+#define AKMENU_DIR  "/_nds/covers_name"
 #define MAX_DEPTH   8
 
 /* The sample rate music.bin was converted at (Pixel Cart Drift, by Jesse Sander). */
@@ -59,7 +60,7 @@
 typedef struct {
     char ssid[33];
     char key[65];
-    int launcher;   /* 0 TWiLightMenu++, 1 Pico Launcher */
+    int launcher;   /* 0 TWiLightMenu++, 1 Pico Launcher, 2 AKMenu-Next */
     bool keep_ar;   /* keep the cover's proportions; off stretches it to the full size */
     int size;       /* 0 classic 128x115, 1 large 168x130, 2 xl 208x143 */
     int border;     /* 0 none, 1 dsi, 2 3ds, 3 black, 4 white */
@@ -79,9 +80,26 @@ static bool is_pico(void)
     return g_config.launcher == 1;
 }
 
+static bool is_akmenu(void)
+{
+    return g_config.launcher == 2;
+}
+
+static bool is_fixed_bmp(void)
+{
+    return is_pico() || is_akmenu();
+}
+
+static bool is_akmenu_rom_ext(const char *ext)
+{
+    return strcasecmp(ext, ".nds") == 0 || strcasecmp(ext, ".dsi") == 0 ||
+           strcasecmp(ext, ".srl") == 0 || strcasecmp(ext, ".ids") == 0 ||
+           strcasecmp(ext, ".ndz") == 0 || strcasecmp(ext, ".gba") == 0;
+}
+
 static const char *boxart_dir(void)
 {
-    return is_pico() ? PICO_DIR : BOXART_DIR;
+    return is_pico() ? PICO_DIR : is_akmenu() ? AKMENU_DIR : BOXART_DIR;
 }
 
 /* The bottom screen's artwork layer. The keyboard is created lazily on first use, because an
@@ -106,13 +124,14 @@ static const int SIZE_W[] = { 128, 168, 208 };
 static const int SIZE_H[] = { 115, 130, 143 };
 /* Nine characters at most: an option row is " > %-18s %s" and the console is 32 columns, so a
    ten-character value lands exactly on column 32, wraps, and shoves every row below it down. */
-static const char *LAUNCHER_NAMES[] = { "TWLMenu++", "DS Pico" };
+static const char *LAUNCHER_NAMES[] = { "TWLMenu++", "Pico", "AK-Next" };
 static const char *SIZE_NAMES[] = { "Classic", "Large", "XL" };
 static const char *BORDER_NAMES[] = { "None", "DSi Theme", "3DS Theme", "Black", "White" };
 static const char *BORDER_WIRE[] = { "None", "NintendoDsi", "Nintendo3Ds", "Line", "Line" };
 
+/* unsupported: ROMs AKMenu-Next shows no covers for (anything but DS and GBA), left out of found. */
 static struct {
-    int found, written, skipped, missed, failed;
+    int found, written, skipped, missed, failed, unsupported;
 } counters;
 
 static bool aborted = false;
@@ -331,10 +350,14 @@ static void print_recent_results(void)
 
 static void print_scan_counts(void)
 {
-    printf("%d games scanned\n"
-           "\x1b[32;1m%d new\x1b[37;1m / \x1b[36;1m%d existing\x1b[37;1m\n"
+    /* Shares the first line so the dashboard keeps its row count: at most 29 of 32 columns. */
+    if (counters.unsupported > 0)
+        printf("%d scanned, %d not DS/GBA\n", counters.found, counters.unsupported);
+    else
+        printf("%d games scanned\n", counters.found);
+    printf("\x1b[32;1m%d new\x1b[37;1m / \x1b[36;1m%d existing\x1b[37;1m\n"
            "\x1b[33;1m%d missing\x1b[37;1m / \x1b[31;1m%d failed\x1b[37;1m\n",
-           counters.found, counters.written, counters.skipped, counters.missed, counters.failed);
+           counters.written, counters.skipped, counters.missed, counters.failed);
 }
 
 static void scan_dashboard(const char *name, const char *status)
@@ -396,8 +419,15 @@ static void scan_summary(bool stopped, size_t selected, size_t first, const char
 static void fetch_art(const char *path, const char *name)
 {
     char out_path[512];
-    snprintf(out_path, sizeof(out_path), "%s/%s%s", boxart_dir(), name,
-             is_pico() ? ".bmp" : ".png");
+    char cover_name[256];
+    snprintf(cover_name, sizeof(cover_name), "%s", name);
+    if (is_akmenu()) {
+        char *extension = strrchr(cover_name, '.');
+        if (extension && extension != cover_name)
+            *extension = '\0';
+    }
+    snprintf(out_path, sizeof(out_path), "%s/%s%s", boxart_dir(), cover_name,
+             is_fixed_bmp() ? ".bmp" : ".png");
 
     struct stat existing;
     if (!g_config.overwrite && stat(out_path, &existing) == 0) {
@@ -407,9 +437,9 @@ static void fetch_art(const char *path, const char *name)
         return;
     }
 
-    /* Pico's cover format is fixed, so the target is the whole render request there. */
+    /* Both BMP targets use Pico's fixed format, so the target is the whole render request. */
     char render[96];
-    if (is_pico()) {
+    if (is_fixed_bmp()) {
         /* ar only travels when it is off, so the default keeps the URL the server already caches. */
         snprintf(render, sizeof(render), "&t=pico%s", g_config.keep_ar ? "" : "&ar=0");
     } else {
@@ -532,6 +562,9 @@ static void scan_directory(int depth)
         if (entry->d_type == DT_DIR) {
             if (!is_skip_dir(entry->d_name, depth))
                 scan_directory(depth + 1);
+        } else if (is_rom_ext(file_ext(entry->d_name)) && !is_junk_file(entry->d_name) &&
+                   is_akmenu() && !is_akmenu_rom_ext(file_ext(entry->d_name))) {
+            counters.unsupported++;
         } else if (is_rom_ext(file_ext(entry->d_name)) && !is_junk_file(entry->d_name)) {
             /* Smaller than the header sample is smaller than any real ROM, so a 31-byte README
                stub is not worth a request; a file stat cannot read still gets its try. */
@@ -650,15 +683,18 @@ static bool edit_line(const char *prompt, char *buf, size_t buf_size)
 
 
 /* Which launcher this card is set up for, when only one of them is installed. Ambiguous cards -
-   both launchers, or neither - answer TWiLightMenu++, which is what a card without an ini got
+   multiple launchers, or none - answer TWiLightMenu++, which is what a card without an ini got
    before this existed. */
 static int detect_launcher(void)
 {
     struct stat st;
     bool pico = stat("/_pico", &st) == 0;
     bool twilight = stat("/_nds/TWiLightMenu", &st) == 0;
+    bool akmenu = stat("/_nds/akmenunext", &st) == 0 || stat(AKMENU_DIR, &st) == 0;
 
-    return pico && !twilight ? 1 : 0;
+    if (akmenu && !pico && !twilight)
+        return 2;
+    return pico && !twilight && !akmenu ? 1 : 0;
 }
 
 static bool load_config(AppConfig *config)
@@ -692,7 +728,9 @@ static bool load_config(AppConfig *config)
             } else if (strcasecmp(key, "key") == 0) {
                 strncpy(config->key, value, sizeof(config->key) - 1);
             } else if (strcasecmp(key, "launcher") == 0) {
-                config->launcher = atoi(value) == 1 ? 1 : 0;
+                config->launcher = atoi(value);
+                if (config->launcher < 0 || config->launcher > 2)
+                    config->launcher = 0;
             } else if (strcasecmp(key, "keep_ar") == 0) {
                 config->keep_ar = atoi(value) != 0;
                 seen_keep_ar = true;
@@ -1190,6 +1228,12 @@ static bool connect_wifi(void)
 
 /* options */
 
+static bool option_enabled(int row)
+{
+    return !(is_fixed_bmp() && row >= 2 && row <= 4) &&
+           !(row == 4 && g_config.border == 0);
+}
+
 /* A little settings screen: pick with the D-pad, A starts the scan. */
 static bool options_menu(void)
 {
@@ -1202,18 +1246,17 @@ static bool options_menu(void)
         const char *values[7] = {
             LAUNCHER_NAMES[g_config.launcher],
             g_config.keep_ar ? "Keep" : "Stretch",
-            SIZE_NAMES[g_config.size],
-            BORDER_NAMES[g_config.border],
-            g_config.thick ? "On" : "Off",
+            is_fixed_bmp() ? "Fixed" : SIZE_NAMES[g_config.size],
+            is_fixed_bmp() ? "N/A" : BORDER_NAMES[g_config.border],
+            !option_enabled(4) ? "N/A" : g_config.thick ? "On" : "Off",
             g_config.overwrite ? "Yes" : "No",
             g_config.quick_scan ? "Quick" : "Complete",
         };
         const char *labels[7] = { "Launcher", "Shape", "Size", "Border", "Thicker border", "Overwrite existing", "Scan mode" };
 
         for (int i = 0; i < 7; i++) {
-            /* Pico's geometry is fixed, so the size and border rows go dark with it. Shape is the
-               one setting it keeps: its window is fixed, the art it holds is not. */
-            bool dim = (i == 4 && g_config.border == 0) || (is_pico() && i >= 2 && i <= 4);
+            /* The BMP launchers have fixed geometry, so the size and border rows go dark with them. */
+            bool dim = !option_enabled(i);
             if (i == row)
                 printf(" \x1b[33;1m> %-18s %s\n", labels[i], values[i]);
             else if (dim)
@@ -1235,17 +1278,23 @@ static bool options_menu(void)
             scanKeys();
             u32 down = keysDownRepeat();
             if (down & KEY_UP) {
-                row = (row + 6) % 7;
+                do {
+                    row = (row + 6) % 7;
+                } while (!option_enabled(row));
                 break;
             }
             if (down & KEY_DOWN) {
-                row = (row + 1) % 7;
+                do {
+                    row = (row + 1) % 7;
+                } while (!option_enabled(row));
                 break;
             }
             if (down & (KEY_LEFT | KEY_RIGHT)) {
+                if (!option_enabled(row))
+                    continue;
                 int step = (down & KEY_RIGHT) ? 1 : -1;
                 if (row == 0)
-                    g_config.launcher = !g_config.launcher;
+                    g_config.launcher = (g_config.launcher + step + 3) % 3;
                 else if (row == 1)
                     g_config.keep_ar = !g_config.keep_ar;
                 else if (row == 2)
@@ -1493,7 +1542,7 @@ int main(void)
                                     MUSIC_VOLUME, 64, true, 0);
 
     printf("TwilightBoxart " APP_VERSION "\n");
-    printf("Box art for TWiLightMenu++\nand Pico Launcher\n\n");
+    printf("Box art for TWiLightMenu++,\nPico Launcher and AKMenu-Next\n\n");
 
     /* DS mode means the 2005 radio: open and WEP networks only, no WPA2. Still enough for a
        hotspot or a guest SSID, so say what to expect up front instead of refusing to run. */
@@ -1575,6 +1624,8 @@ int main(void)
         if (is_pico()) {
             (void)mkdir("/_pico", 0777);
             (void)mkdir("/_pico/covers", 0777);
+        } else if (is_akmenu()) {
+            (void)mkdir("/_nds/covers_name", 0777);
         } else {
             (void)mkdir("/_nds/TWiLightMenu", 0777);
         }

@@ -224,6 +224,26 @@ public class BoxartRendererTests
     }
 
     [TestMethod]
+    public void AkMenuNextUsesThePicoBmpRenderContract()
+    {
+        var options = new RenderOptions { Target = RenderTarget.AkMenuNext }.Normalized();
+        var bmp = new BoxartRenderer().Render(Cover(600, 540), options);
+
+        Assert.AreEqual("image/bmp", options.ContentType);
+        Assert.AreEqual(".bmp", options.FileExtension);
+        Assert.AreEqual("?t=pico", options.ToQueryString());
+        Assert.AreEqual(
+            new RenderOptions { Target = RenderTarget.Pico }.Normalized().CacheDiscriminator(),
+            options.CacheDiscriminator(),
+            "the two launchers accept byte-identical fixed BMP renders");
+        Assert.AreEqual((byte)'B', bmp[0]);
+        Assert.AreEqual((byte)'M', bmp[1]);
+        Assert.AreEqual(RenderOptions.PicoWidth, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(18, 4)));
+        Assert.AreEqual(RenderOptions.PicoHeight, BinaryPrimitives.ReadInt32LittleEndian(bmp.AsSpan(22, 4)));
+        Assert.AreEqual(8, BinaryPrimitives.ReadInt16LittleEndian(bmp.AsSpan(28, 2)));
+    }
+
+    [TestMethod]
     public void BoxartRenderer_FillsThePicoWindowWithoutEverCroppingTheArt()
     {
         // GameTDB serves every DS cover at 768x680, 2.3% off the fixed 106x96 window. Stretched
