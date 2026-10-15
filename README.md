@@ -73,12 +73,12 @@ Every app asks which launcher up front.
 | --- | --- | --- |
 | <a href="https://github.com/DS-Homebrew/TWiLightMenu" target="_blank" rel="noopener">TWiLightMenu++</a> | PNG, sized to the menu's limits | `_nds/TWiLightMenu/boxart/<rom name>.png` |
 | <a href="https://github.com/LNH-team/pico-launcher" target="_blank" rel="noopener">Pico Launcher</a> (DS Pico) | 8-bit BMP, 128 × 96 | `_pico/covers/user/<rom name>.bmp` |
-| <a href="https://github.com/coderkei/akmenu-next" target="_blank" rel="noopener">AKMenu-Next</a> | 8-bit BMP, 128 × 96, for NDS and GBA | `_nds/covers_name/<rom name without extension>.bmp` |
+| <a href="https://github.com/coderkei/akmenu-next" target="_blank" rel="noopener">AKMenu-Next</a> | 8-bit BMP, 128 × 96 | `_nds/covers_name/<rom name without extension>.bmp` |
 
 Pico covers go in the filename-keyed `user` folder: it works for every system below, where the
 game-code folders only do NDS and GBA.
-AKMenu-Next uses the same BMP format; its loader trims the black padding columns and looks up NDS
-and GBA covers by the ROM filename without its extension.
+AKMenu-Next reads the same BMP (its loader trims the black padding columns) and looks covers up by
+the ROM filename without its extension.
 
 Only cover images are written, into the boxart folder. Nothing else on the card is touched.
 
@@ -127,8 +127,7 @@ names the dump, the other has the cover. The menu also lists `.xex`/`.atr` (Atar
 them, so every lookup would miss.
 
 File extensions follow TWiLightMenu++'s own list, so anything the menu will launch is something
-this will scan. That includes `.agb`/`.mb` for GBA, `.srl`/`.ids`/`.app` for DS(i), and `.ndz`
-for AKMenu-Next.
+this will scan. That includes `.agb`/`.mb` for GBA and `.srl`/`.ids`/`.app`/`.ndz` for DS(i).
 
 </details>
 
@@ -144,9 +143,9 @@ A lot of work went into the matching. It rarely misses.
   compatible 8-bit BMP format, no separate converter needed.
 
 For Pico Launcher and AKMenu-Next, the apps show the fixed cover size and mark border settings as
-unavailable. AKMenu-Next only shows covers for DS and GBA games, so other games are left out and
-reported separately instead of being counted as already there. Switching back to TWiLightMenu++
-restores its saved size and border choices.
+unavailable. AKMenu-Next currently shows covers for DS and GBA games only; covers for the other
+systems it launches through plugins are written all the same, ready for when it does. Switching
+back to TWiLightMenu++ restores its saved size and border choices.
 
 ## 🐳 Self-hosting
 

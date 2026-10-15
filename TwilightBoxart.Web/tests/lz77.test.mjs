@@ -83,17 +83,13 @@ test('probeFile leaves a plain ROM on the loose path, untouched by the .lz77 bra
     assert.equal(probe.crc32, crc32(rom));
 });
 
-test('recognizes AKMenu-Next cards and its filename-keyed cover folder', () => {
-    assert.equal(scan.isAkMenuRom('game.nds'), true);
-    assert.equal(scan.isAkMenuRom('game.ndz'), true);
-    assert.equal(scan.isAkMenuRom('game.GBA'), true);
-    assert.equal(scan.isAkMenuRom('game.sfc'), false);
+test('recognizes AKMenu-Next cards by its own folder only', () => {
     assert.equal(scan.fileListHasAkMenuSentinel([
         {webkitRelativePath: 'card/_nds/akmenunext/akmenu-next.nds'},
     ]), true);
     assert.equal(scan.fileListHasAkMenuSentinel([
-        {webkitRelativePath: 'card/_nds/covers_name/Super Mario.nds.bmp'},
-    ]), true);
+        {webkitRelativePath: 'card/_nds/covers_name/Super Mario.bmp'},
+    ]), false, 'the cover folder is ours to create, so it says nothing about the launcher');
     assert.equal(scan.fileListHasAkMenuSentinel([
         {webkitRelativePath: 'card/_nds/TWiLightMenu/settings.ini'},
     ]), false);

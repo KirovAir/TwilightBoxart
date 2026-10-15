@@ -20,7 +20,7 @@ const TWILIGHT_MAX_PNG_BYTES = 0xB000;
 const BOXART_PATH = '_nds/TWiLightMenu/boxart';
 /** Pico's filename-keyed folder: it works for every system and outranks the game-code folders. */
 const PICO_PATH = '_pico/covers/user';
-/** AKMenu-Next looks up BMP covers for NDS and GBA ROMs by filename without the extension. */
+/** AKMenu-Next's name-keyed folder: the ROM filename without its extension, plus .bmp. */
 const AKMENU_PATH = '_nds/covers_name';
 
 const isPico = () => $('launcher-pico').checked;
@@ -70,8 +70,7 @@ const state = {
     installPrompt: null,
 };
 
-// unsupported: games the chosen launcher can't show covers for (AKMenu-Next: anything but DS and GBA).
-const counters = {found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0, unsupported: 0};
+const counters = {found: 0, probed: 0, identified: 0, written: 0, skipped: 0, missed: 0};
 
 /**
  * The missed counter moves only through these two, and each item remembers whether it is counted:
@@ -114,11 +113,13 @@ function readSettings() {
 }
 
 /**
- * Uses the server's render settings for written-file bookkeeping. Keep the launcher in this key too:
- * Pico and AKMenu-Next share BMP bytes but write to different folders.
+ * Mirrors RenderOptions.CacheDiscriminator() so the two caches agree on what "same" means. Pico
+ * folds its geometry away but not its shape, and carries a render version: a bump has to reach here
+ * too, or a card keeps the covers it was written last time. AKMenu-Next gets the same bytes but a
+ * different folder, so it salts the key; Pico's key stays as it was, so its records stay valid.
  */
 const renderKey = (s) => s.target === 'pico' || s.target === 'akmenu'
-    ? `${s.target}_${s.keepAspectRatio ? 'pico2' : 'pico2_fill'}`
+    ? `${s.target === 'akmenu' ? 'akmenu_' : ''}${s.keepAspectRatio ? 'pico2' : 'pico2_fill'}`
     : `${s.width}x${s.height}_${s.keepAspectRatio ? 'ar' : 'fill'}_${s.borderStyle}_${s.borderThickness}_${s.borderColor.toString(16).toUpperCase().padStart(8, '0')}`;
 
 function saveSettings() {
@@ -213,12 +214,11 @@ function paint() {
             const el = $('c-' + k);
             if (el) el.textContent = v.toLocaleString();
         }
-        $('c-unsupported-wrap').hidden = counters.unsupported === 0;
         // Reading the card fills the first half of the bar, fetching covers the second, so the
         // long first scan visibly moves from the start instead of sitting at zero.
         const total = counters.found || 1;
         const read = Math.min(1, counters.probed / total);
-        const done = Math.min(1, (counters.written + counters.skipped + counters.missed + counters.unsupported) / total);
+        const done = Math.min(1, (counters.written + counters.skipped + counters.missed) / total);
         $('bar-fill').style.width = `${(read * 50 + done * 50).toFixed(1)}%`;
     }, 120);
 }
@@ -531,7 +531,7 @@ async function collectFiles(signal) {
 
 const tick = () => new Promise(r => setTimeout(r, 0));
 
-async function probeAll(found, signal, target) {
+async function probeAll(found, signal) {
     const items = found.map((f, i) => ({
         tag: String(i), path: f.path, fileName: f.name, getFile: f.getFile,
         status: 'pending', reason: null, probe: null, identity: null,
@@ -545,9 +545,6 @@ async function probeAll(found, signal, target) {
             item.status = 'missed';
             item.reason = probe.reason;
             countMiss(item);
-        } else if (target === 'akmenu' && !scan.isAkMenuRom(probe.innerName || item.fileName)) {
-            item.status = 'unsupported';
-            counters.unsupported++;
         } else {
             item.probe = probe;
             item.contentKey = store.contentKey(probe);
@@ -888,12 +885,8 @@ async function run({retryOnly = false, deep = false} = {}) {
             log('Looking for games…');
             const found = await collectFiles(signal);
             log(`Found ${found.length.toLocaleString()} games. Reading them…`);
-            items = await probeAll(found, signal, settings.target);
+            items = await probeAll(found, signal);
             state.items = items;
-            if (counters.unsupported) {
-                log(`Left out ${counters.unsupported.toLocaleString()} games that aren't DS or GBA. `
-                    + 'AKMenu-Next only shows covers for those.');
-            }
             await identifyAll(items, signal);
         }
 
@@ -905,8 +898,7 @@ async function run({retryOnly = false, deep = false} = {}) {
         else log(`Done in ${((performance.now() - started) / 1000).toFixed(1)}s: `
             + `${counters.written.toLocaleString()} ${state.mode === 'write' ? 'new covers' : 'ready to download'}, `
             + `${counters.skipped.toLocaleString()} already there, `
-            + `${counters.missed.toLocaleString()} without art`
-            + (counters.unsupported ? `, ${counters.unsupported.toLocaleString()} not DS or GBA.` : '.'), 'good');
+            + `${counters.missed.toLocaleString()} without art.`, 'good');
 
         if (state.mode === 'readonly' && state.zipEntries.length) {
             $('zip-wrap').hidden = false;

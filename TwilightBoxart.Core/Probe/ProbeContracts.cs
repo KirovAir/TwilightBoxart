@@ -106,6 +106,9 @@ public static class SupportedFiles
             [".ds"] = ConsoleType.NintendoDs,
             [".srl"] = ConsoleType.NintendoDs,
             [".ids"] = ConsoleType.NintendoDs,
+            // AKMenu-Next's compressed dump ("NDZ1" magic, game code at 0x2410). The first 512 bytes
+            // carry no DS header, so it rides the filename rung only; the hash it skips as a DS
+            // extension would be of compressed bytes and could never match anyway.
             [".ndz"] = ConsoleType.NintendoDs,
             [".dsi"] = ConsoleType.NintendoDsi,
 
@@ -250,18 +253,6 @@ public static class SupportedFiles
     public static bool IsScannable(string path)
     {
         return Scannable.Contains(Path.GetExtension(path));
-    }
-
-    /// <summary>ROM extensions for which AKMenu-Next displays its filename-keyed covers.</summary>
-    public static bool IsAkMenuNextRom(string path)
-    {
-        var extension = Path.GetExtension(path);
-        return extension.Equals(".nds", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".dsi", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".srl", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".ids", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".ndz", StringComparison.OrdinalIgnoreCase) ||
-               extension.Equals(".gba", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>Documentation wearing a ROM extension; see <see cref="SkipFiles"/>.</summary>

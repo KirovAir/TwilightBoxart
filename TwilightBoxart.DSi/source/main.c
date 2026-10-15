@@ -90,13 +90,6 @@ static bool is_fixed_bmp(void)
     return is_pico() || is_akmenu();
 }
 
-static bool is_akmenu_rom_ext(const char *ext)
-{
-    return strcasecmp(ext, ".nds") == 0 || strcasecmp(ext, ".dsi") == 0 ||
-           strcasecmp(ext, ".srl") == 0 || strcasecmp(ext, ".ids") == 0 ||
-           strcasecmp(ext, ".ndz") == 0 || strcasecmp(ext, ".gba") == 0;
-}
-
 static const char *boxart_dir(void)
 {
     return is_pico() ? PICO_DIR : is_akmenu() ? AKMENU_DIR : BOXART_DIR;
@@ -129,9 +122,8 @@ static const char *SIZE_NAMES[] = { "Classic", "Large", "XL" };
 static const char *BORDER_NAMES[] = { "None", "DSi Theme", "3DS Theme", "Black", "White" };
 static const char *BORDER_WIRE[] = { "None", "NintendoDsi", "Nintendo3Ds", "Line", "Line" };
 
-/* unsupported: ROMs AKMenu-Next shows no covers for (anything but DS and GBA), left out of found. */
 static struct {
-    int found, written, skipped, missed, failed, unsupported;
+    int found, written, skipped, missed, failed;
 } counters;
 
 static bool aborted = false;
@@ -350,14 +342,10 @@ static void print_recent_results(void)
 
 static void print_scan_counts(void)
 {
-    /* Shares the first line so the dashboard keeps its row count: at most 29 of 32 columns. */
-    if (counters.unsupported > 0)
-        printf("%d scanned, %d not DS/GBA\n", counters.found, counters.unsupported);
-    else
-        printf("%d games scanned\n", counters.found);
-    printf("\x1b[32;1m%d new\x1b[37;1m / \x1b[36;1m%d existing\x1b[37;1m\n"
+    printf("%d games scanned\n"
+           "\x1b[32;1m%d new\x1b[37;1m / \x1b[36;1m%d existing\x1b[37;1m\n"
            "\x1b[33;1m%d missing\x1b[37;1m / \x1b[31;1m%d failed\x1b[37;1m\n",
-           counters.written, counters.skipped, counters.missed, counters.failed);
+           counters.found, counters.written, counters.skipped, counters.missed, counters.failed);
 }
 
 static void scan_dashboard(const char *name, const char *status)
@@ -562,9 +550,6 @@ static void scan_directory(int depth)
         if (entry->d_type == DT_DIR) {
             if (!is_skip_dir(entry->d_name, depth))
                 scan_directory(depth + 1);
-        } else if (is_rom_ext(file_ext(entry->d_name)) && !is_junk_file(entry->d_name) &&
-                   is_akmenu() && !is_akmenu_rom_ext(file_ext(entry->d_name))) {
-            counters.unsupported++;
         } else if (is_rom_ext(file_ext(entry->d_name)) && !is_junk_file(entry->d_name)) {
             /* Smaller than the header sample is smaller than any real ROM, so a 31-byte README
                stub is not worth a request; a file stat cannot read still gets its try. */
@@ -690,7 +675,7 @@ static int detect_launcher(void)
     struct stat st;
     bool pico = stat("/_pico", &st) == 0;
     bool twilight = stat("/_nds/TWiLightMenu", &st) == 0;
-    bool akmenu = stat("/_nds/akmenunext", &st) == 0 || stat(AKMENU_DIR, &st) == 0;
+    bool akmenu = stat("/_nds/akmenunext", &st) == 0;
 
     if (akmenu && !pico && !twilight)
         return 2;

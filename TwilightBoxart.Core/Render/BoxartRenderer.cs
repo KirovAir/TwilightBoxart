@@ -70,7 +70,7 @@ public sealed class BoxartRenderer : IBoxartRenderer
         // which is more reliable than an upstream header.
         using var artwork = Image.Load<Rgba32>(Decoder, source.Data);
 
-        if (settings.Target is RenderTarget.Pico or RenderTarget.AkMenuNext)
+        if (RenderOptions.UsesPicoBmp(settings.Target))
         {
             return RenderPico(artwork, settings);
         }

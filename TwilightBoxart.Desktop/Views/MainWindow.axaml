@@ -99,7 +99,7 @@
                                 Text="Pico Launcher covers have a fixed size, so you can only choose whether to keep the aspect ratio."
                                 IsVisible="{Binding IsLauncherPico}" Classes="hint" />
                             <TextBlock
-                                Text="AKMenu-Next covers have a fixed size, so you can only choose whether to keep the aspect ratio. Covers are made for DS and GBA games only."
+                                Text="AKMenu-Next covers have a fixed size, so you can only choose whether to keep the aspect ratio. The launcher currently shows them for DS and GBA games; the rest are written ready for when it does."
                                 IsVisible="{Binding IsLauncherAkMenuNext}" Classes="hint" />
                         </StackPanel>
                     </Border>
@@ -206,11 +206,6 @@
                     <StackPanel Orientation="Horizontal" Spacing="5">
                         <TextBlock Text="{Binding Missed}" FontWeight="Bold" Foreground="#C64465" />
                         <TextBlock Classes="counter" Text="no art" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="5" IsVisible="{Binding HasUnsupported}"
-                                ToolTip.Tip="AKMenu-Next only shows covers for DS and GBA games">
-                        <TextBlock Text="{Binding Unsupported}" FontWeight="Bold" Foreground="#746F9B" />
-                        <TextBlock Classes="counter" Text="not DS or GBA" />
                     </StackPanel>
                 </StackPanel>
                 <CheckBox Grid.Column="1" Content="Overwrite existing boxart?" IsChecked="{Binding Overwrite}"

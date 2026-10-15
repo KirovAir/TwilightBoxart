@@ -8,8 +8,7 @@ namespace TwilightBoxart.Desktop.Services;
 
 public sealed record ScanRequest(string RootFolder, string BoxartDir, RenderOptions Render, bool Overwrite, int Concurrency);
 
-/// <summary>Run totals. Unsupported counts games the chosen launcher cannot show covers for (AKMenu-Next: anything but DS and GBA).</summary>
-public sealed record ScanCounters(int Found, int Identified, int Written, int Skipped, int Missed, int Unsupported = 0);
+public sealed record ScanCounters(int Found, int Identified, int Written, int Skipped, int Missed);
 
 /// <summary>A progress tick: the current counters, and optionally a log line and/or a status change.</summary>
 public sealed record ScanUpdate(ScanCounters Counters, string? Log = null, string? Status = null);
@@ -26,8 +25,10 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
     private const int IdentifyChunk = IdentifyRequest.MaxItems;
 
     /// <summary>
-    /// Where the art goes under a card root. AKMenu-Next looks up NDS/GBA BMPs by the ROM filename
-    /// without its extension; Pico uses its own filename-keyed folder.
+    /// Where the art goes under a card root. The one spelling of each launcher's path. Pico gets the
+    /// filename-keyed <c>user</c> folder: it covers every system (the game-code folders only do
+    /// NDS/GBA) and the launcher gives it precedence. AKMenu-Next's name folder is keyed by the ROM
+    /// filename without its extension.
     /// </summary>
     public static string BoxartDirectory(string root, RenderTarget target)
     {
@@ -47,8 +48,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
     {
         var pico = Directory.Exists(Path.Combine(root, "_pico"));
         var twilight = Directory.Exists(Path.Combine(root, "_nds", "TWiLightMenu"));
-        var akMenuNext = Directory.Exists(Path.Combine(root, "_nds", "akmenunext"))
-                         || Directory.Exists(Path.Combine(root, "_nds", "covers_name"));
+        var akMenuNext = Directory.Exists(Path.Combine(root, "_nds", "akmenunext"));
 
         if ((pico ? 1 : 0) + (twilight ? 1 : 0) + (akMenuNext ? 1 : 0) != 1)
         {
@@ -116,19 +116,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         progress.Report(new ScanUpdate(counters.Snapshot(), "Identifying..."));
 
         // 3. Identify, batched, correlated back by tag.
-        var probed = items.Where(i => i.Probe is not null &&
-                                     (request.Render.Target != RenderTarget.AkMenuNext ||
-                                      SupportedFiles.IsAkMenuNextRom(i.Probe.InnerName))).ToList();
-        var unsupported = request.Render.Target == RenderTarget.AkMenuNext
-            ? items.Count(i => i.Probe is not null && !SupportedFiles.IsAkMenuNextRom(i.Probe.InnerName))
-            : 0;
-        counters.AddUnsupported(unsupported);
-        if (unsupported > 0)
-        {
-            progress.Report(new ScanUpdate(counters.Snapshot(),
-                $"Left out {unsupported:N0} games that aren't DS or GBA. AKMenu-Next only shows covers for those."));
-        }
-
+        var probed = items.Where(i => i.Probe is not null).ToList();
         var fingerprints = new List<RomFingerprint>(probed.Count);
         for (var i = 0; i < probed.Count; i++)
         {
@@ -235,8 +223,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
 
         var final = counters.Snapshot();
         progress.Report(new ScanUpdate(final,
-            Status: $"Done. {final.Written:N0} written, {final.Skipped:N0} already there, {final.Missed:N0} without art"
-                    + (final.Unsupported > 0 ? $", {final.Unsupported:N0} not DS or GBA." : "."),
+            Status: $"Done. {final.Written:N0} written, {final.Skipped:N0} already there, {final.Missed:N0} without art.",
             Log: "Finished."));
     }
 
@@ -391,7 +378,6 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
         private int _written;
         private int _skipped;
         private int _missed;
-        private int _unsupported;
 
         public int Found { get; set; }
 
@@ -423,11 +409,6 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
             Interlocked.Increment(ref _missed);
         }
 
-        public void AddUnsupported(int count)
-        {
-            Interlocked.Add(ref _unsupported, count);
-        }
-
         public ScanCounters Snapshot()
         {
             return new ScanCounters(
@@ -435,8 +416,7 @@ public sealed class ScanService(RomProbeService prober, ILogger<ScanService> log
                 Volatile.Read(ref _identified),
                 Volatile.Read(ref _written),
                 Volatile.Read(ref _skipped),
-                Volatile.Read(ref _missed),
-                Volatile.Read(ref _unsupported));
+                Volatile.Read(ref _missed));
         }
     }
 }

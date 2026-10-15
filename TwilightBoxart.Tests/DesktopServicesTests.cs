@@ -145,16 +145,6 @@ public class DesktopServicesTests
             SafeName.OutputFileName("archive.zip", "Game (Europe).gba", true, ".bmp", stripRomExtension: true));
     }
 
-    [TestMethod]
-    public void AkMenuNextOnlyDisplaysItsSupportedRomTypes()
-    {
-        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.nds"));
-        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.ndz"));
-        Assert.IsTrue(SupportedFiles.IsAkMenuNextRom("game.GBA"));
-        Assert.IsFalse(SupportedFiles.IsAkMenuNextRom("game.sfc"));
-        Assert.IsFalse(SupportedFiles.IsAkMenuNextRom("game.agb"));
-    }
-
     // ── ScanService.CollectFiles ─────────────────────────────────────────────────────────────
 
     [TestMethod]

@@ -298,13 +298,6 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _missed;
 
-    /// <summary>Games AKMenu-Next shows no covers for; the counter is hidden while this is zero.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasUnsupported))]
-    private int _unsupported;
-
-    public bool HasUnsupported => Unsupported > 0;
-
     [ObservableProperty]
     private double _progressValue;
 
@@ -470,8 +463,7 @@ public sealed partial class MainViewModel : ObservableObject
         Written = c.Written;
         Skipped = c.Skipped;
         Missed = c.Missed;
-        Unsupported = c.Unsupported;
-        ProgressValue = c.Found > 0 ? 100.0 * (c.Written + c.Skipped + c.Missed + c.Unsupported) / c.Found : 0;
+        ProgressValue = c.Found > 0 ? 100.0 * (c.Written + c.Skipped + c.Missed) / c.Found : 0;
 
         if (update.Status is { } status)
         {
@@ -499,7 +491,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private void ResetCounters()
     {
-        Found = Written = Skipped = Missed = Unsupported = 0;
+        Found = Written = Skipped = Missed = 0;
         ProgressValue = 0;
         _log.Clear();
         LogText = "";

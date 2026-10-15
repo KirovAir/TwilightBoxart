@@ -21,7 +21,6 @@ import {
 const formats = JSON.parse(document.getElementById('formats').textContent);
 const ROM_EXTENSIONS = new Set(formats.rom);
 const ARCHIVE_EXTENSIONS = new Set(formats.archive);
-const AKMENU_ROM_EXTENSIONS = new Set(['.nds', '.dsi', '.srl', '.ids', '.ndz', '.gba']);
 
 /**
  * Directories that never hold ROMs (the launchers' own data, the hiyaCFW SDNAND layout, OS junk)
@@ -53,7 +52,6 @@ function extname(name) {
 }
 
 export const isRom = (name) => ROM_EXTENSIONS.has(extname(name));
-export const isAkMenuRom = (name) => AKMENU_ROM_EXTENSIONS.has(extname(name));
 const isArchive = (name) => ARCHIVE_EXTENSIONS.has(extname(name));
 export const isScannable = (name) => isRom(name) || isArchive(name);
 
@@ -173,17 +171,15 @@ export function fileListHasPicoSentinel(files) {
     return false;
 }
 
-/** AKMenu-Next stores its files under `_nds/akmenunext/`. */
+/**
+ * AKMenu-Next's own folder is `_nds/akmenunext/`. Its cover folder is deliberately not a
+ * sentinel: this tool creates it, so it would turn every card it has written into an
+ * AKMenu-Next card.
+ */
 export async function hasAkMenuSentinel(root) {
     try {
         const nds = await root.getDirectoryHandle('_nds');
-        if (await nds.getDirectoryHandle('akmenunext')) return true;
-    } catch {
-        // Also recognize a card that already has the launcher's cover directory.
-    }
-    try {
-        const nds = await root.getDirectoryHandle('_nds');
-        await nds.getDirectoryHandle('covers_name');
+        await nds.getDirectoryHandle('akmenunext');
         return true;
     } catch {
         return false;
@@ -193,7 +189,7 @@ export async function hasAkMenuSentinel(root) {
 export function fileListHasAkMenuSentinel(files) {
     for (const f of files) {
         const rel = (f.webkitRelativePath || '').toLowerCase();
-        if (rel.includes('/_nds/akmenunext/') || rel.includes('/_nds/covers_name/')) return true;
+        if (rel.includes('/_nds/akmenunext/')) return true;
     }
     return false;
 }

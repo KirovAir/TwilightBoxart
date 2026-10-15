@@ -144,7 +144,7 @@ With `t=pico` the response is the fixed-cover format: an **8bpp indexed BMP, 128
 (art in the visible left 106x96, right 22 columns black), served as `image/bmp`, always 13,366 bytes. Every other render
 parameter is ignored there, because the launcher's format is fixed. Pico clients write to
 `_pico/covers/user/<rom name>.bmp`; AKMenu-Next clients write to
-`_nds/covers_name/<rom name without extension>.bmp` for NDS and GBA games.
+`_nds/covers_name/<rom name without extension>.bmp`.
 
 Responses carry an `ETag` (the source art's hash) and `Cache-Control: public, max-age=86400`, and honour `If-None-Match`
 with a `304`. The ETag changes when the art changes and is stable across every size and border variant of the same
