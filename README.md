@@ -147,6 +147,19 @@ unavailable. AKMenu-Next currently shows covers for DS and GBA games only; cover
 systems it launches through plugins are written all the same, ready for when it does. Switching
 back to TWiLightMenu++ restores its saved size and border choices.
 
+## 🔲 Borders
+
+You can select between four (or no) border options: `DSi Theme`, `3DS Theme`, `Black` and `White` (which both have a `Thicker border` option).
+
+| DSi Theme | 3DS Theme |
+|     :---:    |     :---:      |
+| <img width="216" height="192" alt="dsi-theme" src="https://github.com/user-attachments/assets/c80ccd9b-9984-4fa3-aefc-d797192ab624" />   | <img width="216" height="192" alt="3ds-theme" src="https://github.com/user-attachments/assets/5c2c7d51-3669-433f-9c8f-045cbe85445b" />     |
+| **Black** | **White** |
+| <img width="217" height="192" alt="black" src="https://github.com/user-attachments/assets/f308080c-3e99-4ef7-8204-7d444798e815" />     | <img width="217" height="192" alt="white" src="https://github.com/user-attachments/assets/7a3b911f-978d-4650-b908-b922e8c38a5a" />       |
+| **Black (Thicker border)** | **White (Thicker border)** |
+| <img width="217" height="192" alt="black-thicker" src="https://github.com/user-attachments/assets/09ff9cda-9ac6-4003-be28-226038e5a4e1" /> | <img width="217" height="192" alt="white-thicker" src="https://github.com/user-attachments/assets/3085fbf8-aac6-4b4e-8e9b-9c343431aa44" /> |
+
+
 ## 🐳 Self-hosting
 
 One container, one volume, no database server, no preparation:
